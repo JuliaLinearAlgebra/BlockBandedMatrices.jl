@@ -1,5 +1,5 @@
 # BlockBandedMatrices.jl
-A placeholder package for `BlockBandedMatrix` and `BandedBlockBandedMatrix`, which is currently in ApproxFun though maybe copied over to a separate package.
+A placeholder package for `BlockBandedMatrix` and `BandedBlockBandedMatrix`, which are currently in ApproxFun though may be moved to this repository in the future.
 
 A `BlockBandedMatrix` represents a block banded matrix: a block matrix with only finite number of blocks near the diagonal nonzero.
 
