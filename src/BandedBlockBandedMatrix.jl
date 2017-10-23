@@ -176,29 +176,58 @@ isbanded(::BandedBlockBandedBlock) = true
 @inline bandwidth(V::BandedBlockBandedBlock, k::Int) = ifelse(k == 1, parent(V).λ, parent(V).μ)
 
 
+
+# gives the columns of parent(V).data that encode the block
+blocks(V::BandedBlockBandedBlock)::Tuple{Int,Int} = first(first(parentindexes(V)).block.n),
+                                                    first(last(parentindexes(V)).block.n)
+function bbb_data_cols(V::BandedBlockBandedBlock)
+    A = parent(V)
+    K = first(first(parentindexes(V)).block.n)
+    J_slice = last(parentindexes(V))
+    J = first(J_slice.block.n)
+    m = length(J_slice.indices)
+    col1 = (A.block_sizes[2][J]-1)*(A.l+A.u+1) + (K-J + A.u)*m+1
+    col1:col1+m-1
+end
+
+
+
+
 @inline function inbands_getindex(V::BandedBlockBandedBlock, k::Int, j::Int)
     A = parent(V)
-    cols = parentindexes(V)[2].indices
+    cols = bbb_data_cols(V)
     u = A.μ
     @inbounds return A.data[u + k - j + 1, cols[j]]
 end
 
-@inline function inbands_setindex!(V::BandedBlockBandedBlock, v, k::Int, j::Int)
+@inline function inbands_setindex!(V::BandedBlockBandedBlock{T}, v, k::Int, j::Int) where T
     A = parent(V)
-    cols = parentindexes(V)[2].indices
+    cols = bbb_data_cols(V)
     u = A.μ
     @inbounds A.data[u + k - j + 1, cols[j]] = convert(T, v)::T
     v
 end
 
-function getindex(V::BandedBlockBandedBlock, k::Int, j::Int)
+@propagate_inbounds function getindex(V::BandedBlockBandedBlock, k::Int, j::Int)
+    @boundscheck checkbounds(V, k, j)
     A = parent(V)
-    cols = parentindexes(V)[2].indices
-    banded_getindex(view(A.data, :, cols), A.λ, A.μ, k, j)
+    K,J = blocks(V)
+    if -A.l ≤ J-K ≤ A.u
+        cols = bbb_data_cols(V)
+        banded_getindex(view(A.data, :, cols), A.λ, A.μ, k, j)
+    else
+        zero(eltype(V))
+    end
 end
 
-function setindex!(V::BandedBlockBandedBlock, v, k::Int, j::Int)
+@propagate_inbounds function setindex!(V::BandedBlockBandedBlock, v, k::Int, j::Int)
+    @boundscheck checkbounds(V, k, j)
     A = parent(V)
-    cols = parentindexes(V)[2].indices
-    banded_setindex!(view(A.data, :, cols), A.λ, A.μ, v, k, j)
+    K,J = blocks(V)
+    if -A.l ≤ J-K ≤ A.u
+        cols = bbb_data_cols(V)
+        banded_setindex!(view(A.data, :, cols), A.λ, A.μ, v, k, j)
+    else
+        throw(BandError(parent(V), J-K))
+    end
 end
