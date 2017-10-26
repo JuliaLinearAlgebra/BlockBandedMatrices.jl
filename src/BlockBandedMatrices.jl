@@ -9,7 +9,7 @@ import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blo
 import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!
 
-import Base: getindex, setindex!, checkbounds, @propagate_inbounds
+import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert
 
 export BandedBlockBandedMatrix
 

@@ -30,6 +30,13 @@ BlockBandedMatrices.bbb_data_cols(view(A, Block(2,2))) == 6:7
 V = view(A, Block(1,1))
 @test_throws BoundsError V[2,1]
 
+# BandedMatrix interface
+@test isbanded(V)
+@test bandwidths(V) == BlockBandedMatrices.subblockbandwidths(A)
+@test V[band(0)] ≈ view(V, band(0)) ≈ A[1:1,1:1]
+
+
+
 if false # turned off since tests have check-bounds=yes
     # test that @inbounds is working properly
     exceed_band(V, k, j) = @inbounds return V[k,j]
@@ -49,6 +56,30 @@ V = view(A, Block(3,4))
 @test V[3,1] == 0
 @test_throws BandError V[3,1] = 5
 
+view(V, band(0)) .= -3
+
+@test BandedMatrix(V) isa BandedMatrix{Int}
+@test BandedMatrix{Float64}(V) isa BandedMatrix{Float64}
+@test BandedMatrix{Float64}(BandedMatrix(V)) == BandedMatrix{Float64}(V)
+@test A[4:6,7:10] ≈ BandedMatrix(V)
+
+diag(A[Block(3,4)])
+
+Block((Block(3),Block(4)))
+A[Block(3),Block(4)]
+A[Block(3,4)]
+
+BlockBandedMatrices.getblock(A, 3, 4)
+Bl
+
+BlockBandedMatrices.getblock(A, Block(3, 4).n...)
+
+
+
+A
+
+V
+
 
 l , u = 2,1
 λ , μ = 1,2
@@ -58,8 +89,8 @@ data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(col
 A = BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 
 # The first block is ignored
-BlockBandedMatrices.bbb_data_cols(view(A, Block(1,1))) == 2:2
-BlockBandedMatrices.bbb_data_cols(view(A, Block(2,1))) == 3:3
-BlockBandedMatrices.bbb_data_cols(view(A, Block(3,1))) == 4:4
-BlockBandedMatrices.bbb_data_cols(view(A, Block(1,2))) == 5:6
-BlockBandedMatrices.bbb_data_cols(view(A, Block(2,2))) == 7:8
+@test BlockBandedMatrices.bbb_data_cols(view(A, Block(1,1))) == 2:2
+@test BlockBandedMatrices.bbb_data_cols(view(A, Block(2,1))) == 3:3
+@test BlockBandedMatrices.bbb_data_cols(view(A, Block(3,1))) == 4:4
+@test BlockBandedMatrices.bbb_data_cols(view(A, Block(1,2))) == 5:6
+@test BlockBandedMatrices.bbb_data_cols(view(A, Block(2,2))) == 7:8

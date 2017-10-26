@@ -154,12 +154,12 @@ subblockbandwidth(A::BandedBlockBandedMatrix, k::Integer) = ifelse(k==1 , A.λ ,
 
 
 
-################
+##################
 # BandedBlockBandedBlock
 #
 #   views of the blocks satisfy the BandedMatrix interface, and are memory-compatible
 #   with BLASBandedMatrix.
-##
+##################
 
 const BlockSlice1 = BlockSlice{Block{1,Int}}
 const BandedBlockBandedBlock{T} = SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{BlockSlice1,BlockSlice1},false}
@@ -167,8 +167,9 @@ const BandedBlockBandedBlock{T} = SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{
 
 
 
-######
+##################
 # BandedMatrix interface
+##################
 
 isbanded(::BandedBlockBandedBlock) = true
 
@@ -231,3 +232,15 @@ end
         throw(BandError(parent(V), J-K))
     end
 end
+
+
+
+
+function convert(::Type{BandedMatrix{T}}, V::BandedBlockBandedBlock) where {T}
+    A = parent(V)
+    cols = bbb_data_cols(V)
+    K,J = blocks(V)
+    BandedMatrix(Matrix{T}(view(A.data,:,cols)), size(V,1), A.λ, A.μ)
+end
+
+convert(::Type{BandedMatrix}, V::BandedBlockBandedBlock) = convert(BandedMatrix{eltype(V)}, V)
