@@ -14,7 +14,11 @@ BlockBandedMatrices.bbb_data_cols(view(A, Block(2,1))) == 3:3
 BlockBandedMatrices.bbb_data_cols(view(A, Block(1,2))) == 4:5
 BlockBandedMatrices.bbb_data_cols(view(A, Block(2,2))) == 6:7
 
-@test A[1,1] == view(A,Block(1),Block(1))[1,1] == view(A,Block(1,1))[1,1] == 5
+# check views of blocks are indexing correctly
+
+@test A[Block(1), Block(1)] isa BandedMatrix
+@test A[Block(1), Block(1)] == A[Block(1,1)] == BlockArrays.getblock(A, 1, 1) == BandedMatrix(view(A, Block(1,1)))
+@test A[1,1] == view(A,Block(1),Block(1))[1,1] == view(A,Block(1,1))[1,1] == A[Block(1,1)][1,1]  == A[Block(1),Block(1)][1,1] == 5
 @test A[2,1] == view(A,Block(2),Block(1))[1,1] == view(A,Block(2,1))[1,1] == 8
 @test A[3,1] == view(A,Block(2),Block(1))[2,1] == 9
 @test A[4,1] == 0
@@ -37,16 +41,7 @@ V = view(A, Block(1,1))
 
 
 
-if false # turned off since tests have check-bounds=yes
-    # test that @inbounds is working properly
-    exceed_band(V, k, j) = @inbounds return V[k,j]
-    @test exceed_band(V, 2,1) == 8
-
-    @test BandedMatrices.inbands_getindex(V, 2, 1) == 8
-    BandedMatrices.inbands_setindex!(V, -2, 5, 1)
-    @test A[2,1] == -2
-end
-
+# test views of blocks fulfill BnadedMatrix interface
 @test BandedMatrices.inbands_getindex(V, 1, 1) == V[1,1] == 5
 BandedMatrices.inbands_setindex!(V, -1, 1, 1)
 @test A[1,1] == -1
@@ -57,28 +52,32 @@ V = view(A, Block(3,4))
 @test_throws BandError V[3,1] = 5
 
 view(V, band(0)) .= -3
+@test all(A[Block(3,4)][band(0)] .== -3)
 
 @test BandedMatrix(V) isa BandedMatrix{Int}
 @test BandedMatrix{Float64}(V) isa BandedMatrix{Float64}
 @test BandedMatrix{Float64}(BandedMatrix(V)) == BandedMatrix{Float64}(V)
 @test A[4:6,7:10] ≈ BandedMatrix(V)
 
-diag(A[Block(3,4)])
-
-Block((Block(3),Block(4)))
-A[Block(3),Block(4)]
-A[Block(3,4)]
-
-BlockBandedMatrices.getblock(A, 3, 4)
-Bl
-
-BlockBandedMatrices.getblock(A, Block(3, 4).n...)
+@test A[Block(3,4)].l == A.λ
+@test A[Block(3,4)].u == A.μ
 
 
 
-A
 
-V
+
+if false # turned off since tests have check-bounds=yes
+    # test that @inbounds is working properly
+    exceed_band(V, k, j) = @inbounds return V[k,j]
+    @test exceed_band(V, 2,1) == 8
+
+    @test BandedMatrices.inbands_getindex(V, 2, 1) == 8
+    BandedMatrices.inbands_setindex!(V, -2, 5, 1)
+    @test A[2,1] == -2
+end
+
+
+
 
 
 l , u = 2,1
