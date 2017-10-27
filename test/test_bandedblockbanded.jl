@@ -93,3 +93,39 @@ A = BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 @test BlockBandedMatrices.bbb_data_cols(view(A, Block(3,1))) == 4:4
 @test BlockBandedMatrices.bbb_data_cols(view(A, Block(1,2))) == 5:6
 @test BlockBandedMatrices.bbb_data_cols(view(A, Block(2,2))) == 7:8
+
+
+
+
+#### Test Blas arithmetic
+
+l , u = 1,1
+λ , μ = 1,1
+N = M = 10
+cols = rows = fill(1000,N)
+data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
+A = BandedBlockBandedMatrix{Float64}(data, (rows,cols), (l,u), (λ,μ))
+V = view(A, Block(N,N))
+
+
+Y = zeros(cols[N], cols[N])
+@time BLAS.axpy!(2.0, V, Y)
+@test Y ≈ 2A[Block(N,N)]
+
+Y = bzeros(Float64, cols[N], cols[N], λ, μ)
+@time BLAS.axpy!(2.0, V, Y)
+@test Y ≈ 2A[Block(N,N)]
+
+Y = bzeros(Float64, cols[N], cols[N], λ+1, μ+1)
+@time BLAS.axpy!(2.0, V, Y)
+@test Y ≈ 2A[Block(N,N)]
+
+Y = bzeros(Float64, cols[N], cols[N], 0, 0)
+@test_throws BandError BLAS.axpy!(2.0, V, Y)
+
+AN = A[Block(N,N)]
+@time BLAS.axpy!(2.0, V, V)
+@test A[Block(N,N)] ≈ 3AN
+
+
+V*V
