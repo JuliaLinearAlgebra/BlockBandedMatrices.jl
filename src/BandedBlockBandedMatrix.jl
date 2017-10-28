@@ -19,10 +19,14 @@ struct BandedBlockBandedMatrix{T} <: AbstractBlockBandedMatrix{T}
         new{T}(data, block_sizes, l, u, λ, μ)
     end
 
-    @inline function BandedBlockBandedMatrix{T}(data::AbstractMatrix, block_sizes::BlockSizes{2},
-                        l::Int, u::Int, λ::Int, μ::Int) where T
+    @inline BandedBlockBandedMatrix{T}(data::AbstractMatrix, block_sizes::BlockSizes{2},
+                        l::Int, u::Int, λ::Int, μ::Int) where T =
         new{T}(Matrix{T}(data), block_sizes, l, u, λ, μ)
-    end
+
+    BandedBlockBandedMatrix{T}(block_sizes::BlockSizes{2},
+                        l::Int, u::Int, λ::Int, μ::Int) where T =
+        BandedBlockBandedMatrix{T}(Matrix{T}(max(0, λ+μ+1), max(0,(l+u+1)*(block_sizes.cumul_sizes[2][end]-1))),
+                                        block_sizes, l, u, λ, μ)
 end
 
 
@@ -114,11 +118,13 @@ Base.size(arr::BandedBlockBandedMatrix) =
     return v
 end
 
-# @inline function Base.setindex!(block_arr::BlockArray{T, N}, v, i::Vararg{Int, N}) where {T,N}
-#     @boundscheck checkbounds(block_arr, i...)
-#     @inbounds block_arr[global2blockindex(block_arr.block_sizes, i)] = v
-#     return block_arr
-# end
+@inline function setindex!(A::BandedBlockBandedMatrix{T}, v, i::Int, j::Int) where T
+    @boundscheck checkbounds(A, i, j)
+    bi = global2blockindex(A.block_sizes, (i, j))
+    V = view(A, Block(bi.I))
+    @inbounds V[bi.α...] = convert(T, v)::T
+    return v
+end
 
 ############
 # Indexing #
@@ -274,6 +280,8 @@ end
     if -A.l ≤ J-K ≤ A.u
         cols = bbb_data_cols(V)
         banded_setindex!(view(A.data, :, cols), A.λ, A.μ, v, k, j)
+    elseif iszero(v) # allow setindex for 0 datya
+        v
     else
         throw(BandError(parent(V), J-K))
     end
@@ -293,14 +301,11 @@ convert(::Type{BandedMatrix}, V::BandedBlockBandedBlock) = convert(BandedMatrix{
 
 
 
+
+
 #############
 # Linear algebra
 #############
-
-BLAS.axpy!(α,A::BandedBlockBandedBlock, B::BandedBlockBandedBlock) = banded_generic_axpy!(α, A, B)
-BLAS.axpy!(α,A::BandedBlockBandedBlock, B::BLASBandedMatrix) = banded_generic_axpy!(α, A, B)
-BLAS.axpy!(α,A::BandedBlockBandedBlock, B::AbstractMatrix) = banded_dense_axpy!(α, A, B)
-
 
 function Base.pointer(V::BandedBlockBandedBlock{T}) where {T<:BlasFloat}
     A = parent(parent(V))
@@ -316,23 +321,15 @@ function Base.pointer(V::BandedBlockBandedBlock{T}) where {T<:BlasFloat}
     p+(col-1)*st*sz
 end
 
-
-*(A::BandedBlockBandedBlock{T}, B::BandedBlockBandedBlock{T}) where T = banded_A_mul_B(A, B)
-*(A::BandedBlockBandedBlock{T}, B::BLASBandedMatrix{T}) where T = banded_A_mul_B(A, B)
-*(A::BLASBandedMatrix{T}, B::BandedBlockBandedBlock{T}) where T = banded_A_mul_B(A, B)
-*(A::BandedBlockBandedBlock{T}, b::AbstractVector{T}) where T = banded_A_mul_B!(Vector{T}(size(A,1)), A, b)
-
-
-Base.A_mul_B!(c::AbstractVector, A::BandedBlockBandedBlock, b::AbstractVector) =
-    BandedMatrices.banded_A_mul_B!(c,A,b)
-
+@banded_linalg BandedBlockBandedBlock
+@banded_banded_linalg BandedBlockBandedBlock BLASBandedMatrix
 
 
 
 function *(A::BandedBlockBandedMatrix{T},
            B::BandedBlockBandedMatrix{V}) where {T<:Number,V<:Number}
-    Arows, Acols = A.block_sizes
-    Brows, Bcols = B.block_sizes
+    Arows, Acols = A.block_sizes.cumul_sizes
+    Brows, Bcols = B.block_sizes.cumul_sizes
     if Acols ≠ Brows
         # diagonal matrices can be converted
         if isdiag(B) && size(A,2) == size(B,1) == size(B,2)
@@ -345,7 +342,7 @@ function *(A::BandedBlockBandedMatrix{T},
     end
     n,m = size(A,1), size(B,2)
 
-    A_mul_B!(BandedBlockBandedMatrix(promote_type(T,V), BlockSizes((Arows,Bcols)),
+    A_mul_B!(BandedBlockBandedMatrix{promote_type(T,V)}(BlockSizes((Arows,Bcols)),
                                      A.l+B.l, A.u+B.u,
                                      A.λ+B.λ, A.μ+B.μ),
              A, B)

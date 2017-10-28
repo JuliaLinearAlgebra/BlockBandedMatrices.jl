@@ -128,4 +128,23 @@ AN = A[Block(N,N)]
 @test A[Block(N,N)] ≈ 3AN
 
 
-V*V
+## standard indexing
+l , u = 1,1
+λ , μ = 1,1
+N = M = 10
+cols = rows = 1:N
+data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
+A = BandedBlockBandedMatrix{Float64}(data, (rows,cols), (l,u), (λ,μ))
+
+A[1,1] = 5
+@test A[1,1] == 5
+
+@test_throws BandError A[1,4] = 5
+A[1,4] = 0
+@test A[1,4] == 0
+
+# TODO: return a BandedMatrix
+@test A[1:10,1:10] ≈ full(A)[1:10,1:10]
+
+
+@time A*A
