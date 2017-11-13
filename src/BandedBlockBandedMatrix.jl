@@ -66,11 +66,10 @@ convert(::Type{BandedBlockBandedMatrix}, B::BandedMatrix) = convert(BandedBlockB
 
 
 ################################
-# BandedBLockBandedMatrix Interface #
+# BandedBlockBandedMatrix Interface #
 ################################
 
-isbandedblockbanded(_) = false
-isbandedblockbanded(::BandedBlockBandedMatrix) = true
+blockbandwidth(A::BandedBlockBandedMatrix, i::Int) = ifelse(i==1, A.λ, A.μ)
 
 isdiag(A::BandedBlockBandedMatrix) = A.λ == A.μ == A.l == A.u
 

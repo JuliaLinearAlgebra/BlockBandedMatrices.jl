@@ -8,6 +8,9 @@ cols = rows = 1:N
 data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
 A = BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 
+@test blockbandwidths(A) == (l,u)
+@test BlockBandedMatrices.subblockbandwidths(A) == (l,u)
+
 # The first block is ignored
 BlockBandedMatrices.bbb_data_cols(view(A, Block(1,1))) == 2:2
 BlockBandedMatrices.bbb_data_cols(view(A, Block(2,1))) == 3:3
