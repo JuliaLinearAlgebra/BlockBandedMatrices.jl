@@ -211,10 +211,6 @@ const BandedBlockBandedBlock{T} = SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{
 ######################################
 # BandedMatrix interface  for Blocks #
 ######################################
-
-isbanded(::BandedBlockBandedBlock) = true
-
-@inline leadingdimension(V::BandedBlockBandedBlock) = stride(parent(V).data,2)
 @inline bandwidth(V::BandedBlockBandedBlock, k::Int) = ifelse(k == 1, parent(V).λ, parent(V).μ)
 
 
@@ -307,6 +303,8 @@ convert(::Type{BandedMatrix}, V::BandedBlockBandedBlock) = convert(BandedMatrix{
 # Linear algebra
 #############
 
+
+# BLAS structure
 function Base.pointer(V::BandedBlockBandedBlock{T}) where {T<:BlasFloat}
     A = parent(parent(V))
     K,J = parentindexes(V)
@@ -321,8 +319,14 @@ function Base.pointer(V::BandedBlockBandedBlock{T}) where {T<:BlasFloat}
     p+(col-1)*st*sz
 end
 
-@banded_linalg BandedBlockBandedBlock
-@banded_banded_linalg BandedBlockBandedBlock BLASBandedMatrix
+@inline leadingdimension(V::BandedBlockBandedBlock) = stride(parent(V).data,2)
+@inline blasstructure(::Type{BandedBlockBandedBlock{<:BlasFloat}}) = BlasStrided()
+
+@banded BandedBlockBandedBlock
+@banded_banded_linalg BandedBlockBandedBlock BandedSubBandedMatrix
+
+
+
 
 
 

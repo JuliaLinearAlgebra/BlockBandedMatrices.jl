@@ -8,9 +8,10 @@ import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blo
 
 import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
-                        banded_generic_axpy!, banded_A_mul_B!, BLASBandedMatrix,
-                        BlasFloat, banded_dense_axpy!,
-                        @banded_banded_linalg, @banded_linalg
+                        banded_generic_axpy!, banded_A_mul_B!,
+                        BlasFloat, banded_dense_axpy!, blasstructure,
+                        BandedSubBandedMatrix,
+                        @banded_banded_linalg, @banded_linalg, @banded
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         isdiag, +, *, -, /, \
