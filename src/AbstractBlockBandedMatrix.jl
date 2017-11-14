@@ -67,3 +67,8 @@ function _firstblockdiagcol(A::AbstractMatrix, j::Int)
     r = a == 1 ? b+1 : a-1
     j-r
 end
+
+
+## BlockSlice1 is a conveneience for views
+
+const BlockSlice1 = BlockSlice{Block{1,Int}}

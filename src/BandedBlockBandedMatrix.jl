@@ -201,7 +201,6 @@ subblockbandwidth(A::BandedBlockBandedMatrix, k::Integer) = ifelse(k==1 , A.λ ,
 #   with BLASBandedMatrix.
 ##################
 
-const BlockSlice1 = BlockSlice{Block{1,Int}}
 const BandedBlockBandedBlock{T} = SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{BlockSlice1,BlockSlice1},false}
 
 
