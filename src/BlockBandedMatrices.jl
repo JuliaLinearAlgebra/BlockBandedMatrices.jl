@@ -4,7 +4,7 @@ module BlockBandedMatrices
 using BlockArrays, BandedMatrices
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
-                        Block, BlockSlice, getblock
+                        Block, BlockSlice, getblock, unblock
 
 import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
@@ -14,12 +14,13 @@ import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         @banded_banded_linalg, @banded_linalg, @banded
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
-                        isdiag, +, *, -, /, \
+                        isdiag, +, *, -, /, \, strides
 
-export BandedBlockBandedMatrix, blockbandwidth, blockbandwidths,
+export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths
 
 include("AbstractBlockBandedMatrix.jl")
+include("BlockBandedMatrix.jl")
 include("BandedBlockBandedMatrix.jl")
 
 # function Base.A_mul_B!(Y::AbstractBlockBandedMatrix, A::AbstractBlockBandedMatrix, B::AbstractBlockBandedMatrix)

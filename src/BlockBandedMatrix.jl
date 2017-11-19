@@ -1,33 +1,81 @@
 
 
 # gives number of entries in a BlockBandedMatrix
-function bb_numentries(block_sizes,l,u)
+function bb_numentries(b_size, l, u)
     numentries = 0
-    N=nblocks(block_sizes,1)
-    for J = 1:nblocks(block_sizes,2), K = max(1,J-u):min(J+l,N)
-        numentries += blocksize(block_sizes, K, J)
+    N = nblocks(b_size,1)
+    for J = 1:nblocks(b_size,2),
+        KR = max(1,J-u):min(J+l,N)
+        num_rows = b_size[1,KR[end]+1]-b_size[1,KR[1]]
+        num_cols = blocksize(b_size, 2, J)
+        numentries += num_rows*num_cols
     end
     numentries
 end
 
 
+function bb_blockstarts(b_size, l, u)
+    N,M = nblocks(b_size)
+    b_start = BandedMatrix(Int,N,M,l,u)
+    ind_shift = 0
+    for J = 1:M
+        KR = max(1,J-u):min(J+l,N)
+        b_start[KR,J] .= ind_shift .+ view(b_size.cumul_sizes[1],KR) .- b_size.cumul_sizes[1][KR[1]] .+ 1
+
+        num_rows = b_size[1,KR[end]+1]-b_size[1,KR[1]]
+        num_cols = blocksize(b_size, 2, J)
+        ind_shift += num_rows*num_cols
+    end
+    b_start
+end
+
+function bb_blockstrides(b_size, l, u)
+    N, M = nblocks(b_size)
+    b_strides = Vector{Int}(M)
+    for J=1:M
+        KR = max(1,J-l):min(J+u,N)
+        num_rows = b_size[1,KR[end]+1]-b_size[1,KR[1]]
+        b_strides[J] = num_rows
+    end
+    b_strides
+end
+
+struct BlockBandedSizes
+    block_sizes::BlockSizes{2}
+    block_starts::BandedMatrix{Int} # gives index where the blocks start
+    block_strides::Vector{Int} # gives stride to next block for J-th column
+end
+
+
+function BlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l, u)
+    b_size = BlockSizes(rows,cols)
+    BlockBandedSizes(b_size, bb_blockstarts(b_size, l, u), bb_blockstrides(b_size, l, u))
+end
+
+for Func in (:nblocks, :getindex, :blocksize, :global2blockindex, :unblock)
+    @eval begin
+        $Func(B::BlockBandedSizes) = $Func(B.block_sizes)
+        $Func(B::BlockBandedSizes, k) = $Func(B.block_sizes, k)
+        $Func(B::BlockBandedSizes, k, j) = $Func(B.block_sizes, k, j)
+    end
+end
 
 
 #  A block matrix where only the bands are nonzero
 #   isomorphic to BandedMatrix{Matrix{T}}
-struct BlockBandedMatrix{T,RI,CI} <: AbstractBlockBandedMatrix{T}
+struct BlockBandedMatrix{T} <: AbstractBlockBandedMatrix{T}
     data::Vector{T}
-    block_sizes::BlockSizes{2}
+    block_sizes::BlockBandedSizes
 
     l::Int  # block lower bandwidth
     u::Int  # block upper bandwidth
 
-    function BlockBandedMatrix{T}(data::Vector{T}, block_sizes::BlockSizes{2},
+    function BlockBandedMatrix{T}(data::Vector{T}, block_sizes::BlockBandedSizes,
                                              l::Int, u::Int) where T
         new{T}(data, block_sizes, l, u)
     end
 
-    BlockBandedMatrix{T}(block_sizes::BlockSizes{2}, l::Int, u::Int) where T =
+    BlockBandedMatrix{T}(block_sizes::BlockBandedSizes, l::Int, u::Int) where T =
         BlockBandedMatrix{T}(Vector{T}(bb_numentries(block_sizes,l,u)),
                                         block_sizes, l, u)
 end
@@ -35,26 +83,22 @@ end
 
 # Auxiliary outer constructors
 
-@inline BlockBandedMatrix(data::AbstractVector, block_sizes::BlockSizes{2},
+@inline BlockBandedMatrix(data::AbstractVector, block_sizes::BlockBandedSizes,
                                          l::Int, u::Int) =
     BlockBandedMatrix{eltype(data)}(data, block_sizes, l, u)
 
-@inline BlockBandedMatrix(data::AbstractVector, block_sizes::NTuple{2, Vector{Int}},
-                                         lu::NTuple{2, Int}) =
-    BlockBandedMatrix{eltype(data)}(data, BlockSizes(block_sizes...), lu...)
-
 @inline BlockBandedMatrix(data::AbstractVector, block_sizes::NTuple{2, AbstractVector{Int}},
-                                    lu::NTuple{2, Int}) =
-    BlockBandedMatrix(data, Vector{Int}.(block_sizes), lu)
+                                         lu::NTuple{2, Int}) =
+    BlockBandedMatrix{eltype(data)}(data, BlockBandedSizes(block_sizes..., lu...), lu...)
 
-
-@inline BlockBandedMatrix{T}(data::AbstractVector, block_sizes::NTuple{2, Vector{Int}},
-                                         lu::NTuple{2, Int}) where T =
-    BlockBandedMatrix{T}(data, BlockSizes(block_sizes...), lu...)
 
 @inline BlockBandedMatrix{T}(data::AbstractVector, block_sizes::NTuple{2, AbstractVector{Int}},
-                                    lu::NTuple{2, Int}) where T =
-    BlockBandedMatrix{T}(data, Vector{Int}.(block_sizes), lu)
+                                         lu::NTuple{2, Int}) where T =
+    BlockBandedMatrix{T}(data, BlockBandedSizes(block_sizes..., lu...), lu...)
+
+@inline BlockBandedMatrix{T}(block_sizes::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) where T =
+    BlockBandedMatrix{T}(BlockBandedSizes(block_sizes..., lu...), lu...)
+
 
 
 
@@ -62,7 +106,7 @@ end
 # BlockBandedMatrix Interface #
 ################################
 
-blockbandwidth(A::BlockBandedMatrix, i::Int) = ifelse(i==1, A.λ, A.μ)
+blockbandwidth(A::BlockBandedMatrix, i::Int) = ifelse(i==1, A.l, A.u)
 
 
 ################################
@@ -99,7 +143,7 @@ end
 # end
 
 Base.size(arr::BlockBandedMatrix) =
-    @inbounds return (arr.block_sizes[1][end] - 1, arr.block_sizes[2][end] - 1)
+    @inbounds return (arr.block_sizes.block_sizes[1][end] - 1, arr.block_sizes.block_sizes[2][end] - 1)
 
 
 @inline function getindex(A::BlockBandedMatrix, i::Int, j::Int)
@@ -188,14 +232,8 @@ end
 #   with StridedMatrix.
 ##################
 
-const BlockBandedBlock{T} = SubArray{T,2,BandedMatrix{T},Tuple{BlockSlice1,BlockSlice1},false}
+const BlockBandedBlock{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice1,BlockSlice1},false}
 
-
-
-
-######################################
-# BandedMatrix interface  for Blocks #
-######################################
 
 
 
@@ -203,86 +241,47 @@ const BlockBandedBlock{T} = SubArray{T,2,BandedMatrix{T},Tuple{BlockSlice1,Block
 blocks(V::BlockBandedBlock)::Tuple{Int,Int} = first(first(parentindexes(V)).block.n),
                                                     first(last(parentindexes(V)).block.n)
 
-#
-# function bb_data_firstcol(V::BlockBandedBlock)
-#     A = parent(V)
-#     K = first(first(parentindexes(V)).block.n)
-#     J_slice = last(parentindexes(V))
-#     J = first(J_slice.block.n)
-#     m = length(J_slice.indices)
-#     col1 = (A.block_sizes[2][J]-1)*(A.l+A.u+1) + (K-J + A.u)*m+1
-# end
-#
-# function bb_data_cols(V::BlockBandedBlock)
-#     A = parent(V)
-#     K = first(first(parentindexes(V)).block.n)
-#     J_slice = last(parentindexes(V))
-#     J = first(J_slice.block.n)
-#     m = length(J_slice.indices)
-#     col1 = (A.block_sizes[2][J]-1)*(A.l+A.u+1) + (K-J + A.u)*m+1
-#     col1:col1+m-1
-# end
-#
-#
-#
-#
-# @inline function inbands_getindex(V::BlockBandedBlock, k::Int, j::Int)
-#     A = parent(V)
-#     cols = bb_data_cols(V)
-#     u = A.μ
-#     @inbounds return A.data[u + k - j + 1, cols[j]]
-# end
-#
-# @inline function inbands_setindex!(V::BlockBandedBlock{T}, v, k::Int, j::Int) where T
-#     A = parent(V)
-#     cols = bb_data_cols(V)
-#     u = A.μ
-#     @inbounds A.data[u + k - j + 1, cols[j]] = convert(T, v)::T
-#     v
-# end
-#
-# @propagate_inbounds function getindex(V::BlockBandedBlock, k::Int, j::Int)
-#     @boundscheck checkbounds(V, k, j)
-#     A = parent(V)
-#     K,J = blocks(V)
-#     if -A.l ≤ J-K ≤ A.u
-#         cols = bb_data_cols(V)
-#         banded_getindex(view(A.data, :, cols), A.λ, A.μ, k, j)
-#     else
-#         zero(eltype(V))
-#     end
-# end
-#
-# @propagate_inbounds function setindex!(V::BlockBandedBlock, v, k::Int, j::Int)
-#     @boundscheck checkbounds(V, k, j)
-#     A = parent(V)
-#     K,J = blocks(V)
-#     if -A.l ≤ J-K ≤ A.u
-#         cols = bb_data_cols(V)
-#         banded_setindex!(view(A.data, :, cols), A.λ, A.μ, v, k, j)
-#     elseif iszero(v) # allow setindex for 0 datya
-#         v
-#     else
-#         throw(BandError(parent(V), J-K))
-#     end
-# end
-#
-#
-#
-#
-# function convert(::Type{BandedMatrix{T}}, V::BlockBandedBlock) where {T}
-#     A = parent(V)
-#     cols = bb_data_cols(V)
-#     K,J = blocks(V)
-#     BandedMatrix(Matrix{T}(view(A.data,:,cols)), size(V,1), A.λ, A.μ)
-# end
-#
-# convert(::Type{BandedMatrix}, V::BlockBandedBlock) = convert(BandedMatrix{eltype(V)}, V)
-#
-#
-#
-#
-#
+######################################
+# Matrix interface  for Blocks #
+######################################
+
+function Base.unsafe_convert(::Type{Ptr{T}}, V::BlockBandedBlock{T}) where T
+    A = parent(V)
+    K,J = blocks(V)
+    Base.unsafe_convert(Ptr{T}, A) + sizeof(T)*(A.block_sizes.block_starts[K,J]-1)
+end
+
+strides(V::BlockBandedBlock) = (1,parent(V).block_strides[blocks(V)[2]])
+
+@propagate_inbounds function getindex(V::BlockBandedBlock, k::Int, j::Int)
+    @boundscheck checkbounds(V, k, j)
+    A = parent(V)
+    K,J = blocks(V)
+    if -A.l ≤ J-K ≤ A.u
+        b_start = A.block_sizes.block_starts[K,J]
+        b_stride = A.block_sizes.block_strides[J]
+        A.data[b_start + k-1 + (j-1)*b_stride ]
+    else
+        zero(eltype(V))
+    end
+end
+
+@propagate_inbounds function setindex!(V::BlockBandedBlock, v, k::Int, j::Int)
+    @boundscheck checkbounds(V, k, j)
+    A = parent(V)
+    K,J = blocks(V)
+    if -A.l ≤ J-K ≤ A.u
+        b_start = A.block_sizes.block_starts[K,J]
+        b_stride = A.block_sizes.block_strides[J]
+        A.data[b_start + k-1 + (j-1)*b_stride ] = v
+    elseif iszero(v) # allow setindex for 0 datya
+        v
+    else
+        throw(BandError(A, J-K))
+    end
+end
+
+
 # #############
 # # Linear algebra
 # #############
