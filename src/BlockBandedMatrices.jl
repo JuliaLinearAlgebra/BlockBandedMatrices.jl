@@ -22,15 +22,6 @@ export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidt
 include("AbstractBlockBandedMatrix.jl")
 include("BlockBandedMatrix.jl")
 include("BandedBlockBandedMatrix.jl")
+include("linalg.jl")
 
-# function Base.A_mul_B!(Y::AbstractBlockBandedMatrix, A::AbstractBlockBandedMatrix, B::AbstractBlockBandedMatrix)
-#     T=eltype(Y)
-#     BLAS.scal!(length(Y.data),zero(T),Y.data,1)
-#     o=one(T)
-#     for J=Block(1):Block(blocksize(B,2)),
-#         N=blockcolrange(B,J), K=blockcolrange(A,N)
-#         αA_mul_B_plus_βC!(o,view(A,K,N),view(B,N,J),o,view(Y,K,J))
-#     end
-#     Y
-# end
 end # module

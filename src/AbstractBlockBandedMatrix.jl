@@ -3,6 +3,9 @@
 # A BlockBandedMatrix is a BlockMatrix, but is not a BandedMatrix
 abstract type AbstractBlockBandedMatrix{T} <: AbstractBlockMatrix{T} end
 
+
+
+
 doc"""
     blockbandwidths(A)
 
