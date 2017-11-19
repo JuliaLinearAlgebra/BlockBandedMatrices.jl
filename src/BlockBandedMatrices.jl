@@ -14,7 +14,7 @@ import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         @banded_banded_linalg, @banded_linalg, @banded
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
-                        isdiag, +, *, -, /, \, strides
+                        isdiag, +, *, -, /, \, strides, zeros, eye
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths

@@ -5,6 +5,21 @@ l , u = 1,1
 λ , μ = 1,1
 N = M = 4
 cols = rows = 1:N
+
+@test Matrix(zeros(BandedBlockBandedMatrix, (rows,cols), (l,u), (λ,μ))) ==
+    zeros(Float64, 10, 10)
+
+@test Matrix(zeros(BandedBlockBandedMatrix{Int}, (rows,cols), (l,u), (λ,μ))) ==
+    zeros(Int, 10, 10)
+
+@test Matrix(eye(BandedBlockBandedMatrix, (rows,cols), (l,u), (λ,μ))) ==
+    eye(Float64, 10, 10)
+
+@test Matrix(eye(BandedBlockBandedMatrix{Int}, (rows,cols), (l,u), (λ,μ))) ==
+    eye(Int, 10, 10)
+
+
+
 data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
 A = BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 

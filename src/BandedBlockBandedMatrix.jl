@@ -45,13 +45,13 @@ end
     BandedBlockBandedMatrix(data, Vector{Int}.(block_sizes), lu, λμ)
 
 
-@inline BandedBlockBandedMatrix{T}(data::AbstractMatrix, block_sizes::NTuple{2, Vector{Int}},
+@inline BandedBlockBandedMatrix{T}(data::AbstractMatrix, dims::NTuple{2, Vector{Int}},
                                          lu::NTuple{2, Int}, λμ::NTuple{2, Int}) where T =
-    BandedBlockBandedMatrix{T}(data, BlockSizes(block_sizes...), lu..., λμ...)
+    BandedBlockBandedMatrix{T}(data, BlockSizes(dims...), lu..., λμ...)
 
-@inline BandedBlockBandedMatrix{T}(data::AbstractMatrix, block_sizes::NTuple{2, AbstractVector{Int}},
+@inline BandedBlockBandedMatrix{T}(data::AbstractMatrix, dims::NTuple{2, AbstractVector{Int}},
                                     lu::NTuple{2, Int}, λμ::NTuple{2, Int}) where T =
-    BandedBlockBandedMatrix{T}(data, Vector{Int}.(block_sizes), lu, λμ)
+    BandedBlockBandedMatrix{T}(data, Vector{Int}.(dims), lu, λμ)
 
 
 convert(::Type{BandedBlockBandedMatrix{T}}, B::BandedMatrix) where T =
@@ -63,6 +63,28 @@ convert(::Type{BandedBlockBandedMatrix{T}}, B::BandedMatrix) where T =
 
 convert(::Type{BandedBlockBandedMatrix}, B::BandedMatrix) = convert(BandedBlockBandedMatrix{eltype(B)}, B)
 
+zeros(::Type{BandedBlockBandedMatrix{T}}, dims::NTuple{2, AbstractVector{Int}},
+      lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
+    BandedBlockBandedMatrix{T}(zeros(T, max(0, sum(λμ)+1),
+                                              max(0,(sum(lu)+1)*sum(dims[2]))),
+                                     dims, lu, λμ)
+
+zeros(::Type{BandedBlockBandedMatrix}, dims::NTuple{2, AbstractVector{Int}},
+      lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
+    zeros(BandedBlockBandedMatrix{Float64}, dims, lu, λμ)
+
+function eye(::Type{BandedBlockBandedMatrix{T}}, dims::NTuple{2, AbstractVector{Int}},
+      lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T
+    ret = BandedBlockBandedMatrix{T}(zeros(T, max(0, sum(λμ)+1),
+                                              max(0,(sum(lu)+1)*sum(dims[2]))),
+                                     dims, lu, λμ)
+    ret[diagind(ret)] = one(T)
+    ret
+end
+
+eye(::Type{BandedBlockBandedMatrix}, dims::NTuple{2, AbstractVector{Int}},
+      lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
+    eye(BandedBlockBandedMatrix{Float64}, dims, lu, λμ)
 
 
 ################################

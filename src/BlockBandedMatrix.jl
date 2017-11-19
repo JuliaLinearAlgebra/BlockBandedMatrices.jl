@@ -101,6 +101,30 @@ end
 
 
 
+function zeros(::Type{BlockBandedMatrix{T}}, dims::NTuple{2, AbstractVector{Int}},
+      lu::NTuple{2,Int}) where T
+      bs = BlockBandedSizes(dims..., lu...)
+      BlockBandedMatrix{T}(zeros(T, bb_numentries(bs,lu...)),
+                                 bs, lu...)
+end
+
+zeros(::Type{BlockBandedMatrix}, dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2,Int}) =
+      zeros(BlockBandedMatrix{Float64}, dims, lu)
+
+
+function eye(::Type{BlockBandedMatrix{T}}, dims::NTuple{2, AbstractVector{Int}},
+    lu::NTuple{2,Int}) where T
+    bs = BlockBandedSizes(dims..., lu...)
+    ret = BlockBandedMatrix{T}(zeros(T, bb_numentries(bs,lu...)),
+                               bs, lu...)
+    ret[diagind(ret)] = one(T)
+    ret
+end
+
+eye(::Type{BlockBandedMatrix}, dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2,Int}) =
+    eye(BlockBandedMatrix{Float64}, dims, lu)
+
+
 
 ################################
 # BlockBandedMatrix Interface #

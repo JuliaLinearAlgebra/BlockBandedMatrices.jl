@@ -6,6 +6,19 @@ l , u = 1,1
 N = M = 4
 cols = rows = 1:N
 
+@test Matrix(zeros(BlockBandedMatrix, (rows,cols), (l,u))) ==
+    zeros(Float64, 10, 10)
+
+@test Matrix(zeros(BlockBandedMatrix{Int}, (rows,cols), (l,u))) ==
+    zeros(Int, 10, 10)
+
+@test Matrix(eye(BlockBandedMatrix, (rows,cols), (l,u))) ==
+    eye(Float64, 10, 10)
+
+@test Matrix(eye(BlockBandedMatrix{Int}, (rows,cols), (l,u))) ==
+    eye(Int, 10, 10)
+
+
 A = BlockBandedMatrix{Int}((rows,cols), (l,u))
     A.data .= 1:length(A.data)
 

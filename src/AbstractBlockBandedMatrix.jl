@@ -30,10 +30,10 @@ blockbandrange(A::AbstractMatrix) = -blockbandwidth(A,1):blockbandwidth(A,2)
 
 
 # start/stop indices of the i-th column/row, bounded by actual matrix size
-@inline blockcolstart(A::AbstractVecOrMat, i::Integer) = max(i-blockbandwidth(A,2), 1)
-@inline  blockcolstop(A::AbstractVecOrMat, i::Integer) = max(min(i+blockbandwidth(A,1), nblocks(A, 1)), 0)
-@inline blockrowstart(A::AbstractVecOrMat, i::Integer) = max(i-blockbandwidth(A,1), 1)
-@inline  blockrowstop(A::AbstractVecOrMat, i::Integer) = max(min(i+blockbandwidth(A,2), nblocks(A, 2)), 0)
+@inline blockcolstart(A::AbstractVecOrMat, i::Integer) = Block(max(i-blockbandwidth(A,2), 1))
+@inline  blockcolstop(A::AbstractVecOrMat, i::Integer) = Block(max(min(i+blockbandwidth(A,1), nblocks(A, 1)), 0))
+@inline blockrowstart(A::AbstractVecOrMat, i::Integer) = Block(max(i-blockbandwidth(A,1), 1))
+@inline  blockrowstop(A::AbstractVecOrMat, i::Integer) = Block(max(min(i+blockbandwidth(A,2), nblocks(A, 2)), 0))
 
 
 @inline blockcolrange(A::AbstractVecOrMat, i::Integer) = blockcolstart(A,i):blockcolstop(A,i)
@@ -41,9 +41,13 @@ blockbandrange(A::AbstractMatrix) = -blockbandwidth(A,1):blockbandwidth(A,2)
 
 
 # length of i-the column/row
-@inline blockcollength(A::AbstractVecOrMat, i::Integer) = max(blockcolstop(A, i) - blockcolstart(A, i) + 1, 0)
-@inline blockrowlength(A::AbstractVecOrMat, i::Integer) = max(blockrowstop(A, i) - blockrowstart(A, i) + 1, 0)
+@inline blockcollength(A::AbstractVecOrMat, i::Integer) = max(blockcolstop(A, i).n[1] - blockcolstart(A, i).n[1] + 1, 0)
+@inline blockrowlength(A::AbstractVecOrMat, i::Integer) = max(blockrowstop(A, i).n[1] - blockrowstart(A, i).n[1] + 1, 0)
 
+
+for Func in (:blockcolstart, :blockcolstop, :blockrowstart, :blockrowstop)
+    @eval $Func(A, i::Block{1}) = $Func(A, i.n[1])
+end
 
 doc"""
     isblockbanded(A)
