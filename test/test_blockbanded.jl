@@ -1,21 +1,27 @@
 using BlockArrays, BandedMatrices, BlockBandedMatrices, Base.Test
-
+    import BlockBandedMatrices: _BlockBandedMatrix
 
 
 l , u = 1,1
 N = M = 4
 cols = rows = 1:N
 
-@test Matrix(zeros(BlockBandedMatrix, (rows,cols), (l,u))) ==
+@test Matrix(BlockBandedMatrix(Zeros(sum(rows),sum(cols)), (rows, cols), (l,u))) ==
     zeros(Float64, 10, 10)
 
-@test Matrix(zeros(BlockBandedMatrix{Int}, (rows,cols), (l,u))) ==
+@test Matrix(BlockBandedMatrix{Int}(Zeros(sum(rows),sum(cols)), (rows,cols), (l,u))) ==
     zeros(Int, 10, 10)
 
-@test Matrix(eye(BlockBandedMatrix, (rows,cols), (l,u))) ==
+@test Matrix(BlockBandedMatrix(Eye(sum(rows),sum(cols)), (rows,cols), (l,u))) ==
     eye(Float64, 10, 10)
 
-@test Matrix(eye(BlockBandedMatrix{Int}, (rows,cols), (l,u))) ==
+@test Matrix(BlockBandedMatrix{Int}(Eye(sum(rows),sum(cols)), (rows,cols), (l,u))) ==
+    eye(Int, 10, 10)
+
+@test Matrix(BlockBandedMatrix(I, (rows,cols), (l,u))) ==
+    eye(Float64, 10, 10)
+
+@test Matrix(BlockBandedMatrix{Int}(I, (rows,cols), (l,u))) ==
     eye(Int, 10, 10)
 
 
@@ -93,7 +99,7 @@ Y = zeros(cols[N], cols[N])
 @time BLAS.axpy!(2.0, V, Y)
 @test Y ≈ 2A[Block(N,N)]
 
-Y = bzeros(Float64, cols[N], cols[N], 0, 0)
+Y = BandedMatrix(Zeros(cols[N], cols[N]), (0, 0))
 @test_throws BandError BLAS.axpy!(2.0, V, Y)
 
 AN = A[Block(N,N)]

@@ -11,7 +11,8 @@ import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         banded_generic_axpy!, banded_A_mul_B!,
                         BlasFloat, banded_dense_axpy!, blasstructure,
                         BandedSubBandedMatrix, αA_mul_B_plus_βC!,
-                        @banded_banded_linalg, @banded_linalg, @banded
+                        @banded_banded_linalg, @banded_linalg, @banded,
+                        _BandedMatrix
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         isdiag, +, *, -, /, \, strides, zeros, eye
