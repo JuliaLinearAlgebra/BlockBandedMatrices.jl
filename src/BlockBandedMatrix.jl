@@ -16,7 +16,7 @@ end
 
 function bb_blockstarts(b_size, l, u)
     N,M = nblocks(b_size)
-    b_start = BandedMatrix{Int}(N,M,l,u)
+    b_start = BandedMatrix{Int}(uninitialized, N, M, l, u)
     ind_shift = 0
     for J = 1:M
         KR = max(1,J-u):min(J+l,N)
@@ -82,11 +82,11 @@ end
 @inline _BlockBandedMatrix(data::AbstractVector, block_sizes::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) =
     _BlockBandedMatrix(data, BlockBandedSizes(block_sizes..., lu...), lu...)
 
-@inline BlockBandedMatrix{T}(block_sizes::BlockBandedSizes, l::Int, u::Int) where T =
-    _BlockBandedMatrix(Vector{T}(bb_numentries(block_sizes,l,u)), block_sizes, l, u)
+@inline BlockBandedMatrix{T}(::Uninitialized, block_sizes::BlockBandedSizes, l::Int, u::Int) where T =
+    _BlockBandedMatrix(Vector{T}(uninitialized, bb_numentries(block_sizes,l,u)), block_sizes, l, u)
 
-@inline BlockBandedMatrix{T}(block_sizes::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) where T =
-    BlockBandedMatrix{T}(BlockBandedSizes(block_sizes..., lu...), lu...)
+@inline BlockBandedMatrix{T}(::Uninitialized, block_sizes::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) where T =
+    BlockBandedMatrix{T}(uninitialized, BlockBandedSizes(block_sizes..., lu...), lu...)
 
 
 function BlockBandedMatrix{T}(Z::Zeros, dims::NTuple{2,AbstractVector{Int}}, lu::NTuple{2,Int}) where T

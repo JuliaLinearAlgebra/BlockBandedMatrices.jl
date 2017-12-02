@@ -32,9 +32,9 @@ end
                                  l::Int, u::Int, λ::Int, μ::Int) where T =
     _BandedBlockBandedMatrix(Matrix{T}(data), block_sizes, l, u, λ, μ)
 
-BandedBlockBandedMatrix{T}(block_sizes::BlockSizes{2},
+BandedBlockBandedMatrix{T}(::Uninitialized, block_sizes::BlockSizes{2},
                     l::Int, u::Int, λ::Int, μ::Int) where T =
-    _BandedBlockBandedMatrix(Matrix{T}(max(0, λ+μ+1), max(0,(l+u+1)*(block_sizes.cumul_sizes[2][end]-1))),
+    _BandedBlockBandedMatrix(Matrix{T}(uninitialized,max(0, λ+μ+1), max(0,(l+u+1)*(block_sizes.cumul_sizes[2][end]-1))),
                                     block_sizes, l, u, λ, μ)
 
 
@@ -369,7 +369,7 @@ function *(A::BandedBlockBandedMatrix{T},
     end
     n,m = size(A,1), size(B,2)
 
-    A_mul_B!(BandedBlockBandedMatrix{promote_type(T,V)}(BlockSizes((Arows,Bcols)),
+    A_mul_B!(BandedBlockBandedMatrix{promote_type(T,V)}(uninitialized, BlockSizes((Arows,Bcols)),
                                      A.l+B.l, A.u+B.u,
                                      A.λ+B.λ, A.μ+B.μ),
              A, B)

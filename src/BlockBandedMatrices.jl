@@ -1,7 +1,7 @@
 __precompile__()
 
 module BlockBandedMatrices
-using BlockArrays, BandedMatrices
+using BlockArrays, BandedMatrices, Compat
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
                         Block, BlockSlice, getblock, unblock

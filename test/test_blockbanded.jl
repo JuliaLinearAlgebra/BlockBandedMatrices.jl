@@ -25,7 +25,7 @@ cols = rows = 1:N
     eye(Int, 10, 10)
 
 
-A = BlockBandedMatrix{Int}((rows,cols), (l,u))
+A = BlockBandedMatrix{Int}(uninitialized, (rows,cols), (l,u))
     A.data .= 1:length(A.data)
 
 @test A[1,1] == 1
@@ -77,7 +77,7 @@ l , u = 2,1
 N = M = 5
 cols = rows = 1:N
 
-A = BlockBandedMatrix{Int}((rows,cols), (l,u))
+A = BlockBandedMatrix{Int}(uninitialized, (rows,cols), (l,u))
 A.data .= 1:length(A.data)
 
 @test A[1,2] == 7
@@ -89,7 +89,7 @@ A[1,2] = -5
 l , u = 1,1
 N = M = 10
 cols = rows = fill(100,N)
-A = BlockBandedMatrix{Float64}((rows,cols), (l,u))
+A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
     A.data .= 1:length(A.data)
 
 V = view(A, Block(N,N))
@@ -112,7 +112,7 @@ l , u = 1,1
 λ , μ = 1,1
 N = M = 10
 cols = rows = 1:N
-A = BlockBandedMatrix{Float64}((rows,cols), (l,u))
+A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
     A.data .= 1:length(A.data)
 
 A[1,1] = 5
