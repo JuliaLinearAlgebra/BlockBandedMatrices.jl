@@ -82,11 +82,6 @@ end
 @inline _BlockBandedMatrix(data::AbstractVector, block_sizes::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) =
     _BlockBandedMatrix(data, BlockBandedSizes(block_sizes..., lu...), lu...)
 
-
-@inline _BlockBandedMatrix(data::AbstractVector, block_sizes::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) =
-    _BlockBandedMatrix(data, BlockBandedSizes(block_sizes..., lu...), lu...)
-
-
 @inline BlockBandedMatrix{T}(block_sizes::BlockBandedSizes, l::Int, u::Int) where T =
     _BlockBandedMatrix(Vector{T}(bb_numentries(block_sizes,l,u)), block_sizes, l, u)
 
