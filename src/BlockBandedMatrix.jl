@@ -17,15 +17,19 @@ end
 function bb_blockstarts(b_size, l, u)
     N,M = nblocks(b_size)
     b_start = BandedMatrix{Int}(uninitialized, N, M, l, u)
+    -l > u && return b_start
+
     ind_shift = 0
     for J = 1:M
         KR = max(1,J-u):min(J+l,N)
+
         b_start[KR,J] .= ind_shift .+ view(b_size.cumul_sizes[1],KR) .- b_size.cumul_sizes[1][KR[1]] .+ 1
 
         num_rows = b_size[1,KR[end]+1]-b_size[1,KR[1]]
         num_cols = blocksize(b_size, 2, J)
         ind_shift += num_rows*num_cols
     end
+    
     b_start
 end
 
