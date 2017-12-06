@@ -146,6 +146,9 @@ blockbandwidth(A::BlockBandedMatrix, i::Int) = ifelse(i==1, A.l, A.u)
 @inline nblocks(block_array::BlockBandedMatrix) = nblocks(block_array.block_sizes)
 @inline blocksize(block_array::BlockBandedMatrix, i1::Int, i2::Int) = blocksize(block_array.block_sizes, (i1,i2))
 
+zeroblock(A::BlockBandedMatrix, K::Int, J::Int) =
+    Matrix(Zeros{eltype(A)}(blocksize(A, K, J)))
+
 @inline function getblock(A::BlockBandedMatrix, K::Int, J::Int)
     @boundscheck blockcheckbounds(A, K, J)
     if -A.l ≤ J - K ≤ A.u
