@@ -73,6 +73,10 @@ A[1,1] = -5
 A[1,3] = -6
 @test A[1,3] == -6
 
+A[Block(3,4)] = Matrix(Ones{Int}(3,4))
+@test A[Block(3,4)] == Matrix(Ones{Int}(3,4))
+
+
 l , u = 2,1
 N = M = 5
 cols = rows = 1:N

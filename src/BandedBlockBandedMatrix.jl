@@ -94,6 +94,9 @@ BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 # BandedBlockBandedMatrix Interface #
 ################################
 
+isbandedblockbanded(_) = false
+isbandedblockbanded(::BandedBlockBandedMatrix) = true
+
 blockbandwidth(A::BandedBlockBandedMatrix, i::Int) = ifelse(i==1, A.λ, A.μ)
 
 isdiag(A::BandedBlockBandedMatrix) = A.λ == A.μ == A.l == A.u
@@ -163,12 +166,14 @@ end
 # end
 #
 #
-# @inline function setblock!(block_arr::BlockArray{T, N}, v, block::Vararg{Int, N}) where {T,N}
-#     @boundscheck blockcheckbounds(block_arr, block...)
-#     @boundscheck _check_setblock!(block_arr, v, block)
-#     @inbounds block_arr.blocks[block...] = v
-#     return block_arr
-# end
+@inline function setblock!(A::BandedBlockBandedMatrix, v, K::Int, J::Int)
+    @boundscheck blockcheckbounds(A, K, J)
+
+    @boundscheck (bandwidth(v, 1) > A.λ || bandwidth(v, 2) > A.μ) && throw(BandError())
+    V = view(A, Block(K), Block(J))
+    V .= v
+    return A
+end
 #
 # @propagate_inbounds function Base.setindex!(block_array::BlockArray{T, N}, v, block_index::BlockIndex{N}) where {T,N}
 #     getblock(block_array, block_index.I...)[block_index.α...] = v

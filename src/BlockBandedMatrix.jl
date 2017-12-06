@@ -22,14 +22,15 @@ function bb_blockstarts(b_size, l, u)
     ind_shift = 0
     for J = 1:M
         KR = max(1,J-u):min(J+l,N)
+        if !isempty(KR)
+            b_start[KR,J] .= ind_shift .+ view(b_size.cumul_sizes[1],KR) .- b_size.cumul_sizes[1][KR[1]] .+ 1
 
-        b_start[KR,J] .= ind_shift .+ view(b_size.cumul_sizes[1],KR) .- b_size.cumul_sizes[1][KR[1]] .+ 1
-
-        num_rows = b_size[1,KR[end]+1]-b_size[1,KR[1]]
-        num_cols = blocksize(b_size, 2, J)
-        ind_shift += num_rows*num_cols
+            num_rows = b_size[1,KR[end]+1]-b_size[1,KR[1]]
+            num_cols = blocksize(b_size, 2, J)
+            ind_shift += num_rows*num_cols
+        end
     end
-    
+
     b_start
 end
 
@@ -38,8 +39,12 @@ function bb_blockstrides(b_size, l, u)
     b_strides = Vector{Int}(M)
     for J=1:M
         KR = max(1,J-l):min(J+u,N)
-        num_rows = b_size[1,KR[end]+1]-b_size[1,KR[1]]
-        b_strides[J] = num_rows
+        if !isempty(KR)
+            num_rows = b_size[1,KR[end]+1]-b_size[1,KR[1]]
+            b_strides[J] = num_rows
+        else
+            b_strides[J] = 0
+        end
     end
     b_strides
 end
@@ -199,13 +204,14 @@ end
 # end
 #
 #
-# @inline function setblock!(block_arr::BlockArray{T, N}, v, block::Vararg{Int, N}) where {T,N}
-#     @boundscheck blockcheckbounds(block_arr, block...)
-#     @boundscheck _check_setblock!(block_arr, v, block)
-#     @inbounds block_arr.blocks[block...] = v
-#     return block_arr
-# end
-#
+@inline function setblock!(A::BlockBandedMatrix, v, K::Int, J::Int)
+    @boundscheck blockcheckbounds(A, K, J)
+
+    V = view(A, Block(K), Block(J))
+    V .= v
+    return A
+end
+
 # @propagate_inbounds function Base.setindex!(block_array::BlockArray{T, N}, v, block_index::BlockIndex{N}) where {T,N}
 #     getblock(block_array, block_index.I...)[block_index.α...] = v
 # end

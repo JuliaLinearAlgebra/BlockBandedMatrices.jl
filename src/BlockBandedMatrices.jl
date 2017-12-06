@@ -4,7 +4,7 @@ module BlockBandedMatrices
 using BlockArrays, BandedMatrices, Compat
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
-                        Block, BlockSlice, getblock, unblock
+                        Block, BlockSlice, getblock, unblock, setblock!
 
 import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!,

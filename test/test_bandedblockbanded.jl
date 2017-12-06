@@ -86,8 +86,8 @@ view(V, band(0)) .= -3
 @test A[Block(3,4)].l == A.λ
 @test A[Block(3,4)].u == A.μ
 
-
-
+A[Block(3,4)] = BandedMatrix(Ones{Int}(3,4),(1,1))
+@test A[Block(3,4)] == BandedMatrix(Ones{Int}(3,4),(1,1))
 
 
 if false # turned off since tests have check-bounds=yes
@@ -131,6 +131,10 @@ data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)
 A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 V = view(A, Block(N,N))
 
+AN = A[Block(N,N)]
+@time BLAS.axpy!(2.0, V, V)
+@test A[Block(N,N)] ≈ 3AN
+
 
 Y = zeros(cols[N], cols[N])
 @time BLAS.axpy!(2.0, V, Y)
@@ -147,9 +151,7 @@ Y = BandedMatrix(Zeros(cols[N], cols[N]), (λ+1, μ+1))
 Y = BandedMatrix(Zeros(cols[N], cols[N]), (0, 0))
 @test_throws BandError BLAS.axpy!(2.0, V, Y)
 
-AN = A[Block(N,N)]
-@time BLAS.axpy!(2.0, V, V)
-@test A[Block(N,N)] ≈ 3AN
+
 
 
 ## standard indexing
