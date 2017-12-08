@@ -129,4 +129,9 @@ A[1,4] = 0
 @test A[1:10,1:10] ≈ full(A)[1:10,1:10]
 
 
-@time A*A
+## Bug in setindex!
+
+ret = BlockBandedMatrix(Zeros{Float64}((4,6)), ([2,2], [2,2,2]), (0,2))
+V = view(ret, Block(1), Block(2))
+V[1,1] = 1
+@test ret[1,2] == 0
