@@ -1,19 +1,4 @@
 
-
-# gives number of entries in a BlockBandedMatrix
-function bb_numentries(b_size, l, u)
-    numentries = 0
-    N = nblocks(b_size,1)
-    for J = 1:nblocks(b_size,2),
-        KR = max(1,J-u):min(J+l,N)
-        num_rows = b_size[1,KR[end]+1]-b_size[1,KR[1]]
-        num_cols = blocksize(b_size, 2, J)
-        numentries += num_rows*num_cols
-    end
-    numentries
-end
-
-
 function bb_blockstarts(b_size, l, u)
     N,M = nblocks(b_size)
     b_start = BandedMatrix{Int}(uninitialized, N, M, l, u)
@@ -38,10 +23,9 @@ function bb_blockstrides(b_size, l, u)
     N, M = nblocks(b_size)
     b_strides = Vector{Int}(M)
     for J=1:M
-        KR = max(1,J-l):min(J+u,N)
+        KR = max(1,J-u):min(J+l,N)
         if !isempty(KR)
-            num_rows = b_size[1,KR[end]+1]-b_size[1,KR[1]]
-            b_strides[J] = num_rows
+            b_strides[J] = b_size[1,KR[end]+1]-b_size[1,KR[1]]
         else
             b_strides[J] = 0
         end
@@ -55,11 +39,12 @@ struct BlockBandedSizes
     block_strides::Vector{Int} # gives stride to next block for J-th column
 end
 
-
-function BlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l, u)
-    b_size = BlockSizes(rows,cols)
+BlockBandedSizes(b_size::BlockSizes{2}, l, u) =
     BlockBandedSizes(b_size, bb_blockstarts(b_size, l, u), bb_blockstrides(b_size, l, u))
-end
+
+BlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l, u) =
+    BlockBandedSizes(BlockSizes(rows,cols), l, u)
+
 
 for Func in (:nblocks, :getindex, :blocksize, :global2blockindex, :unblock)
     @eval begin
@@ -67,6 +52,19 @@ for Func in (:nblocks, :getindex, :blocksize, :global2blockindex, :unblock)
         $Func(B::BlockBandedSizes, k) = $Func(B.block_sizes, k)
         $Func(B::BlockBandedSizes, k, j) = $Func(B.block_sizes, k, j)
     end
+end
+
+function bb_numentries(B::BlockBandedSizes)
+    b_size, l, u = B.block_sizes, B.block_starts.l, B.block_starts.u
+    numentries = 0
+    N = nblocks(b_size,1)
+    for J = 1:nblocks(b_size,2),
+        KR = colrange(B.block_starts, J)
+        num_rows = b_size[1,KR[end]+1] - b_size[1,KR[1]]
+        num_cols = blocksize(b_size, 2, J)
+        numentries += num_rows*num_cols
+    end
+    numentries
 end
 
 
@@ -92,10 +90,25 @@ end
     _BlockBandedMatrix(data, BlockBandedSizes(block_sizes..., lu...), lu...)
 
 @inline BlockBandedMatrix{T}(::Uninitialized, block_sizes::BlockBandedSizes, l::Int, u::Int) where T =
-    _BlockBandedMatrix(Vector{T}(uninitialized, bb_numentries(block_sizes,l,u)), block_sizes, l, u)
+    _BlockBandedMatrix(Vector{T}(uninitialized, bb_numentries(block_sizes)), block_sizes, l, u)
 
 @inline BlockBandedMatrix{T}(::Uninitialized, block_sizes::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) where T =
     BlockBandedMatrix{T}(uninitialized, BlockBandedSizes(block_sizes..., lu...), lu...)
+
+
+
+function BlockBandedMatrix{T}(A::AbstractMatrix, dims::NTuple{2,AbstractVector{Int}},
+                                    lu::NTuple{2,Int}) where T
+    if size(A) ≠ sum.(dims)
+        throw(DimensionMismatch("Size of input $(size(A)) must be consistent with $(sum.(dims))"))
+    end
+    ret = BlockBandedMatrix(Zeros{T}(size(A)), dims, lu)
+    for J = Block.(1:nblocks(ret, 2)), K = blockcolrange(ret, Int(J))
+        kr, jr = globalrange(ret.block_sizes.block_sizes, (Int(K), Int(J)))
+        view(ret, K, J) .= view(A, kr, jr)
+    end
+    ret
+end
 
 
 function BlockBandedMatrix{T}(Z::Zeros, dims::NTuple{2,AbstractVector{Int}}, lu::NTuple{2,Int}) where T
@@ -103,7 +116,7 @@ function BlockBandedMatrix{T}(Z::Zeros, dims::NTuple{2,AbstractVector{Int}}, lu:
        throw(DimensionMismatch("Size of input $(size(Z)) must be consistent with $(sum.(dims))"))
    end
    bs = BlockBandedSizes(dims..., lu...)
-   _BlockBandedMatrix(zeros(T, bb_numentries(bs,lu...)),
+   _BlockBandedMatrix(zeros(T, bb_numentries(bs)),
                               bs, lu...)
 end
 
@@ -342,24 +355,25 @@ end
 #
 #
 #
-# function *(A::BlockBandedMatrix{T},
-#            B::BlockBandedMatrix{V}) where {T<:Number,V<:Number}
-#     Arows, Acols = A.block_sizes.cumul_sizes
-#     Brows, Bcols = B.block_sizes.cumul_sizes
-#     if Acols ≠ Brows
-#         # diagonal matrices can be converted
-#         if isdiag(B) && size(A,2) == size(B,1) == size(B,2)
-#             B = BlockBandedMatrix(B.data, BlockSizes((Acols,Acols)), 0, 0, 0, 0)
-#         elseif isdiag(A) && size(A,2) == size(B,1) == size(A,1)
-#             A = BlockBandedMatrix(A.data, BlockSizes((Brows,Brows)), 0, 0, 0, 0)
-#         else
-#             throw(DimensionMismatch("*"))
-#         end
-#     end
-#     n,m = size(A,1), size(B,2)
-#
-#     A_mul_B!(BlockBandedMatrix{promote_type(T,V)}(BlockSizes((Arows,Bcols)),
-#                                      A.l+B.l, A.u+B.u,
-#                                      A.λ+B.λ, A.μ+B.μ),
-#              A, B)
-# end
+function *(A::BlockBandedMatrix{T},
+           B::BlockBandedMatrix{V}) where {T<:Number,V<:Number}
+    Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
+    Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
+    if Acols ≠ Brows
+        # diagonal matrices can be converted
+        if isdiag(B) && size(A,2) == size(B,1) == size(B,2)
+            B = BlockBandedMatrix(B.data, BlockSizes((Acols,Acols)), 0, 0, 0, 0)
+        elseif isdiag(A) && size(A,2) == size(B,1) == size(A,1)
+            A = BlockBandedMatrix(A.data, BlockSizes((Brows,Brows)), 0, 0, 0, 0)
+        else
+            throw(DimensionMismatch("*"))
+        end
+    end
+    n,m = size(A,1), size(B,2)
+
+    l, u = A.l+B.l, A.u+B.u
+    A_mul_B!(BlockBandedMatrix{promote_type(T,V)}(uninitialized,
+                                    BlockBandedSizes(BlockSizes((Arows,Bcols)), l, u),
+                                     l, u),
+             A, B)
+end

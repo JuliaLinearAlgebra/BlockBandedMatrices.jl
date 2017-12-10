@@ -130,8 +130,19 @@ A[1,4] = 0
 
 
 ## Bug in setindex!
-
 ret = BlockBandedMatrix(Zeros{Float64}((4,6)), ([2,2], [2,2,2]), (0,2))
 V = view(ret, Block(1), Block(2))
-V[1,1] = 1
+V[1,1] = 2
 @test ret[1,2] == 0
+
+ret
+
+BlockArrays.globalrange(ret.block_sizes.block_sizes, (1,1))
+
+A = BlockBandedMatrix(Ones{Float64}((4,6)), ([2,2], [2,2,2]), (0,2))
+B = BlockBandedMatrix(Ones{Float64}((6,6)), ([2,2,2], [2,2,2]), (0,1))
+@test sum(A) == 20
+@test sum(B) == 20
+AB = A*B
+@test AB isa BlockBandedMatrix
+@test Matrix(AB) == Matrix(A)*Matrix(B)
