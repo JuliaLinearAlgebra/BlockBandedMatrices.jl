@@ -97,7 +97,8 @@ BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 isbandedblockbanded(_) = false
 isbandedblockbanded(::BandedBlockBandedMatrix) = true
 
-blockbandwidth(A::BandedBlockBandedMatrix, i::Int) = ifelse(i==1, A.λ, A.μ)
+blockbandwidth(A::BandedBlockBandedMatrix, i::Int) = ifelse(i==1, A.l, A.u)
+subblockbandwidth(A::BandedBlockBandedMatrix, i::Int) = ifelse(i==1, A.λ, A.μ)
 
 isdiag(A::BandedBlockBandedMatrix) = A.λ == A.μ == A.l == A.u
 

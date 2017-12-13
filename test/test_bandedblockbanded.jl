@@ -111,6 +111,17 @@ cols = rows = 1:N
 data = reshape(Vector(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
 A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 
+@test A.l == l == blockbandwidth(A,1)
+@test A.u == u == blockbandwidth(A,2)
+@test blockbandwidths(A) == (l, u)
+
+@test A.λ == λ == subblockbandwidth(A,1)
+@test A.μ == μ == subblockbandwidth(A,2)
+@test subblockbandwidths(A) == (λ, μ)
+
+@test_throws BandError A[1,4] = 5
+@test_throws BandError view(A, Block(1,3))[2] = 5
+
 # The first block is ignored
 @test BlockBandedMatrices.bbb_data_cols(view(A, Block(1,1))) == 2:2
 @test BlockBandedMatrices.bbb_data_cols(view(A, Block(2,1))) == 3:3
