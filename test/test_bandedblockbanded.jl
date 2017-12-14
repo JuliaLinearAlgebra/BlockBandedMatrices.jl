@@ -28,6 +28,8 @@ cols = rows = 1:N
 
 data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
 A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+@test Matrix(BlockBandedMatrix(A)) == Matrix(A)
+
 
 @test blockbandwidths(A) == (l,u)
 @test BlockBandedMatrices.subblockbandwidths(A) == (l,u)
@@ -185,3 +187,40 @@ A[1,4] = 0
 
 
 @time A*A
+
+
+
+lu = (l , u) = -1,1
+λμ = (λ , μ) = 0,1
+rows = 1:91
+cols = 1:100
+
+BandedBlockBandedMatrix(Zeros(sum(rows), sum(cols)), (rows,cols), (l,u), (λ, μ))
+
+
+Z = Zeros(sum(rows), sum(cols))
+max(0, sum((λ,μ))+1)
+
+max(0,(sum((l,u))+1)*sum(size(Z,2)))
+T = Float64
+data = zeros(T, max(0, sum(λμ)+1), max(0,(sum(lu)+1)*sum(size(Z,2))))
+l+u+1
+
+dims = (rows,cols)
+
+_BandedBlockBandedMatrix(zeros(T, max(0, sum(λμ)+1),
+                                          max(0,(sum(lu)+1)*sum(size(Z,2)))),
+                                 BlockBandedMatrices.BlockSizes(dims...), l, u, λ, μ)
+
+1-l
+(sum(lu)+1)
+size(Z,2)
+
+(size(data,1) ≠ λ+μ+1  && !(size(data,1) == 0 && -λ > μ))
+
+block_sizes = BlockBandedMatrices.BlockSizes(dims...)
+n = block_sizes[1][end]-1 # number of rows
+(size(data,2) ≠ (l+u+1)*n && !(size(data,2) == 0 && -l > u))
+
+
+size(data,2) ≠ (l+u+1)*n

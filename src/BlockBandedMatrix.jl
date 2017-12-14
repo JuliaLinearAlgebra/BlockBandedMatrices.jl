@@ -144,7 +144,7 @@ BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 
 function convert(::Type{BlockBandedMatrix}, A::AbstractMatrix)
     @assert isblockbanded(A)
-    BlockBandedMatrix(A, A.block_sizes, blockbandwidths(A)...)
+    BlockBandedMatrix(A, BlockBandedSizes(A.block_sizes, blockbandwidths(A)...), blockbandwidths(A)...)
 end
 
 

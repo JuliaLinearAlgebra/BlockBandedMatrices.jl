@@ -16,8 +16,7 @@ struct BandedBlockBandedMatrix{T} <: AbstractBlockBandedMatrix{T}
     global function _BandedBlockBandedMatrix(data::Matrix{T}, block_sizes::BlockSizes{2},
                                              l::Int, u::Int, λ::Int, μ::Int) where T
         n = block_sizes[1][end]-1 # number of rows
-        if (size(data,1) ≠ λ+μ+1  && !(size(data,1) == 0 && -λ > μ)) ||
-              (size(data,2) ≠ (l+u+1)*n && !(size(data,2) == 0 && -l > u))
+        if (size(data,1) ≠ λ+μ+1  && !(size(data,1) == 0 && -λ > μ))
               throw(ArgumentError("Data matrix must have number rows equal to number of bands"))
         end
 
