@@ -1,9 +1,43 @@
 
+
+
+# struct BandedBlockBandedSizes
+#     block_sizes::BlockSizes{2}
+#     l::Int
+#     u::Int
+#     λ::Int
+#     μ::Int
+#     ncols::Int # numbber of columns in data matrix
+# end
+#
+# BlockBandedSizes(b_size::BlockSizes{2}, l, u, λ, μ) =
+#     BlockBandedSizes(b_size, l, u, λ, μ)
+#
+# BlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l, u, λ, μ) =
+#     BlockBandedSizes(BlockSizes(rows,cols), l, u, λ, μ)
+#
+#
+# for Func in (:nblocks, :getindex, :blocksize, :global2blockindex, :unblock, :size, :globalrange)
+#     @eval begin
+#         $Func(B::BandedBlockBandedSizes) = $Func(B.block_sizes)
+#         $Func(B::BandedBlockBandedSizes, k) = $Func(B.block_sizes, k)
+#         $Func(B::BandedBlockBandedSizes, k, j) = $Func(B.block_sizes, k, j)
+#     end
+# end
+#
+# # gives the number of columns in the data matrix
+# # each block is
+# function bbb_numcols(B::BandedBlockBandedSizes)
+
 function _BandedBlockBandedMatrix end
 
 
 # Represents a block banded matrix with banded blocks
 #   similar to BandedMatrix{BandedMatrix{T}}
+# Here the data is stored by blocks, in a way that is consistent with
+# BandedMatrix
+#
+
 struct BandedBlockBandedMatrix{T} <: AbstractBlockBandedMatrix{T}
     data::Matrix{T}
     block_sizes::BlockSizes{2}
@@ -15,7 +49,7 @@ struct BandedBlockBandedMatrix{T} <: AbstractBlockBandedMatrix{T}
 
     global function _BandedBlockBandedMatrix(data::Matrix{T}, block_sizes::BlockSizes{2},
                                              l::Int, u::Int, λ::Int, μ::Int) where T
-        n = block_sizes[1][end]-1 # number of rows
+        n,m = nblocks(block_sizes) # number of rows
         if (size(data,1) ≠ λ+μ+1  && !(size(data,1) == 0 && -λ > μ))
               throw(ArgumentError("Data matrix must have number rows equal to number of bands"))
         end
@@ -33,7 +67,7 @@ end
 
 BandedBlockBandedMatrix{T}(::Uninitialized, block_sizes::BlockSizes{2},
                     l::Int, u::Int, λ::Int, μ::Int) where T =
-    _BandedBlockBandedMatrix(Matrix{T}(uninitialized,max(0, λ+μ+1), max(0,(l+u+1)*(block_sizes.cumul_sizes[2][end]-1))),
+    _BandedBlockBandedMatrix(Matrix{T}(uninitialized, max(0, λ+μ+1), max(0,(l+u+1)*(block_sizes.cumul_sizes[2][end]-1))),
                                     block_sizes, l, u, λ, μ)
 
 
@@ -244,13 +278,13 @@ const BandedBlockBandedBlock{T} = SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{
 
 
 # gives the columns of parent(V).data that encode the block
-blocks(V::BandedBlockBandedBlock)::Tuple{Int,Int} = first(first(parentindexes(V)).block.n),
-                                                    first(last(parentindexes(V)).block.n)
+blocks(V::BandedBlockBandedBlock)::Tuple{Int,Int} = Int(first(parentindexes(V)).block),
+                                                    Int(last(parentindexes(V)).block)
 
 
 function bbb_data_firstcol(V::BandedBlockBandedBlock)
     A = parent(V)
-    K = first(first(parentindexes(V)).block.n)
+    K = Int(first(parentindexes(V)).block)
     J_slice = last(parentindexes(V))
     J = first(J_slice.block.n)
     m = length(J_slice.indices)
@@ -259,7 +293,7 @@ end
 
 function bbb_data_cols(V::BandedBlockBandedBlock)
     A = parent(V)
-    K = first(first(parentindexes(V)).block.n)
+    K = Int(first(parentindexes(V)).block)
     J_slice = last(parentindexes(V))
     J = first(J_slice.block.n)
     m = length(J_slice.indices)
@@ -285,13 +319,14 @@ end
     v
 end
 
+dataview(V::BandedBlockBandedBlock) = view(parent(V).data, :, bbb_data_cols(V))
+
 @propagate_inbounds function getindex(V::BandedBlockBandedBlock, k::Int, j::Int)
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
     K,J = blocks(V)
     if -A.l ≤ J-K ≤ A.u
-        cols = bbb_data_cols(V)
-        banded_getindex(view(A.data, :, cols), A.λ, A.μ, k, j)
+        banded_getindex(dataview(V), A.λ, A.μ, k, j)
     else
         zero(eltype(V))
     end
@@ -302,8 +337,7 @@ end
     A = parent(V)
     K,J = blocks(V)
     if -A.l ≤ J-K ≤ A.u
-        cols = bbb_data_cols(V)
-        banded_setindex!(view(A.data, :, cols), A.λ, A.μ, v, k, j)
+        banded_setindex!(dataview(V), A.λ, A.μ, v, k, j)
     elseif iszero(v) # allow setindex for 0 datya
         v
     else
@@ -316,9 +350,7 @@ end
 
 function convert(::Type{BandedMatrix{T}}, V::BandedBlockBandedBlock) where {T}
     A = parent(V)
-    cols = bbb_data_cols(V)
-    K,J = blocks(V)
-    _BandedMatrix(Matrix{T}(view(A.data,:,cols)), size(V,1), A.λ, A.μ)
+    _BandedMatrix(Matrix{T}(dataview(V)), size(V,1), A.λ, A.μ)
 end
 
 convert(::Type{BandedMatrix}, V::BandedBlockBandedBlock) = convert(BandedMatrix{eltype(V)}, V)

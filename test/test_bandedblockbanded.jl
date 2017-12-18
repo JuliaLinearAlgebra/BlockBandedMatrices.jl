@@ -195,7 +195,7 @@ lu = (l , u) = -1,1
 rows = 1:91
 cols = 1:100
 
-BandedBlockBandedMatrix(Zeros(sum(rows), sum(cols)), (rows,cols), (l,u), (λ, μ))
+BandedBlockBandedMatrix(Zeros(sum(rows), sum(cols)), (rows,cols), (l,u), (λ,μ))
 
 
 Z = Zeros(sum(rows), sum(cols))
@@ -224,3 +224,43 @@ n = block_sizes[1][end]-1 # number of rows
 
 
 size(data,2) ≠ (l+u+1)*n
+
+
+## experiment
+# using BlockArrays
+# import BlockArrays: BlockSizes
+#
+#
+# fill(λ+μ+1, l+u+1)
+#
+#
+# rows = cols = 1:4
+# bs = BlockSizes(rows, cols)
+# λ , μ = 1,2
+# l, u = 2,1
+#
+# data_bs = BlockSizes((BlockArrays._cumul_vec(fill(λ+μ+1, l+u+1)),bs.cumul_sizes[2]))
+# data = BlockArray{Float64}(uninitialized, data_bs)
+#
+# K, J = Block(2),Block(3)
+# data[K-J+u+1, J]
+#
+#
+# K-J
+# K-J+u
+#
+# u
+#
+#
+#
+# K-J+l
+# cumsumfill(λ+μ+1, l+u+1)
+#
+# fill(λ+μ+1, l+u+1)
+#
+# fill(λ+μ+1, l+u+1)
+#
+# using ApproxFun, SO
+# Conversion(Ultraspherical(1)^2, Ultraspherical(2)^2)[Block.(1:5),Block.(1:5)]
+#
+#
