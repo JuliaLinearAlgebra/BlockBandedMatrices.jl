@@ -26,19 +26,13 @@ cols = rows = 1:N
 
 
 
-data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
+data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
 A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 @test Matrix(BlockBandedMatrix(A)) == Matrix(A)
 
 
 @test blockbandwidths(A) == (l,u)
 @test BlockBandedMatrices.subblockbandwidths(A) == (l,u)
-
-# The first block is ignored
-BlockBandedMatrices.bbb_data_cols(view(A, Block(1,1))) == 2:2
-BlockBandedMatrices.bbb_data_cols(view(A, Block(2,1))) == 3:3
-BlockBandedMatrices.bbb_data_cols(view(A, Block(1,2))) == 4:5
-BlockBandedMatrices.bbb_data_cols(view(A, Block(2,2))) == 6:7
 
 # check views of blocks are indexing correctly
 
@@ -49,7 +43,7 @@ BlockBandedMatrices.bbb_data_cols(view(A, Block(2,2))) == 6:7
 @test A[3,1] == view(A,Block(2),Block(1))[2,1] == 9
 @test A[4,1] == 0
 @test A[1,2] == view(A,Block(1,2))[1,1] == 11
-@test A[1,3] == view(A,Block(1,2))[1,2] == view(A,Block(1,2))[2] == 13
+@test A[1,3] == view(A,Block(1,2))[1,2] == view(A,Block(1,2))[2] == 19
 
 @test view(A, Block(3),Block(1)) ≈ [0,0,0]
 @test_throws BandError view(A, Block(3),Block(1))[1,1] = 4
@@ -124,15 +118,6 @@ A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 @test_throws BandError A[1,4] = 5
 @test_throws BandError view(A, Block(1,3))[2] = 5
 
-# The first block is ignored
-@test BlockBandedMatrices.bbb_data_cols(view(A, Block(1,1))) == 2:2
-@test BlockBandedMatrices.bbb_data_cols(view(A, Block(2,1))) == 3:3
-@test BlockBandedMatrices.bbb_data_cols(view(A, Block(3,1))) == 4:4
-@test BlockBandedMatrices.bbb_data_cols(view(A, Block(1,2))) == 5:6
-@test BlockBandedMatrices.bbb_data_cols(view(A, Block(2,2))) == 7:8
-
-
-
 
 #### Test Blas arithmetic
 
@@ -140,8 +125,9 @@ l , u = 1,1
 λ , μ = 1,1
 N = M = 10
 cols = rows = fill(1000,N)
-data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
+data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
 A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+
 V = view(A, Block(N,N))
 
 AN = A[Block(N,N)]
@@ -192,75 +178,29 @@ A[1,4] = 0
 
 lu = (l , u) = -1,1
 λμ = (λ , μ) = 0,1
-rows = 1:91
-cols = 1:100
+rows = 1:5
+cols = 1:6
 
-BandedBlockBandedMatrix(Zeros(sum(rows), sum(cols)), (rows,cols), (l,u), (λ,μ))
+data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
+A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+@test_throws BandError A[1,1] = 5
 
-
-Z = Zeros(sum(rows), sum(cols))
-max(0, sum((λ,μ))+1)
-
-max(0,(sum((l,u))+1)*sum(size(Z,2)))
-T = Float64
-data = zeros(T, max(0, sum(λμ)+1), max(0,(sum(lu)+1)*sum(size(Z,2))))
-l+u+1
-
-dims = (rows,cols)
-
-_BandedBlockBandedMatrix(zeros(T, max(0, sum(λμ)+1),
-                                          max(0,(sum(lu)+1)*sum(size(Z,2)))),
-                                 BlockBandedMatrices.BlockSizes(dims...), l, u, λ, μ)
-
-1-l
-(sum(lu)+1)
-size(Z,2)
-
-(size(data,1) ≠ λ+μ+1  && !(size(data,1) == 0 && -λ > μ))
-
-block_sizes = BlockBandedMatrices.BlockSizes(dims...)
-n = block_sizes[1][end]-1 # number of rows
-(size(data,2) ≠ (l+u+1)*n && !(size(data,2) == 0 && -l > u))
+@test A[1,2] == 4
+@test A[Block(2,2)] == [0 0; 0 0]
+@test A[Block(2,3)]  == [8.0 9.0 0.0; 0.0 10.0 11.0]
+@test bandwidths(A[Block(2,3)]) == (0,1)
 
 
-size(data,2) ≠ (l+u+1)*n
+lu = (l , u) = -1,1
+λμ = (λ , μ) = -1,1
+rows = 1:5
+cols = 1:6
 
+data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
+A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+@test_throws BandError A[1,1] = 5
 
-## experiment
-# using BlockArrays
-# import BlockArrays: BlockSizes
-#
-#
-# fill(λ+μ+1, l+u+1)
-#
-#
-# rows = cols = 1:4
-# bs = BlockSizes(rows, cols)
-# λ , μ = 1,2
-# l, u = 2,1
-#
-# data_bs = BlockSizes((BlockArrays._cumul_vec(fill(λ+μ+1, l+u+1)),bs.cumul_sizes[2]))
-# data = BlockArray{Float64}(uninitialized, data_bs)
-#
-# K, J = Block(2),Block(3)
-# data[K-J+u+1, J]
-#
-#
-# K-J
-# K-J+u
-#
-# u
-#
-#
-#
-# K-J+l
-# cumsumfill(λ+μ+1, l+u+1)
-#
-# fill(λ+μ+1, l+u+1)
-#
-# fill(λ+μ+1, l+u+1)
-#
-# using ApproxFun, SO
-# Conversion(Ultraspherical(1)^2, Ultraspherical(2)^2)[Block.(1:5),Block.(1:5)]
-#
-#
+@test A[1,3] == 3
+@test A[Block(2,2)] == [0 0; 0 0]
+@test A[Block(2,3)]  == [0 5 0; 0 0 6]
+@test bandwidths(A[Block(2,3)]) == (-1,1)
