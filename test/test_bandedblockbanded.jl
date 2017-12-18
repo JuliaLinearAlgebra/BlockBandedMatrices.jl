@@ -158,7 +158,7 @@ l , u = 1,1
 λ , μ = 1,1
 N = M = 10
 cols = rows = 1:N
-data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
+data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1),sum(cols)))
 A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 
 A[1,1] = 5
