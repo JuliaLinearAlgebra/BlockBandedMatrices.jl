@@ -59,47 +59,47 @@
 ######
 # back substitution
 ######
-# #TODO: don't auto-pad
-# function trtrs!(::Type{Val{'U'}}, A::BlockBandedMatrix, u::Vector)
-#     # When blocks are square, use LAPACK trtrs!
-#     mn=min(length(A.rows),length(A.cols))
-#     if A.rows[1:mn] == A.cols[1:mn]
-#         blockbanded_squareblocks_trtrs!(A,u)
-#     else
-#         blockbanded_rectblocks_trtrs!(A,u)
-#     end
-# end
-#
-#
-#
-# function blockbanded_squareblocks_trtrs!(A::BlockBandedMatrix,u::Vector)
-#     if size(A,1) < size(u,1)
-#         throw(BoundsError())
-#     end
-#     n=size(u,1)
-#     N=Block(A.rowblocks[n])
-#
-#     kr1=blockrows(A,N)
-#     b=n-kr1[1]+1
-#     kr1=kr1[1]:n
-#
-#     trtrs!('U','N','N',view(A,N[1:b],N[1:b]),view(u,kr1))
-#
-#     for K=N-1:-1:Block(1)
-#         kr=blockrows(A,K)
-#         for J=min(N,blockrowstop(A,K)):-1:K+1
-#             if J==N  # need to take into account zeros
-#                 gemv!('N',-one(eltype(A)),view(A,K,N[1:b]),view(u,kr1),one(eltype(A)),view(u,kr))
-#             else
-#                 gemv!('N',-one(eltype(A)),view(A,K,J),view(u,blockcols(A,J)),one(eltype(A)),view(u,kr))
-#             end
-#         end
-#         trtrs!('U','N','N',view(A,K,K),view(u,kr))
-#     end
-#
-#     u
-# end
-#
+
+function trtrs!(uplo, trans, diag, A::BlockBandedBlock, u::StridedVector)
+
+end
+
+
+
+#TODO: don't auto-pad
+function trtrs!(uplo, trans, diag, A::BlockBandedMatrix, u::StridedVector)
+    (uplo == 'U' && trans == 'N' && diag == 'N') || error("Not implemented")
+
+    @boundscheck size(A,1) == length(u) || throw(BoundsError(A))
+
+    # When blocks are square, use LAPACK trtrs!
+    if A.block_sizes.block_sizes.cumul_sizes[1] == A.block_sizes.block_sizes.cumul_sizes[2]
+        blockbanded_squareblocks_trtrs!(A, u)
+    else
+        blockbanded_rectblocks_trtrs!(A, u)
+    end
+end
+
+
+
+function blockbanded_squareblocks_trtrs!(A::BlockBandedMatrix, u::StridedVector)
+    @boundscheck size(A,1) == size(u,1) || throw(BoundsError())
+
+    n = size(u,1)
+    N = nblocks(A,1)
+
+    for K = N:-1:1
+        kr = globalrange(A.block_sizes, (N,N))[1]
+        for J = min(N,Int(blockrowstop(A,K))):-1:K+1
+            gemv!('N', -one(eltype(A)), view(A,K,J), view(u,blockcols(A,J)),
+                  one(eltype(A)), view(u,kr))
+        end
+        trtrs!('U', 'N', 'N', view(A,K,K), view(u,kr))
+    end
+
+    u
+end
+
 # function blockbanded_rectblocks_trtrs!(R::BlockBandedMatrix{T},b::Vector) where T
 #     n=n_end=length(b)
 #     K_diag=N=Block(R.rowblocks[n])

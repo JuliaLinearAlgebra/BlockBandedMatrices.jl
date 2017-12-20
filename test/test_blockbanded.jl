@@ -113,7 +113,6 @@ AN = A[Block(N,N)]
 
 ## standard indexing
 l , u = 1,1
-λ , μ = 1,1
 N = M = 10
 cols = rows = 1:N
 A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
@@ -146,3 +145,38 @@ B = BlockBandedMatrix(Ones{Float64}((6,6)), ([2,2,2], [2,2,2]), (0,1))
 AB = A*B
 @test AB isa BlockBandedMatrix
 @test Matrix(AB) == Matrix(A)*Matrix(B)
+
+
+
+# l, u = 1, 1
+#
+# N = 5
+# cols = rows = 1:N
+# A = BlockBandedMatrix(rand(sum(rows), sum(cols)), (rows,cols), (l,u))
+#
+# A.data
+
+
+
+#######
+# Linear algebra tests
+#######
+
+
+trtrs!(uplo, trans, diag, A::BlockBandedMatrix, u::StridedVector)
+
+
+l , u = 1,1
+N = M = 10
+cols = rows = 1:N
+A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+    A.data .= 1:length(A.data)
+
+v = ones(size(A,1))
+
+LAPACK.trtrs!('U', 'N', 'N', A, v)
+
+
+BlockBandedMatrices.blasstructure(view(A,Block(5),Block(5)))
+
+BlockBandedMatrices.blockrowstop(A,1)
