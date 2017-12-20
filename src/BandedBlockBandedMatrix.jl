@@ -81,6 +81,10 @@ BandedBlockBandedMatrix{T}(::Uninitialized, block_sizes::BandedBlockBandedSizes)
     _BandedBlockBandedMatrix(
         PseudoBlockArray{T}(uninitialized, block_sizes.data_block_sizes), block_sizes)
 
+BandedBlockBandedMatrix{T}(::Uninitialized, dims::NTuple{2, AbstractVector{Int}},
+                        lu::NTuple{2, Int}, λμ::NTuple{2, Int}) where T =
+    BandedBlockBandedMatrix{T}(uninitialized, BandedBlockBandedSizes(dims..., lu..., λμ...))
+
 
 # Auxiliary outer constructors
 @inline _BandedBlockBandedMatrix(data::AbstractMatrix, dims::NTuple{2, AbstractVector{Int}},
