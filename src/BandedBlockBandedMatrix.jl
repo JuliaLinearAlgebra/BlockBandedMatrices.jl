@@ -110,7 +110,7 @@ function BandedBlockBandedMatrix{T}(Z::Zeros, dims::NTuple{2,AbstractVector{Int}
 
    bs = BandedBlockBandedSizes(dims..., lu..., λμ...)
    d_bs = bs.data_block_sizes
-    _BandedBlockBandedMatrix(PseudoBlockArray(zeros(size(d_bs)), d_bs), bs)
+    _BandedBlockBandedMatrix(PseudoBlockArray(zeros(T, size(d_bs)), d_bs), bs)
 end
 
 

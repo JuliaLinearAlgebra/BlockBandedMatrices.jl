@@ -204,3 +204,18 @@ A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 @test A[Block(2,2)] == [0 0; 0 0]
 @test A[Block(2,3)]  == [0 5 0; 0 0 6]
 @test bandwidths(A[Block(2,3)]) == (-1,1)
+
+
+
+### test other types
+
+A = BandedBlockBandedMatrix{Float32}(Zeros{Float32}(10,10),
+                            (ones(Int,10), ones(Int,10)), (1,1), (1,1))
+
+@test eltype(A) == Float32
+
+
+A = BandedBlockBandedMatrix(Zeros{Float32}(10,10),
+                            (ones(Int,10), ones(Int,10)), (1,1), (1,1))
+
+@test eltype(A) == Float32
