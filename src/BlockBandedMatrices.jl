@@ -4,7 +4,8 @@ module BlockBandedMatrices
 using BlockArrays, BandedMatrices, Compat
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
-                        Block, BlockSlice, getblock, unblock, setblock!, globalrange
+                        Block, BlockSlice, getblock, unblock, setblock!, globalrange,
+                        _find_block
 
 import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
@@ -12,7 +13,7 @@ import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         BlasFloat, banded_dense_axpy!, blasstructure,
                         BandedSubBandedMatrix, αA_mul_B_plus_βC!,
                         @banded_banded_linalg, @banded_linalg, @banded,
-                        _BandedMatrix
+                        _BandedMatrix, colstart, colstop, rowstart, rowstop
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         isdiag, +, *, -, /, \, strides, zeros, eye, size

@@ -139,7 +139,6 @@ BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 
 
 
-
 ################################
 # BandedBlockBandedMatrix Interface #
 ################################
@@ -151,6 +150,7 @@ blockbandwidth(A::BandedBlockBandedMatrix, i::Int) = ifelse(i==1, A.l, A.u)
 subblockbandwidth(A::BandedBlockBandedMatrix, i::Int) = ifelse(i==1, A.λ, A.μ)
 
 isdiag(A::BandedBlockBandedMatrix) = A.λ == A.μ == A.l == A.u
+
 
 ################################
 # AbstractBlockArray Interface #

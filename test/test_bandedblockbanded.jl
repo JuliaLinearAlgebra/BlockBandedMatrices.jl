@@ -1,5 +1,5 @@
 using BlockArrays, BandedMatrices, BlockBandedMatrices, Base.Test
-    import BlockBandedMatrices: _BandedBlockBandedMatrix
+    import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowrange, colrange, rowrange
 
 l , u = 1,1
 λ , μ = 1,1
@@ -33,6 +33,28 @@ A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 
 @test blockbandwidths(A) == (l,u)
 @test BlockBandedMatrices.subblockbandwidths(A) == (l,u)
+
+
+@test blockrowrange(A, 1) == Block.(1:2)
+@test blockrowrange(A, 2) == Block.(1:3)
+@test blockrowrange(A, 3) == Block.(2:4)
+
+@test blockcolrange(A, 1) == Block.(1:2)
+@test blockcolrange(A, 2) == Block.(1:3)
+@test blockcolrange(A, 3) == Block.(2:4)
+
+@test rowrange(A,1) == 1:3
+@test rowrange(A,2) == 1:6
+@test rowrange(A,3) == 1:6
+@test rowrange(A,4) == 2:10
+
+
+@test colrange(A,1) == 1:3
+@test colrange(A,2) == 1:6
+@test colrange(A,3) == 1:6
+@test colrange(A,4) == 2:10
+
+
 
 # check views of blocks are indexing correctly
 
@@ -115,6 +137,27 @@ A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 @test A.μ == μ == subblockbandwidth(A,2)
 @test subblockbandwidths(A) == (λ, μ)
 
+@test blockrowrange(A, 1) == Block.(1:2)
+@test blockrowrange(A, 2) == Block.(1:3)
+@test blockrowrange(A, 3) == Block.(1:4)
+@test blockrowrange(A, 4) == Block.(2:4)
+
+
+@test blockcolrange(A, 1) == Block.(1:3)
+@test blockcolrange(A, 2) == Block.(1:4)
+@test blockcolrange(A, 3) == Block.(2:4)
+@test blockcolrange(A, 4) == Block.(3:4)
+
+@test rowrange(A,1) == 1:3
+@test rowrange(A,2) == 1:6
+@test rowrange(A,3) == 1:6
+@test rowrange(A,4) == 1:10
+
+@test colrange(A,1) == 1:6
+@test colrange(A,2) == 1:10
+@test colrange(A,3) == 1:10
+@test colrange(A,4) == 2:10
+
 @test_throws BandError A[1,4] = 5
 @test_throws BandError view(A, Block(1,3))[2] = 5
 
@@ -190,6 +233,26 @@ A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 @test A[Block(2,3)]  == [8.0 9.0 0.0; 0.0 10.0 11.0]
 @test bandwidths(A[Block(2,3)]) == (0,1)
 
+@test blockrowrange(A, 1) == Block.(2:2)
+@test blockrowrange(A, 2) == Block.(3:3)
+@test blockrowrange(A, 3) == Block.(4:4)
+@test blockrowrange(A, 4) == Block.(5:5)
+
+@test blockcolrange(A, 1) == Block.(1:0)
+@test blockcolrange(A, 2) == Block.(1:1)
+@test blockcolrange(A, 3) == Block.(2:2)
+
+@test rowrange(A,1) == 2:3
+@test rowrange(A,2) == 4:6
+@test rowrange(A,3) == 4:6
+@test rowrange(A,4) == 7:10
+
+
+@test colrange(A,1) == 1:0
+@test colrange(A,2) == 1:1
+@test colrange(A,3) == 1:1
+@test colrange(A,4) == 2:3
+
 
 lu = (l , u) = -1,1
 λμ = (λ , μ) = -1,1
@@ -205,6 +268,16 @@ A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 @test A[Block(2,3)]  == [0 5 0; 0 0 6]
 @test bandwidths(A[Block(2,3)]) == (-1,1)
 
+
+
+@test blockcolrange(A, 1) == Block.(1:0)
+@test blockcolrange(A, 2) == Block.(1:1)
+@test blockcolrange(A, 3) == Block.(2:2)
+
+@test colrange(A,1) == 1:0
+@test colrange(A,2) == 1:1
+@test colrange(A,3) == 1:1
+@test colrange(A,4) == 2:3
 
 
 ### test other types
