@@ -60,44 +60,44 @@
 # back substitution
 ######
 
-function trtrs!(uplo, trans, diag, A::BlockBandedBlock, u::StridedVector)
-
-end
-
+@inline A_ldiv_B!(U::UpperTriangular{T, BlockBandedBlock{T}}, b::StridedVecOrMat{T}) where {T<:BlasFloat} =
+    trtrs!('U', 'N', 'N', parent(U), b)
 
 
-#TODO: don't auto-pad
-function trtrs!(uplo, trans, diag, A::BlockBandedMatrix, u::StridedVector)
-    (uplo == 'U' && trans == 'N' && diag == 'N') || error("Not implemented")
+@inline hasmatchingblocks(A) =
+    A.block_sizes.block_sizes.cumul_sizes[1] == A.block_sizes.block_sizes.cumul_sizes[2]
 
-    @boundscheck size(A,1) == length(u) || throw(BoundsError(A))
+function A_ldiv_B!(U::UpperTriangular{T, BlockBandedMatrix{T}}, b::StridedVector) where T
+    A = parent(U)
+
+    @boundscheck size(A,1) == length(b) || throw(BoundsError(A))
 
     # When blocks are square, use LAPACK trtrs!
-    if A.block_sizes.block_sizes.cumul_sizes[1] == A.block_sizes.block_sizes.cumul_sizes[2]
-        blockbanded_squareblocks_trtrs!(A, u)
+    if hasmatchingblocks(A)
+        blockbanded_squareblocks_trtrs!(A, b)
     else
-        blockbanded_rectblocks_trtrs!(A, u)
+        blockbanded_rectblocks_trtrs!(A, b)
     end
 end
 
 
+function blockbanded_squareblocks_trtrs!(A::BlockBandedMatrix, b::StridedVector)
+    @boundscheck size(A,1) == size(b,1) || throw(BoundsError())
 
-function blockbanded_squareblocks_trtrs!(A::BlockBandedMatrix, u::StridedVector)
-    @boundscheck size(A,1) == size(u,1) || throw(BoundsError())
-
-    n = size(u,1)
+    n = size(b,1)
     N = nblocks(A,1)
 
     for K = N:-1:1
-        kr = globalrange(A.block_sizes, (N,N))[1]
+        kr = globalrange(A.block_sizes, (K,K))[1]
+        v = view(b, kr)
         for J = min(N,Int(blockrowstop(A,K))):-1:K+1
-            gemv!('N', -one(eltype(A)), view(A,K,J), view(u,blockcols(A,J)),
-                  one(eltype(A)), view(u,kr))
+            jr = globalrange(A.block_sizes, (K,J))[2]
+            gemv!('N', -one(eltype(A)), view(A,Block(K),Block(J)), view(b, jr), one(eltype(A)), v)
         end
-        trtrs!('U', 'N', 'N', view(A,K,K), view(u,kr))
+        @inbounds A_ldiv_B!(UpperTriangular(view(A,Block(K),Block(K))), v)
     end
 
-    u
+    b
 end
 
 # function blockbanded_rectblocks_trtrs!(R::BlockBandedMatrix{T},b::Vector) where T

@@ -298,10 +298,10 @@ blocks(V::BlockBandedBlock)::Tuple{Int,Int} = first(first(parentindexes(V)).bloc
 function Base.unsafe_convert(::Type{Ptr{T}}, V::BlockBandedBlock{T}) where T
     A = parent(V)
     K,J = blocks(V)
-    Base.unsafe_convert(Ptr{T}, A) + sizeof(T)*(A.block_sizes.block_starts[K,J]-1)
+    Base.unsafe_convert(Ptr{T}, A.data) + sizeof(T)*(A.block_sizes.block_starts[K,J]-1)
 end
 
-strides(V::BlockBandedBlock) = (1,parent(V).block_strides[blocks(V)[2]])
+strides(V::BlockBandedBlock) = (1,parent(V).block_sizes.block_strides[blocks(V)[2]])
 
 @propagate_inbounds function getindex(V::BlockBandedBlock, k::Int, j::Int)
     @boundscheck checkbounds(V, k, j)

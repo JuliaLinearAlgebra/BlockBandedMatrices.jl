@@ -18,15 +18,20 @@ import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         isdiag, +, *, -, /, \, strides, zeros, eye, size
 
-
-import Base.LAPACK: trtrs!
+import Base.LinAlg: A_ldiv_B!
+import Base.BLAS: BlasInt, BlasFloat, @blasfunc, libblas
+import Base.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
+                    chkuplo
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths
 
+include("lapack.jl")
+
 include("AbstractBlockBandedMatrix.jl")
 include("BlockBandedMatrix.jl")
 include("BandedBlockBandedMatrix.jl")
+
 include("linalg.jl")
 
 end # module

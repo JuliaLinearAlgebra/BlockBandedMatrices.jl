@@ -162,21 +162,33 @@ AB = A*B
 # Linear algebra tests
 #######
 
-
-trtrs!(uplo, trans, diag, A::BlockBandedMatrix, u::StridedVector)
-
-
 l , u = 1,1
-N = M = 10
+N = M = 4
 cols = rows = 1:N
 A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
     A.data .= 1:length(A.data)
 
+V = view(A, Block(N), Block(N))
+
+@test strides(V) == (1,7)
+@test stride(V,2) == 7
+@test unsafe_load(pointer(V)) == 46
+@test unsafe_load(pointer(V) + stride(V,2)*sizeof(Float64)) == 53
+
+v = ones(4)
+U = UpperTriangular(view(A, Block(N), Block(N)))
+w = Matrix(U) \ v
+U \ v == w
+@test v == ones(4)
+@test A_ldiv_B!(U , v) === v
+@test v == w
+
 v = ones(size(A,1))
 
-LAPACK.trtrs!('U', 'N', 'N', A, v)
+U = UpperTriangular(A)
+w = Matrix(U) \ v
+@test U \ v ≈ w
 
-
-BlockBandedMatrices.blasstructure(view(A,Block(5),Block(5)))
-
-BlockBandedMatrices.blockrowstop(A,1)
+@test v == ones(size(A,1))
+@test A_ldiv_B!(U, v) === v
+@test v ≈ w
