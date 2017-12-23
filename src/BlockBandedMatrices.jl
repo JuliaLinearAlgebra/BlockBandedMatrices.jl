@@ -10,7 +10,7 @@ import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blo
 import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
                         banded_generic_axpy!, banded_A_mul_B!,
-                        BlasFloat, banded_dense_axpy!, blasstructure,
+                        BlasFloat, banded_dense_axpy!, memorylayout,
                         BandedSubBandedMatrix, αA_mul_B_plus_βC!,
                         @banded_banded_linalg, @banded_linalg, @banded,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop

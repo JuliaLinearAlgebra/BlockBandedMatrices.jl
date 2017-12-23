@@ -369,7 +369,7 @@ convert(::Type{BandedMatrix}, V::BandedBlockBandedBlock) = convert(BandedMatrix{
 Base.pointer(V::BandedBlockBandedBlock{T}) where {T<:BlasFloat} = pointer(dataview(V))
 
 @inline leadingdimension(V::BandedBlockBandedBlock) = stride(dataview(V), 2)
-@inline blasstructure(::Type{BandedBlockBandedBlock{<:BlasFloat}}) = BlasStrided()
+@inline memorylayout(::Type{BandedBlockBandedBlock{<:BlasFloat}}) = BlasStrided()
 
 @banded BandedBlockBandedBlock
 @banded_banded_linalg BandedBlockBandedBlock BandedSubBandedMatrix
