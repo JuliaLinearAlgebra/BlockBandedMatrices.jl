@@ -11,14 +11,16 @@ import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
                         banded_generic_axpy!, banded_A_mul_B!,
                         BlasFloat, banded_dense_axpy!, memorylayout,
-                        BandedSubBandedMatrix, αA_mul_B_plus_βC!,
+                        BandedLayout, StridedLayout,
+                        BandedSubBandedMatrix, scalemul!, _scalemul!,
                         @banded_banded_linalg, @banded_linalg, @banded,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
-                        isdiag, +, *, -, /, \, strides, zeros, eye, size
+                        isdiag, +, *, -, /, \, strides, zeros, eye, size,
+                        unsafe_convert
 
-import Base.LinAlg: A_ldiv_B!
+import Base.LinAlg: A_ldiv_B!, A_mul_B!
 import Base.BLAS: BlasInt, BlasFloat, @blasfunc, libblas
 import Base.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo

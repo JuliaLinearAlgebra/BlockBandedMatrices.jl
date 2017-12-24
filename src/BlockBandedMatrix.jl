@@ -1,4 +1,10 @@
+####
+# BlockBandedMatrix memory layout
 
+struct BlockBandedLayout{T} <: AbstractBlockBandedInterface{T} end
+
+
+#### Routines for BandedSizes
 function bb_blockstarts(b_size, l, u)
     N,M = nblocks(b_size)
     b_start = BandedMatrix{Int}(uninitialized, N, M, l, u)
@@ -152,6 +158,7 @@ end
 # BlockBandedMatrix Interface #
 ################################
 
+memorylayout(::Type{BlockBandedMatrix{T}}) where T = BlockBandedLayout{T}()
 blockbandwidth(A::BlockBandedMatrix, i::Int) = ifelse(i==1, A.l, A.u)
 
 
@@ -294,6 +301,9 @@ blocks(V::BlockBandedBlock)::Tuple{Int,Int} = first(first(parentindexes(V)).bloc
 ######################################
 # Matrix interface  for Blocks #
 ######################################
+
+
+memorylayout(::Type{BlockBandedBlock{T}}) where T = StridedLayout{T}()
 
 function Base.unsafe_convert(::Type{Ptr{T}}, V::BlockBandedBlock{T}) where T
     A = parent(V)

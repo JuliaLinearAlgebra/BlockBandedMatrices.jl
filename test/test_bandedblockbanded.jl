@@ -1,4 +1,4 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, Base.Test
+using BlockArrays, BandedMatrices, BlockBandedMatrices, Compat.Test
     import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowrange, colrange, rowrange
 
 l , u = 1,1

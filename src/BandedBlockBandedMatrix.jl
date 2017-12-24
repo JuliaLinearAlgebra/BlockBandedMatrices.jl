@@ -1,5 +1,7 @@
 
 
+struct BandedBlockBandedLayout{T} <: AbstractBlockBandedInterface{T} end
+
 
 struct BandedBlockBandedSizes
     block_sizes::BlockSizes{2}
@@ -143,6 +145,8 @@ BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 # BandedBlockBandedMatrix Interface #
 ################################
 
+memorylayout(::Type{BandedBlockBandedMatrix{T}}) where T = BandedBlockBandedLayout{T}()
+
 isbandedblockbanded(_) = false
 isbandedblockbanded(::BandedBlockBandedMatrix) = true
 
@@ -207,6 +211,30 @@ end
     @inbounds V[bi.α...] = convert(T, v)::T
     return v
 end
+
+
+
+######
+# extra marrix routines
+#####
+
+function Base.fill!(A::BandedBlockBandedMatrix, x)
+    !iszero(x) && throw(BandError())
+    fill!(A.data, x)
+    A
+end
+
+function Base.scale!(A::BandedBlockBandedMatrix, x::Number)
+    scale!(A.data, x)
+    A
+end
+
+
+function Base.scale!(x::Number, A::BandedBlockBandedMatrix)
+    scale!(x, A.data)
+    A
+end
+
 
 ############
 # Indexing #
@@ -359,45 +387,17 @@ convert(::Type{BandedMatrix}, V::BandedBlockBandedBlock) = convert(BandedMatrix{
 
 
 
-
 #############
 # Linear algebra
 #############
 
 
 # BLAS structure
-Base.pointer(V::BandedBlockBandedBlock{T}) where {T<:BlasFloat} = pointer(dataview(V))
+unsafe_convert(::Type{Ptr{T}}, V::BandedBlockBandedBlock{T}) where {T<:BlasFloat} =
+    unsafe_convert(Ptr{T}, dataview(V))
 
 @inline leadingdimension(V::BandedBlockBandedBlock) = stride(dataview(V), 2)
-@inline memorylayout(::Type{BandedBlockBandedBlock{<:BlasFloat}}) = BlasStrided()
+@inline memorylayout(::Type{BandedBlockBandedBlock{T}}) where T = BandedLayout{T}()
 
 @banded BandedBlockBandedBlock
 @banded_banded_linalg BandedBlockBandedBlock BandedSubBandedMatrix
-
-
-
-
-
-
-function *(A::BandedBlockBandedMatrix{T},
-           B::BandedBlockBandedMatrix{V}) where {T<:Number,V<:Number}
-    Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
-    Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
-    if Acols ≠ Brows
-        # diagonal matrices can be converted
-        if isdiag(B) && size(A,2) == size(B,1) == size(B,2)
-            # TODO: fix
-            B = BandedBlockBandedMatrix(B.data, BlockSizes((Acols,Acols)), 0, 0, 0, 0)
-        elseif isdiag(A) && size(A,2) == size(B,1) == size(A,1)
-            A = BandedBlockBandedMatrix(A.data, BlockSizes((Brows,Brows)), 0, 0, 0, 0)
-        else
-            throw(DimensionMismatch("*"))
-        end
-    end
-    n,m = size(A,1), size(B,2)
-
-    bs = BandedBlockBandedSizes(BlockSizes((Arows,Bcols)), A.l+B.l, A.u+B.u, A.λ+B.λ, A.μ+B.μ)
-
-    A_mul_B!(BandedBlockBandedMatrix{promote_type(T,V)}(uninitialized, bs),
-             A, B)
-end

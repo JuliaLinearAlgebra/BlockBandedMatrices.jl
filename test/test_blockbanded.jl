@@ -1,4 +1,4 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, Base.Test
+using BlockArrays, BandedMatrices, BlockBandedMatrices, Compat.Test
     import BlockBandedMatrices: _BlockBandedMatrix
 
 

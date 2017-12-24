@@ -1,59 +1,65 @@
 
-# function blockmatrix_αA_mul_B_plus_βC!(α,A,x,β,y)
-#     if length(x) != size(A,2) || length(y) != size(A,1)
-#         throw(BoundsError())
-#     end
-#
-#     BLAS.scal!(length(y),β,y,1)
-#     o=one(eltype(y))
-#
-#     for J=Block(1):Block(blocksize(A,2))
-#         jr=blockcols(A,J)
-#         for K=blockcolrange(A,J)
-#             kr=blockrows(A,K)
-#             B=view(A,K,J)
-#             αA_mul_B_plus_βC!(α,B,view(x,jr),o,view(y,kr))
-#         end
-#     end
-#     y
-# end
-#
-# αA_mul_B_plus_βC!(α,A::AbstractBlockMatrix,x::AbstractVector,β,y::AbstractVector) =
-#     blockmatrix_αA_mul_B_plus_βC!(α,A,x,β,y)
-#
-# Base.A_mul_B!(y::Vector,A::AbstractBlockMatrix,b::Vector) =
-#     αA_mul_B_plus_βC!(one(eltype(A)),A,b,zero(eltype(y)),y)
-#
-#
-#
-#
-# function block_axpy!(α,A,Y)
-#     if size(A) ≠ size(Y)
-#         throw(BoundsError())
-#     end
-#
-#     for J=Block.(1:blocksize(A,2)), K=blockcolrange(A,J)
-#         BLAS.axpy!(α,view(A,K,J),view(Y,K,J))
-#     end
-#     Y
-# end
-#
-# Base.BLAS.axpy!(α,A::AbstractBlockMatrix,Y::AbstractBlockMatrix) = block_axpy!(α,A,Y)
-#
-#
-#
-# ## Algebra
-#
-#
-# function Base.A_mul_B!(Y::AbstractBlockMatrix,A::AbstractBlockMatrix,B::AbstractBlockMatrix)
-#     T=eltype(Y)
-#     BLAS.scal!(length(Y.data),zero(T),Y.data,1)
-#     o=one(T)
-#     for J=Block(1):Block(blocksize(B,2)),N=blockcolrange(B,J),K=blockcolrange(A,N)
-#         αA_mul_B_plus_βC!(o,view(A,K,N),view(B,N,J),o,view(Y,K,J))
-#     end
-#     Y
-# end
+
+function _scalemul!(α, A::AbstractMatrix, x::AbstractVector, β, y::AbstractVector,
+                    ::AbstractBlockBandedInterface, xlayout, ylayout)
+    if length(x) != size(A,2) || length(y) != size(A,1)
+        throw(BoundsError())
+    end
+
+    scale!(β, y)
+    o = one(eltype(y))
+
+    for J = Block.(1:nblocks(A,2))
+        for K = blockcolrange(A,J)
+            kr,jr = globalrange(A, (K,J))
+            scalemul!(α, view(A,K,J), view(x,jr), o, view(y,kr))
+        end
+    end
+    y
+end
+
+
+function _scalemul!(α, A::AbstractMatrix, X::AbstractMatrix, β, Y::AbstractMatrix,
+                    ::AbstractBlockBandedInterface, ::AbstractBlockBandedInterface, ::AbstractBlockBandedInterface)
+    scale!(β, Y)
+    o=one(eltype(Y))
+    for J=Block(1):Block(nblocks(X,2)),
+            N=blockcolrange(X,J), K=blockcolrange(A,N)
+        scalemul!(o, view(A,K,N), view(X,N,J), o, view(Y,K,J))
+    end
+    Y
+end
+
+A_mul_B!(y::AbstractVector, A::AbstractBlockBandedMatrix, b::AbstractVector) =
+    scalemul!(one(eltype(A)), A, b, zero(eltype(y)), fill!(y, zero(eltype(y))))
+
+A_mul_B!(y::AbstractMatrix, A::AbstractBlockBandedMatrix, b::AbstractMatrix) =
+    scalemul!(one(eltype(A)), A, b, zero(eltype(y)), fill!(y, zero(eltype(y))))
+
+
+
+function *(A::BandedBlockBandedMatrix{T},
+           B::BandedBlockBandedMatrix{V}) where {T<:Number,V<:Number}
+    Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
+    Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
+    if Acols ≠ Brows
+        # diagonal matrices can be converted
+        if isdiag(B) && size(A,2) == size(B,1) == size(B,2)
+            # TODO: fix
+            B = BandedBlockBandedMatrix(B.data, BlockSizes((Acols,Acols)), 0, 0, 0, 0)
+        elseif isdiag(A) && size(A,2) == size(B,1) == size(A,1)
+            A = BandedBlockBandedMatrix(A.data, BlockSizes((Brows,Brows)), 0, 0, 0, 0)
+        else
+            throw(DimensionMismatch("*"))
+        end
+    end
+    n,m = size(A,1), size(B,2)
+
+    bs = BandedBlockBandedSizes(BlockSizes((Arows,Bcols)), A.l+B.l, A.u+B.u, A.λ+B.λ, A.μ+B.μ)
+
+    A_mul_B!(BandedBlockBandedMatrix{promote_type(T,V)}(uninitialized, bs),
+             A, B)
+end
 
 
 ######
