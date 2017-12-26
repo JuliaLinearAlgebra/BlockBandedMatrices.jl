@@ -37,6 +37,44 @@ for (fname, elty) in ((:dgemv_,:Float64),
     end
 end
 
+for (gemm, elty) in
+        ((:dgemm_,:Float64),
+         (:sgemm_,:Float32),
+         (:zgemm_,:ComplexF64),
+         (:cgemm_,:ComplexF32))
+    @eval begin
+             # SUBROUTINE DGEMM(TRANSA,TRANSB,M,N,K,ALPHA,A,LDA,B,LDB,BETA,C,LDC)
+             # *     .. Scalar Arguments ..
+             #       DOUBLE PRECISION ALPHA,BETA
+             #       INTEGER K,LDA,LDB,LDC,M,N
+             #       CHARACTER TRANSA,TRANSB
+             # *     .. Array Arguments ..
+             #       DOUBLE PRECISION A(LDA,*),B(LDB,*),C(LDC,*)
+        function gemm!(transA::Char, transB::Char, alpha::($elty), A::AbstractVecOrMat{$elty}, B::AbstractVecOrMat{$elty}, beta::($elty), C::AbstractVecOrMat{$elty})
+#           if any([stride(A,1), stride(B,1), stride(C,1)] .!= 1)
+#               error("gemm!: BLAS module requires contiguous matrix columns")
+#           end  # should this be checked on every call?
+            m = size(A, transA == 'N' ? 1 : 2)
+            ka = size(A, transA == 'N' ? 2 : 1)
+            kb = size(B, transB == 'N' ? 1 : 2)
+            n = size(B, transB == 'N' ? 2 : 1)
+            if ka != kb || m != size(C,1) || n != size(C,2)
+                throw(DimensionMismatch("A has size ($m,$ka), B has size ($kb,$n), C has size $(size(C))"))
+            end
+            ccall((@blasfunc($gemm), libblas), Cvoid,
+                (Ref{UInt8}, Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
+                 Ref{BlasInt}, Ref{$elty}, Ptr{$elty}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt}, Ref{$elty}, Ptr{$elty},
+                 Ref{BlasInt}),
+                 transA, transB, m, n,
+                 ka, alpha, A, max(1,stride(A,2)),
+                 B, max(1,stride(B,2)), beta, C,
+                 max(1,stride(C,2)))
+            C
+        end
+    end
+end
+
 
 ## (TR) triangular matrices: solver and inverse
 for (trtri, trtrs, elty) in

@@ -37,9 +37,56 @@ A_mul_B!(y::AbstractMatrix, A::AbstractBlockBandedMatrix, b::AbstractMatrix) =
     scalemul!(one(eltype(A)), A, b, zero(eltype(y)), fill!(y, zero(eltype(y))))
 
 
+#############
+# BLAS overrides
+#############
 
-function *(A::BandedBlockBandedMatrix{T},
-           B::BandedBlockBandedMatrix{V}) where {T<:Number,V<:Number}
+
+function BLAS.axpy!(a, X::AbstractBlockBandedMatrix, Y::AbstractBlockBandedMatrix)
+    size(X) == size(Y) || throw(DimensionMismatch())
+
+    for J=Block(1):Block(nblocks(X,2)), K=blockcolrange(X,J)
+        BLAS.axpy!(a, view(X,K,J), view(Y,K,J))
+    end
+    Y
+end
+
+BLAS.gemv!(trans::Char, α::T, A::BlockBandedBlock{T}, X::AbstractVector{T}, β::T, Y::AbstractVector{T}) where T <: BlasFloat =
+    gemv!(trans, α, A, X, β, Y)
+
+
+const BBBOrStridedVecOrMat{T} = Union{BlockBandedBlock{T}, StridedVecOrMat{T}}
+
+BLAS.gemm!(transA::Char, transB::Char, α::T, A::BBBOrStridedVecOrMat{T}, B::BBBOrStridedVecOrMat{T}, β::T, C::BBBOrStridedVecOrMat{T}) where T <: BlasFloat =
+    gemm!(transA, transB, α, A, B, β, C)
+
+
+
+function *(A::BlockBandedMatrix{T}, B::BlockBandedMatrix{V}) where {T<:Number,V<:Number}
+    Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
+    Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
+    if Acols ≠ Brows
+        # diagonal matrices can be converted
+        if isdiag(B) && size(A,2) == size(B,1) == size(B,2)
+            B = BlockBandedMatrix(B.data, BlockSizes((Acols,Acols)), 0, 0, 0, 0)
+        elseif isdiag(A) && size(A,2) == size(B,1) == size(A,1)
+            A = BlockBandedMatrix(A.data, BlockSizes((Brows,Brows)), 0, 0, 0, 0)
+        else
+            throw(DimensionMismatch("*"))
+        end
+    end
+    n,m = size(A,1), size(B,2)
+
+    l, u = A.l+B.l, A.u+B.u
+    A_mul_B!(BlockBandedMatrix{promote_type(T,V)}(uninitialized,
+                                    BlockBandedSizes(BlockSizes((Arows,Bcols)), l, u),
+                                     l, u),
+             A, B)
+end
+
+
+
+function *(A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{V}) where {T<:Number,V<:Number}
     Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
     Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
     if Acols ≠ Brows

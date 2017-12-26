@@ -22,3 +22,23 @@ C =  A*A
 @test C isa BandedBlockBandedMatrix
 @test Matrix(A*A) ≈ Matrix(A)*Matrix(A)
 @test C.l == C.u == C.λ == C.μ == 2
+
+
+
+A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+    A.data .= 1:length(A.data)
+
+V = view(A, Block(2,2))
+
+W = 2.0Matrix(V)^2 + 3.0Matrix(V)
+C = copy(V)
+BLAS.gemm!('N', 'N', 2.0, V, V, 3.0, C)
+@test C == W
+BLAS.gemm!('N', 'N', 2.0, V, V, 3.0, V)
+@test V == W
+
+BLAS.gemm!('N', 'N', 2.0, ones(V), V, 0.0, C)
+@test 2.0*ones(V)*V == C
+
+BLAS.gemm!('N', 'N', 2.0, V, ones(V), 0.0, C)
+@test 2.0*V*ones(V) == C
