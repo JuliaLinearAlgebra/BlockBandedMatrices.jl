@@ -11,7 +11,7 @@ function _scalemul!(α, A::AbstractMatrix, x::AbstractVector, β, y::AbstractVec
 
     for J = Block.(1:nblocks(A,2))
         for K = blockcolrange(A,J)
-            kr,jr = globalrange(A, (K,J))
+            kr,jr = globalrange(A.block_sizes, (Int(K),Int(J)))
             scalemul!(α, view(A,K,J), view(x,jr), o, view(y,kr))
         end
     end
