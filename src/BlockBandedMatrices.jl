@@ -18,7 +18,7 @@ import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         isdiag, +, *, -, /, \, strides, zeros, eye, size,
-                        unsafe_convert
+                        unsafe_convert, copy!, fill!
 
 import Base.LinAlg: A_ldiv_B!, A_mul_B!
 import Base.BLAS: BlasInt, BlasFloat, @blasfunc, libblas

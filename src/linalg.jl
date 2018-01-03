@@ -61,6 +61,51 @@ BLAS.gemm!(transA::Char, transB::Char, α::T, A::BBBOrStridedVecOrMat{T}, B::BBB
     gemm!(transA, transB, α, A, B, β, C)
 
 
+function checkblocks(A, B)
+    Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
+    Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
+    if Acols ≠ Bcols || Arows ≠ Brows
+        throw(DimensionMismatch("*"))
+    end
+end
+## algebra
+function fill!(B::BandedBlockBandedBlock{T}, x) where T
+    x == zero(T) || throw(BandError(B))
+    fill!(dataview(B), x)
+    B
+end
+
+function copy!(dest::BandedBlockBandedMatrix{T}, src::BandedBlockBandedMatrix) where T
+    checkblocks(dest, src)
+    (dest.l ≥ src.l && dest.u ≥ src.u) || throw(BandError(dest))
+
+    M,N = nblocks(src)
+    for J = 1:N
+        for K = max(1,J-dest.u):J-src.u-1
+            fill!(view(dest,Block(K),Block(J)),zero(T))
+        end
+        for K = max(1,J-src.u):min(J+src.l,M)
+            copy!(view(dest,Block(K),Block(J)), view(src,Block(K),Block(J)))
+        end
+        for K = max(1,J+src.l+1):min(J+dest.l,M)
+            fill!(view(dest,Block(K),Block(J)),zero(T))
+        end
+    end
+    dest
+end
+
+function +(A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{V}) where {T<:Number,V<:Number}
+    checkblocks(A, B)
+    n,m = size(A)
+
+    bs = BandedBlockBandedSizes(BlockSizes((Arows,Acols)), max(A.l,B.l), max(A.u,B.u), max(A.λ,B.λ), max(A.μ,B.μ))
+    TV = promote_type(T,V)
+    ret = BandedBlockBandedMatrix{TV}(Zeros(n,m), bs)
+    copy!(ret, A)
+    BLAS.axpy!(one(TV), B, ret)
+end
+
+
 
 function *(A::BlockBandedMatrix{T}, B::BlockBandedMatrix{V}) where {T<:Number,V<:Number}
     Arows, Acols = A.block_sizes.block_sizes.cumul_sizes

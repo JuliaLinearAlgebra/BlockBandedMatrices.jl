@@ -42,3 +42,32 @@ BLAS.gemm!('N', 'N', 2.0, ones(V), V, 0.0, C)
 
 BLAS.gemm!('N', 'N', 2.0, V, ones(V), 0.0, C)
 @test 2.0*V*ones(V) == C
+
+
+
+l , u = 1,1
+λ , μ = 1,1
+N = M = 100
+cols = rows = 1:N
+
+
+@testset "fill! block" begin
+    data = randn((λ+μ+1)*(l+u+1), sum(cols))
+    A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+
+    V = view(A,Block(2,3))
+    @test_throws BandError fill!(V, 2.0)
+    fill!(V, 0)
+    @test A[2:3,4:6] == zeros(2,3)
+end
+
+data = randn((λ+μ+1)*(l+u+1), sum(cols))
+A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+
+
+data = randn((λ+μ+1)*(l+u+1), sum(cols))
+B = _BandedBlockBandedMatrix(data, (rows,cols), (l+1,u+1), (λ+1,μ+1))
+
+@time copy!(B, A)
+
+@time A+B
