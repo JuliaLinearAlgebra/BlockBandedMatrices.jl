@@ -47,7 +47,7 @@ BLAS.gemm!('N', 'N', 2.0, V, ones(V), 0.0, C)
 
 l , u = 1,1
 λ , μ = 1,1
-N = M = 100
+N = M = 20
 cols = rows = 1:N
 
 
@@ -61,13 +61,30 @@ cols = rows = 1:N
     @test A[2:3,4:6] == zeros(2,3)
 end
 
-data = randn((λ+μ+1)*(l+u+1), sum(cols))
-A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+dataA = randn((λ+μ+1)*(l+u+1), sum(cols))
+A = _BandedBlockBandedMatrix(copy(dataA), (rows,cols), (l,u), (λ,μ))
 
+dataB = randn((λ+μ+3)*(l+u+3), sum(cols))
+B = _BandedBlockBandedMatrix(copy(dataB), (rows,cols), (l+1,u+1), (λ+1,μ+1))
 
-data = randn((λ+μ+1)*(l+u+1), sum(cols))
-B = _BandedBlockBandedMatrix(data, (rows,cols), (l+1,u+1), (λ+1,μ+1))
+K,J = 3,1
+T = Float64
+fill!(view(dest,Block(K),Block(J)), zero(T))
 
+B = _BandedBlockBandedMatrix(copy(dataB), (rows,cols), (l+1,u+1), (λ+1,μ+1))
+copy!(view(B, Block(N,N)), view(A, Block(N,N)))
+@test B[Block(N,N)] == A[Block(N,N)]
+
+B = _BandedBlockBandedMatrix(copy(dataB), (rows,cols), (l+1,u+1), (λ+1,μ+1))
 @time copy!(B, A)
+@test norm(B[Block(3,1)]) == 0
+@test  B ≈ A
+@test Matrix(B) ≈ Matrix(A)
 
-@time A+B
+B = _BandedBlockBandedMatrix(copy(dataB), (rows,cols), (l+1,u+1), (λ+1,μ+1))
+
+@time AB = A+B
+@test AB ≈ Matrix(A)+Matrix(B)
+
+@time BLAS.axpy!(1.0, A, B)
+@test B ≈ AB

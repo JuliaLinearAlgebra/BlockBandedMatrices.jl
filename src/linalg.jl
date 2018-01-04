@@ -75,20 +75,32 @@ function fill!(B::BandedBlockBandedBlock{T}, x) where T
     B
 end
 
+function fill!(B::AbstractBlockBandedMatrix{T}, x) where T
+    x == zero(T) || throw(BandError(B))
+
+    M,N = nblocks(B)
+    for J = 1:N
+        for K = blockcolrange(B,J)
+            fill!(view(dest,Block(K),Block(J)), x)
+        end
+    end
+    dest
+end
+
 function copy!(dest::BandedBlockBandedMatrix{T}, src::BandedBlockBandedMatrix) where T
     checkblocks(dest, src)
     (dest.l ≥ src.l && dest.u ≥ src.u) || throw(BandError(dest))
 
     M,N = nblocks(src)
     for J = 1:N
-        for K = max(1,J-dest.u):J-src.u-1
+        for K = max(1,J-dest.u):min(J-src.u-1,M)
             fill!(view(dest,Block(K),Block(J)),zero(T))
         end
         for K = max(1,J-src.u):min(J+src.l,M)
             copy!(view(dest,Block(K),Block(J)), view(src,Block(K),Block(J)))
         end
         for K = max(1,J+src.l+1):min(J+dest.l,M)
-            fill!(view(dest,Block(K),Block(J)),zero(T))
+            fill!(view(dest,Block(K),Block(J)), zero(T))
         end
     end
     dest
@@ -97,10 +109,12 @@ end
 function +(A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{V}) where {T<:Number,V<:Number}
     checkblocks(A, B)
     n,m = size(A)
+    Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
+
 
     bs = BandedBlockBandedSizes(BlockSizes((Arows,Acols)), max(A.l,B.l), max(A.u,B.u), max(A.λ,B.λ), max(A.μ,B.μ))
     TV = promote_type(T,V)
-    ret = BandedBlockBandedMatrix{TV}(Zeros(n,m), bs)
+    ret = BandedBlockBandedMatrix{TV}(uninitialized, bs)
     copy!(ret, A)
     BLAS.axpy!(one(TV), B, ret)
 end
