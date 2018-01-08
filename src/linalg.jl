@@ -87,7 +87,7 @@ function fill!(B::AbstractBlockBandedMatrix{T}, x) where T
     dest
 end
 
-function copy!(dest::BandedBlockBandedMatrix{T}, src::BandedBlockBandedMatrix) where T
+function copy!(dest::AbstractBlockBandedMatrix{T}, src::AbstractBlockBandedMatrix) where T
     checkblocks(dest, src)
     (dest.l ≥ src.l && dest.u ≥ src.u) || throw(BandError(dest))
 
