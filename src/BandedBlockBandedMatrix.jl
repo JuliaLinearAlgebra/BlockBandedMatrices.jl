@@ -219,7 +219,7 @@ end
 #####
 
 function Base.fill!(A::BandedBlockBandedMatrix, x)
-    !iszero(x) && throw(BandError())
+    !iszero(x) && throw(BandError(A))
     fill!(A.data, x)
     A
 end
@@ -317,6 +317,13 @@ subblockbandwidth(A::BandedBlockBandedMatrix, k::Integer) = ifelse(k==1 , A.λ ,
 const BandedBlockBandedBlock{T} = SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{BlockSlice1,BlockSlice1},false}
 
 
+
+function inblockbands(V::BandedBlockBandedBlock)
+    A = parent(V)
+    K_sl, J_sl = parentindexes(V)
+    K, J = K_sl.block, J_sl.block
+    -A.l ≤ Int(J-K) ≤ A.u
+end
 
 
 ######################################

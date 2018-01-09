@@ -71,6 +71,8 @@ end
 ## algebra
 function fill!(B::BandedBlockBandedBlock{T}, x) where T
     x == zero(T) || throw(BandError(B))
+    inblockbands(B) || return B
+
     fill!(dataview(B), x)
     B
 end
@@ -79,12 +81,10 @@ function fill!(B::AbstractBlockBandedMatrix{T}, x) where T
     x == zero(T) || throw(BandError(B))
 
     M,N = nblocks(B)
-    for J = 1:N
-        for K = blockcolrange(B,J)
-            fill!(view(dest,Block(K),Block(J)), x)
-        end
+    for J = 1:N, K = blockcolrange(B,J)
+        fill!(view(B,K,Block(J)), x)
     end
-    dest
+    B
 end
 
 function copy!(dest::AbstractBlockBandedMatrix{T}, src::AbstractBlockBandedMatrix) where T

@@ -1,4 +1,5 @@
 using BlockArrays, BlockBandedMatrices, Compat.Test
+    import BandedMatrices: BandError
     import BlockBandedMatrices: _BandedBlockBandedMatrix, scalemul!, _scalemul!, memorylayout
 
 
@@ -64,12 +65,26 @@ end
 dataA = randn((λ+μ+1)*(l+u+1), sum(cols))
 A = _BandedBlockBandedMatrix(copy(dataA), (rows,cols), (l,u), (λ,μ))
 
+K,J = 2,1
+@test_throws BandError fill!(view(A,Block(K),Block(J)), 2.0)
+fill!(view(A,Block(K),Block(J)), 0.0)
+@test Matrix(view(A,Block(K),Block(J))) == zeros(2,1)
+
+K,J = 3,1
+@test_throws BandError fill!(view(A,Block(K),Block(J)), 2.0)
+fill!(view(A,Block(K),Block(J)), 0.0)
+@test Matrix(view(A,Block(K),Block(J))) == zeros(3,1)
+
+@test_throws BandError fill!(A, 2.0)
+fill!(A, 0.0)
+@test Matrix(A) == zeros(size(A))
+
+dataA = randn((λ+μ+1)*(l+u+1), sum(cols))
+A = _BandedBlockBandedMatrix(copy(dataA), (rows,cols), (l,u), (λ,μ))
+
 dataB = randn((λ+μ+3)*(l+u+3), sum(cols))
 B = _BandedBlockBandedMatrix(copy(dataB), (rows,cols), (l+1,u+1), (λ+1,μ+1))
 
-K,J = 3,1
-T = Float64
-fill!(view(dest,Block(K),Block(J)), zero(T))
 
 B = _BandedBlockBandedMatrix(copy(dataB), (rows,cols), (l+1,u+1), (λ+1,μ+1))
 copy!(view(B, Block(N,N)), view(A, Block(N,N)))
@@ -83,8 +98,29 @@ B = _BandedBlockBandedMatrix(copy(dataB), (rows,cols), (l+1,u+1), (λ+1,μ+1))
 
 B = _BandedBlockBandedMatrix(copy(dataB), (rows,cols), (l+1,u+1), (λ+1,μ+1))
 
-@time AB = A+B
-@test AB ≈ Matrix(A)+Matrix(B)
+@time AB = A + B
+@test AB ≈ Matrix(A) + Matrix(B)
 
 @time BLAS.axpy!(1.0, A, B)
 @test B ≈ AB
+
+
+#####
+# BlockBandedMatrix
+#####
+
+A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+    A.data .= randn(length(A.data))
+
+fill!(view(A, Block(2,1)), 2.0)
+@test A[Block(2,1)] ≈ fill(2.0, 2)
+
+@test_throws BandError fill!(view(A, Block(3,1)), 2.0)
+
+fill!(view(A, Block(3,1)), 0.0)
+@test A[Block(3,1)] ≈ zeros(3)
+
+
+@test_throws BandError fill!(A, 2.0)
+fill!(A, 0.0)
+@test Matrix(A) == zeros(size(A))
