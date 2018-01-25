@@ -87,24 +87,30 @@ function fill!(B::AbstractBlockBandedMatrix{T}, x) where T
     B
 end
 
-function copy!(dest::AbstractBlockBandedMatrix{T}, src::AbstractBlockBandedMatrix) where T
-    checkblocks(dest, src)
-    (dest.l ≥ src.l && dest.u ≥ src.u) || throw(BandError(dest))
+function blockbanded_copy!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
+    @boundscheck checkblocks(dest, src)
+    
+    dl, du = blockbandwidths(dest)
+    sl, su = blockbandwidths(src)
+    (dl ≥ sl && du ≥ su) || throw(BandError(dest))
 
     M,N = nblocks(src)
     for J = 1:N
-        for K = max(1,J-dest.u):min(J-src.u-1,M)
-            fill!(view(dest,Block(K),Block(J)),zero(T))
+        for K = max(1,J-du):min(J-su-1,M)
+            fill!(view(dest,Block(K),Block(J)), zero(T))
         end
-        for K = max(1,J-src.u):min(J+src.l,M)
+        for K = max(1,J-su):min(J+sl,M)
             copy!(view(dest,Block(K),Block(J)), view(src,Block(K),Block(J)))
         end
-        for K = max(1,J+src.l+1):min(J+dest.l,M)
+        for K = max(1,J+sl+1):min(J+dl,M)
             fill!(view(dest,Block(K),Block(J)), zero(T))
         end
     end
     dest
 end
+
+copy!(dest::AbstractBlockBandedMatrix, src::AbstractBlockBandedMatrix) =
+    blockbanded_copy!(dest, src)
 
 function +(A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{V}) where {T<:Number,V<:Number}
     checkblocks(A, B)
