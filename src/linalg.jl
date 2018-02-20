@@ -1,7 +1,7 @@
 
 
-function _mul!(α, A::AbstractMatrix, x::AbstractVector, β, y::AbstractVector,
-                    ::BlockBandedLayout, xlayout, ylayout)
+function _mul!(y::AbstractVector, A::AbstractMatrix, x::AbstractVector, α, β,
+                    ylayout, ::BlockBandedLayout, xlayout)
     if length(x) != size(A,2) || length(y) != size(A,1)
         throw(BoundsError())
     end
@@ -12,29 +12,29 @@ function _mul!(α, A::AbstractMatrix, x::AbstractVector, β, y::AbstractVector,
     for J = Block.(1:nblocks(A,2))
         for K = blockcolrange(A,J)
             kr,jr = globalrange(A.block_sizes, (Int(K),Int(J)))
-            mul!(α, view(A,K,J), view(x,jr), o, view(y,kr))
+            mul!(view(y,kr), view(A,K,J), view(x,jr), α, o)
         end
     end
     y
 end
 
 
-function _mul!(α, A::AbstractMatrix, X::AbstractMatrix, β, Y::AbstractMatrix,
+function _mul!(Y::AbstractMatrix, A::AbstractMatrix, X::AbstractMatrix, α, β,
                     ::BlockBandedLayout, ::BlockBandedLayout, ::BlockBandedLayout)
     scale!(β, Y)
     o=one(eltype(Y))
     for J=Block(1):Block(nblocks(X,2)),
             N=blockcolrange(X,J), K=blockcolrange(A,N)
-        mul!(o, view(A,K,N), view(X,N,J), o, view(Y,K,J))
+        mul!(view(Y,K,J), view(A,K,N), view(X,N,J), α, o)
     end
     Y
 end
 
 A_mul_B!(y::AbstractVector, A::AbstractBlockBandedMatrix, b::AbstractVector) =
-    mul!(one(eltype(A)), A, b, zero(eltype(y)), fill!(y, zero(eltype(y))))
+    mul!(fill!(y, zero(eltype(y))), A, b, one(eltype(A)), zero(eltype(y)))
 
 A_mul_B!(y::AbstractMatrix, A::AbstractBlockBandedMatrix, b::AbstractMatrix) =
-    mul!(one(eltype(A)), A, b, zero(eltype(y)), fill!(y, zero(eltype(y))))
+    mul!(fill!(y, zero(eltype(y))), A, b, one(eltype(A)), zero(eltype(y)))
 
 
 #############
