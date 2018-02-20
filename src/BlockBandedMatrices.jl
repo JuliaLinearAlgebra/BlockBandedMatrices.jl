@@ -12,7 +12,7 @@ import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         banded_generic_axpy!, banded_A_mul_B!,
                         BlasFloat, banded_dense_axpy!, memorylayout,
                         BandedLayout, StridedLayout,
-                        BandedSubBandedMatrix, scalemul!, _scalemul!,
+                        BandedSubBandedMatrix, mul!, _mul!,
                         @banded_banded_linalg, @banded_linalg, @banded,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop
 

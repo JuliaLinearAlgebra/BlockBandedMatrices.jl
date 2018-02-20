@@ -1,7 +1,7 @@
 
 
-function _scalemul!(α, A::AbstractMatrix, x::AbstractVector, β, y::AbstractVector,
-                    ::AbstractBlockBandedInterface, xlayout, ylayout)
+function _mul!(α, A::AbstractMatrix, x::AbstractVector, β, y::AbstractVector,
+                    ::BlockBandedLayout, xlayout, ylayout)
     if length(x) != size(A,2) || length(y) != size(A,1)
         throw(BoundsError())
     end
@@ -12,29 +12,29 @@ function _scalemul!(α, A::AbstractMatrix, x::AbstractVector, β, y::AbstractVec
     for J = Block.(1:nblocks(A,2))
         for K = blockcolrange(A,J)
             kr,jr = globalrange(A.block_sizes, (Int(K),Int(J)))
-            scalemul!(α, view(A,K,J), view(x,jr), o, view(y,kr))
+            mul!(α, view(A,K,J), view(x,jr), o, view(y,kr))
         end
     end
     y
 end
 
 
-function _scalemul!(α, A::AbstractMatrix, X::AbstractMatrix, β, Y::AbstractMatrix,
-                    ::AbstractBlockBandedInterface, ::AbstractBlockBandedInterface, ::AbstractBlockBandedInterface)
+function _mul!(α, A::AbstractMatrix, X::AbstractMatrix, β, Y::AbstractMatrix,
+                    ::BlockBandedLayout, ::BlockBandedLayout, ::BlockBandedLayout)
     scale!(β, Y)
     o=one(eltype(Y))
     for J=Block(1):Block(nblocks(X,2)),
             N=blockcolrange(X,J), K=blockcolrange(A,N)
-        scalemul!(o, view(A,K,N), view(X,N,J), o, view(Y,K,J))
+        mul!(o, view(A,K,N), view(X,N,J), o, view(Y,K,J))
     end
     Y
 end
 
 A_mul_B!(y::AbstractVector, A::AbstractBlockBandedMatrix, b::AbstractVector) =
-    scalemul!(one(eltype(A)), A, b, zero(eltype(y)), fill!(y, zero(eltype(y))))
+    mul!(one(eltype(A)), A, b, zero(eltype(y)), fill!(y, zero(eltype(y))))
 
 A_mul_B!(y::AbstractMatrix, A::AbstractBlockBandedMatrix, b::AbstractMatrix) =
-    scalemul!(one(eltype(A)), A, b, zero(eltype(y)), fill!(y, zero(eltype(y))))
+    mul!(one(eltype(A)), A, b, zero(eltype(y)), fill!(y, zero(eltype(y))))
 
 
 #############
@@ -89,7 +89,7 @@ end
 
 function blockbanded_copy!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
     @boundscheck checkblocks(dest, src)
-    
+
     dl, du = blockbandwidths(dest)
     sl, su = blockbandwidths(src)
     (dl ≥ sl && du ≥ su) || throw(BandError(dest))

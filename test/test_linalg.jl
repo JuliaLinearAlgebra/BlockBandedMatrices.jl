@@ -1,6 +1,6 @@
 using BlockArrays, BlockBandedMatrices, Compat.Test
     import BandedMatrices: BandError
-    import BlockBandedMatrices: _BandedBlockBandedMatrix, scalemul!, _scalemul!, memorylayout
+    import BlockBandedMatrices: _BandedBlockBandedMatrix, memorylayout
 
 
 @testset "BlockBandedMatrix linear algebra" begin
