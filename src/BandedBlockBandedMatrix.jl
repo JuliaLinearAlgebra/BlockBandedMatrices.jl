@@ -1,6 +1,6 @@
 
 
-struct BandedBlockBandedLayout{T} <: AbstractBlockBandedInterface{T} end
+struct BandedBlockBandedLayout{T} <: AbstractBlockBandedLayout{T} end
 
 
 struct BandedBlockBandedSizes
@@ -189,7 +189,7 @@ BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 # BandedBlockBandedMatrix Interface #
 ################################
 
-memorylayout(::Type{BandedBlockBandedMatrix{T}}) where T = BandedBlockBandedLayout{T}()
+MemoryLayout(::BandedBlockBandedMatrix{T}) where T = BandedBlockBandedLayout{T}()
 
 isbandedblockbanded(_) = false
 isbandedblockbanded(::BandedBlockBandedMatrix) = true
@@ -448,7 +448,6 @@ unsafe_convert(::Type{Ptr{T}}, V::BandedBlockBandedBlock{T}) where {T<:BlasFloat
     unsafe_convert(Ptr{T}, dataview(V))
 
 @inline leadingdimension(V::BandedBlockBandedBlock) = stride(dataview(V), 2)
-@inline memorylayout(::Type{BandedBlockBandedBlock{T}}) where T = BandedLayout{T}()
 
 @banded BandedBlockBandedBlock
 @banded_banded_linalg BandedBlockBandedBlock BandedSubBandedMatrix

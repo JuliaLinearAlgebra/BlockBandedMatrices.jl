@@ -1,7 +1,7 @@
 
 
 function _mul!(y::AbstractVector, A::AbstractMatrix, x::AbstractVector, α, β,
-                    ylayout, ::BlockBandedLayout, xlayout)
+                    ylayout, ::AbstractBlockBandedLayout, xlayout)
     if length(x) != size(A,2) || length(y) != size(A,1)
         throw(BoundsError())
     end
@@ -20,7 +20,7 @@ end
 
 
 function _mul!(Y::AbstractMatrix, A::AbstractMatrix, X::AbstractMatrix, α, β,
-                    ::BlockBandedLayout, ::BlockBandedLayout, ::BlockBandedLayout)
+                    ::AbstractBlockBandedLayout, ::AbstractBlockBandedLayout, ::AbstractBlockBandedLayout)
     scale!(β, Y)
     o=one(eltype(Y))
     for J=Block(1):Block(nblocks(X,2)),
