@@ -134,9 +134,53 @@ function BandedBlockBandedMatrix{T}(A::UniformScaling, dims::NTuple{2, AbstractV
 end
 
 
+function BandedBlockBandedMatrix{T}(Z::Zeros, block_sizes::BandedBlockBandedSizes,
+                                    lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T
+   if size(Z) ≠ size(block_sizes)
+       throw(DimensionMismatch())
+   end
+
+   d_bs = block_sizes.data_block_sizes
+    _BandedBlockBandedMatrix(PseudoBlockArray(zeros(T, size(d_bs)), d_bs), block_sizes)
+end
+
+function BandedBlockBandedMatrix{T}(A::AbstractMatrix, block_sizes::BandedBlockBandedSizes,
+                                    lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T
+    ret = BandedBlockBandedMatrix(Zeros{T}(size(A)), block_sizes, lu::NTuple{2,Int}, λμ::NTuple{2,Int})
+    for J = Block.(1:nblocks(ret, 2)), K = blockcolrange(ret, Int(J))
+        kr, jr = globalrange(block_sizes, (Int(K), Int(J)))
+
+        # We have the correct block - now we need to only add the entries from
+        # the correct bands
+        B = view(A, kr, jr)
+        R = view(ret, K, J)
+        rows, cols = size(B)
+        for λ = 1:λμ[1], j = 1:min(rows, cols+1)-λ
+            view(R, j+λ, j) .= view(B, j+λ, j)
+        end
+        for i = 1:min(rows, cols)
+            view(R, i, i) .= view(B, i, i)
+        end
+        for μ = 1:λμ[2], k = 1:min(rows+1, cols)-μ
+            view(R, k, k+μ) .= view(B, k, k+μ)
+        end
+    end
+    ret
+end
+
 BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
-                        dims::NTuple{2, AbstractVector{Int}},
-                        lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
+                        block_sizes::BandedBlockBandedSizes, lu::NTuple{2,Int},
+                        λμ::NTuple{2,Int}) =
+    BandedBlockBandedMatrix{eltype(A)}(A, block_sizes, lu, λμ)
+
+BandedBlockBandedMatrix{T}(A::Union{AbstractMatrix,UniformScaling},
+                           dims::NTuple{2,AbstractVector{Int}}, lu::NTuple{2,Int},
+                           λμ::NTuple{2,Int}) where T =
+    BandedBlockBandedMatrix{T}(A, BandedBlockBandedSizes(dims..., lu..., λμ...), lu, λμ)
+
+BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
+                        dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2,Int},
+                        λμ::NTuple{2,Int}) =
     BandedBlockBandedMatrix{eltype(A)}(A, dims, lu, λμ)
 
 
