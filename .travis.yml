@@ -11,6 +11,9 @@ matrix:
     - julia: nightly
 notifications:
   email: false
+after_success:
+  - julia -e 'Pkg.add("Documenter")'
+  - julia -e 'cd(Pkg.dir("BlockBandedMatrices")); include(joinpath("docs", "make.jl"))'
 
 # uncomment the following lines to override the default test script
 #script:
