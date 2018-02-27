@@ -1,6 +1,8 @@
 using BlockArrays, BlockBandedMatrices, Compat.Test
     import BandedMatrices: BandError
-    import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout
+    import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!
+
+
 
 
 @testset "BlockBandedMatrix linear algebra" begin
@@ -114,3 +116,80 @@ end
     @time BLAS.axpy!(1.0, A, B)
     @test B ≈ AB
 end
+
+
+
+@testset "SubBlockBandedMatrix linear algebra" begin
+    l , u = 1,1
+    N = M = 2
+    cols = rows = 1:5
+    A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+        A.data .= 1:length(A.data)
+
+
+
+    V = view(A, Block.(1:3), Block.(1:3))
+
+    @test blockrowstop(V,1) == Block(2)
+    @test blockcolstop(V,1) == Block(2)
+
+    @test BlockBandedMatrices.block_sizes(V) == BlockSizes(1:3, 1:3)
+
+    b = randn(size(V,1))
+    r = UpperTriangular(Matrix(V)) \ b
+    @test BlockBandedMatrices.blockbanded_squareblocks_trtrs!(V, copy(b)) ≈ r
+
+    @test all(A_ldiv_B!(UpperTriangular(V), copy(b)) .=== BlockBandedMatrices.blockbanded_squareblocks_trtrs!(V, copy(b)))
+end
+
+
+l , u = 1,1
+N = M = 2
+cols = rows = 1:5
+A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+    A.data .= 1:length(A.data)
+
+V = view(A, Block.(2:3), Block(3)[2:3])
+@show typeof(V)
+V
+
+A
+
+A.block_sizes
+
+
+JR = parentindexes(V)[2]
+T = Float64
+p = unsafe_convert(Ptr{T}, view(parent(V), first(parentindexes(V)[1].block), Block(JR)))
+JR.block.indices
+unsafe_load(p + )
+
+unsafe_load(pointer(V))
+@test unsafe_load(pointer(V)) == A[2,5] == 25
+@test unsafe_load(pointer(V)+sizeof(Float64)*stride(V,2)) == A[2,6] == 34
+
+b = randn(2)
+@test all(Matrix(V)*b .=== BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(uninitialized, size(V,1))))
+
+size(V)
+Base.strides(V)
+Base.stride(V,2)
+
+parent(V).block_sizes.block_strides
+A.block_sizes.block_strides
+
+size(V)
+
+A
+
+
+V isa DenseBlockRangeSubBlockBandedMatrix{Float64}
+
+typeof(V)
+
+A
+
+
+
+
+@which Base.unsafe_convert(Ptr{Float64}, view(A, Block(1,3)))

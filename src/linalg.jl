@@ -174,6 +174,51 @@ function *(A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{V}) where {
 end
 
 
+
+
+# BlockBandedMatrix with block range indexes is also block-banded
+const BlockRange1 = BlockRange{1,Tuple{UnitRange{Int}}}
+const BlockBandedSubBlockBandedMatrix{T} =
+    SubArray{T,2,BlockBandedMatrix{T},NTuple{2,BlockSlice{BlockRange1}}}
+
+
+block_sizes(A::AbstractBlockArray) = A.block_sizes
+block_sizes(A::AbstractBlockBandedMatrix) = A.block_sizes.block_sizes
+
+function block_sizes(V::BlockBandedSubBlockBandedMatrix)
+    A = parent(V)
+    Bs = A.block_sizes.block_sizes
+
+    KR = parentindexes(V)[1].block.indices[1]
+    JR = parentindexes(V)[2].block.indices[1]
+
+    Bs.cumul_sizes[1]
+    @assert KR[1] == JR[1] == 1
+    BlockSizes((Bs.cumul_sizes[1][KR[1]:KR[end]+1],Bs.cumul_sizes[1][JR[1]:JR[end]+1]))
+end
+
+function blockbandwidths(V::BlockBandedSubBlockBandedMatrix)
+    A = parent(V)
+    Bs = A.block_sizes.block_sizes
+
+    KR = parentindexes(V)[1].block.indices[1]
+    JR = parentindexes(V)[2].block.indices[1]
+
+    @assert KR[1] == JR[1] == 1
+    blockbandwidths(A)
+end
+
+function blockbandwidth(V::BlockBandedSubBlockBandedMatrix, k::Integer)
+    A = parent(V)
+    Bs = A.block_sizes.block_sizes
+
+    KR = parentindexes(V)[1].block.indices[1]
+    JR = parentindexes(V)[2].block.indices[1]
+
+    @assert KR[1] == JR[1] == 1
+    blockbandwidth(A,k)
+end
+
 ######
 # back substitution
 ######
@@ -183,9 +228,9 @@ end
 
 
 @inline hasmatchingblocks(A) =
-    A.block_sizes.block_sizes.cumul_sizes[1] == A.block_sizes.block_sizes.cumul_sizes[2]
+    block_sizes(A).cumul_sizes[1] == block_sizes(A).cumul_sizes[2]
 
-function A_ldiv_B!(U::UpperTriangular{T, BlockBandedMatrix{T}}, b::StridedVector) where T
+function A_ldiv_B!(U::UpperTriangular{T, BM}, b::StridedVector) where BM <: Union{BlockBandedMatrix{T}, BlockBandedSubBlockBandedMatrix{T}} where T
     A = parent(U)
 
     @boundscheck size(A,1) == length(b) || throw(BoundsError(A))
@@ -199,17 +244,22 @@ function A_ldiv_B!(U::UpperTriangular{T, BlockBandedMatrix{T}}, b::StridedVector
 end
 
 
-function blockbanded_squareblocks_trtrs!(A::BlockBandedMatrix, b::StridedVector)
+
+
+
+function blockbanded_squareblocks_trtrs!(A::AbstractMatrix, b::AbstractVector)
     @boundscheck size(A,1) == size(b,1) || throw(BoundsError())
 
     n = size(b,1)
-    N = nblocks(A,1)
+
+    Bs = block_sizes(A)
+    N = nblocks(Bs,1)
 
     for K = N:-1:1
-        kr = globalrange(A.block_sizes, (K,K))[1]
+        kr = globalrange(Bs, (K,K))[1]
         v = view(b, kr)
         for J = min(N,Int(blockrowstop(A,K))):-1:K+1
-            jr = globalrange(A.block_sizes, (K,J))[2]
+            jr = globalrange(Bs, (K,J))[2]
             gemv!('N', -one(eltype(A)), view(A,Block(K),Block(J)), view(b, jr), one(eltype(A)), v)
         end
         @inbounds A_ldiv_B!(UpperTriangular(view(A,Block(K),Block(K))), v)
@@ -217,6 +267,24 @@ function blockbanded_squareblocks_trtrs!(A::BlockBandedMatrix, b::StridedVector)
 
     b
 end
+
+
+####
+
+const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int64}}}
+const DenseBlockSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{Block{1,Int}},BlockSlice{BlockIndexRange1}}}
+const DenseBlockRangeSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{BlockRange1},BlockSlice{BlockIndexRange1}}}
+
+function unsafe_convert(::Type{Ptr{T}}, V::DenseBlockRangeSubBlockBandedMatrix{T}) where T
+    JR = parentindexes(V)[2]
+    p = unsafe_convert(Ptr{T}, view(parent(V), first(parentindexes(V)[1].block), Block(JR)))
+    p + sizeof(T)*(JR.block.indices[1][1]-1)*stride(V,2)
+end
+
+strides(V::DenseBlockRangeSubBlockBandedMatrix) = (1,parent(V).block_sizes.block_strides[Int(Block(parentindexes(V)[2]))])
+
+MemoryLayout(V::DenseBlockRangeSubBlockBandedMatrix{T}) where T = ColumnMajor{T}()
+
 
 # function blockbanded_rectblocks_trtrs!(R::BlockBandedMatrix{T},b::Vector) where T
 #     n=n_end=length(b)
