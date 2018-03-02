@@ -150,27 +150,19 @@ A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
     A.data .= 1:length(A.data)
 
 V = view(A, Block.(2:3), Block(3)[2:3])
-@show typeof(V)
-V
-
-A
-
-A.block_sizes
-
-
-JR = parentindexes(V)[2]
-T = Float64
-p = unsafe_convert(Ptr{T}, view(parent(V), first(parentindexes(V)[1].block), Block(JR)))
-JR.block.indices
-unsafe_load(p + )
-
-unsafe_load(pointer(V))
 @test unsafe_load(pointer(V)) == A[2,5] == 25
 @test unsafe_load(pointer(V)+sizeof(Float64)*stride(V,2)) == A[2,6] == 34
+
+V[1,1] == 25 # makes sure V is not GCed in last two tests
+
+V = view(A, Block.(1:3), Block(3)[2:3])
+@test_throws ArgumentError pointer(V)
 
 b = randn(2)
 @test all(Matrix(V)*b .=== BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(uninitialized, size(V,1))))
 
+
+pointer(V)
 size(V)
 Base.strides(V)
 Base.stride(V,2)
@@ -179,6 +171,9 @@ parent(V).block_sizes.block_strides
 A.block_sizes.block_strides
 
 size(V)
+
+
+
 
 A
 

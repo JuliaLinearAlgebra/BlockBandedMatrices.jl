@@ -276,12 +276,21 @@ const DenseBlockSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tupl
 const DenseBlockRangeSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{BlockRange1},BlockSlice{BlockIndexRange1}}}
 
 function unsafe_convert(::Type{Ptr{T}}, V::DenseBlockRangeSubBlockBandedMatrix{T}) where T
+    A = parent(V)
     JR = parentindexes(V)[2]
-    p = unsafe_convert(Ptr{T}, view(parent(V), first(parentindexes(V)[1].block), Block(JR)))
+    K = first(parentindexes(V)[1].block)
+    J = Block(JR)
+    K ∈ blockcolrange(A, J) || throw(ArgumentError("Pointer is only defined when inside colrange"))
+    p = unsafe_convert(Ptr{T}, view(A, K, J))
     p + sizeof(T)*(JR.block.indices[1][1]-1)*stride(V,2)
 end
 
 strides(V::DenseBlockRangeSubBlockBandedMatrix) = (1,parent(V).block_sizes.block_strides[Int(Block(parentindexes(V)[2]))])
+
+struct ShiftedLayout{T,ML<:MemoryLayout} <: MemoryLayout{T}
+    shift::Int  # gives the shift to the start of the memory. So shift == 0 implies that the first rows are all zeor
+    layout::ML
+end
 
 MemoryLayout(V::DenseBlockRangeSubBlockBandedMatrix{T}) where T = ColumnMajor{T}()
 
