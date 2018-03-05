@@ -223,8 +223,16 @@ end
     A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
         A.data .= randn(length(A.data))
 
-
     b = randn(size(A,1))
-    @test all(UpperTriangular(A) \ b .=== BlockBandedMatrices.blockbanded_rectblocks_trtrs!(A, copy(b)))
-    @test UpperTriangular(A) \ b ≈ UpperTriangular(Matrix(A)) \ b
+
+    V = view(A, Block.(1:3), Block.(1:4))
+    @test block_sizes(V) == block_sizes(A)
+    @test all(Matrix(V) .=== Matrix(A))
+
+    @test view(V, Block(2)[1:2], Block(3)) ≡ view(A, Block(2)[1:2], Block(3))
+
+    @test all(UpperTriangular(A) \ b .===
+                    BlockBandedMatrices.blockbanded_rectblocks_trtrs!(A, copy(b)) .===
+                    BlockBandedMatrices.blockbanded_rectblocks_trtrs!(V, copy(b)))
+    @test UpperTriangular(A) \ b ≈ UpperTriangular(V) \ b ≈ UpperTriangular(Matrix(A)) \ b
 end

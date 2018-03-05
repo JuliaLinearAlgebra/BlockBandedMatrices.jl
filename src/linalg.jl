@@ -195,7 +195,7 @@ function block_sizes(V::BlockBandedSubBlockBandedMatrix)
 
     Bs.cumul_sizes[1]
     @assert KR[1] == JR[1] == 1
-    BlockSizes((Bs.cumul_sizes[1][KR[1]:KR[end]+1],Bs.cumul_sizes[1][JR[1]:JR[end]+1]))
+    BlockSizes((Bs.cumul_sizes[1][KR[1]:KR[end]+1],Bs.cumul_sizes[2][JR[1]:JR[end]+1]))
 end
 
 function blockbandwidths(V::BlockBandedSubBlockBandedMatrix)
@@ -455,16 +455,20 @@ function _squaredblocks_mapback(kr, cs)
 end
 
 
+block_banded_sizes(A::BlockBandedMatrix) = A.block_sizes
+block_banded_sizes(A::AbstractMatrix) = BlockBandedSizes(block_sizes(A), blockbandwidths(A)...)
+
 
 function blockbanded_rectblocks_trtrs!(A::AbstractMatrix{T}, b::AbstractVector{T}) where T
     @boundscheck size(A,1) == size(b,1) || throw(BoundsError())
-    bs = squaredblocks(A.block_sizes)
+    bbs = block_banded_sizes(A)
+    bs_square = squaredblocks(bbs)
     l, u = blockbandwidths(A)
-    l_new, u_new = blockbandwidths(bs)
-    cs = bs.block_sizes.cumul_sizes[1]
+    l_new, u_new = blockbandwidths(bs_square)
+    cs = bs_square.block_sizes.cumul_sizes[1]
 
-    KR = A.block_sizes.block_sizes.cumul_sizes[1]
-    JR = A.block_sizes.block_sizes.cumul_sizes[2]
+    KR = bbs.block_sizes.cumul_sizes[1]
+    JR = bbs.block_sizes.cumul_sizes[2]
 
     KR_map = _squaredblocks_mapback(KR, cs)
     JR_map = _squaredblocks_mapback(JR, cs)

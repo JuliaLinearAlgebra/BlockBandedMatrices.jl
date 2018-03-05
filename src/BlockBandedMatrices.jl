@@ -20,7 +20,7 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         isdiag, +, *, -, /, \, strides, zeros, eye, size,
                         unsafe_convert, copy!, fill!, length, done, first, last, next,
                         start, iteratorsize, eltype, getindex, to_indices, to_index,
-                        reindex, _maybetail, tail
+                        reindex, _maybetail, tail, @_propagate_inbounds_meta
 
 import Base.LinAlg: A_ldiv_B!, A_mul_B!
 import Base.BLAS: BlasInt, BlasFloat, @blasfunc, libblas
