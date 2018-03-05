@@ -184,6 +184,8 @@ const BlockBandedSubBlockBandedMatrix{T} =
 
 block_sizes(A::AbstractBlockArray) = A.block_sizes
 block_sizes(A::AbstractBlockBandedMatrix) = A.block_sizes.block_sizes
+nblocks(A::AbstractArray) = nblocks(block_sizes(A)) #TODO: Type piracy
+nblocks(A::AbstractArray, i::Int) = nblocks(block_sizes(A),i)
 
 function block_sizes(V::BlockBandedSubBlockBandedMatrix)
     A = parent(V)
@@ -219,9 +221,83 @@ function blockbandwidth(V::BlockBandedSubBlockBandedMatrix, k::Integer)
     blockbandwidth(A,k)
 end
 
+
+
+####
+# BlockIndexRange subblocks
+####
+
+A_mul_B!(c::AbstractVector{T}, V::BlockBandedBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
+    mul!(c, V, b, one(T), zero(T))
+
+const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int64}}}
+const BlockRangeBlockIndexRangeSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{BlockRange1},BlockSlice{BlockIndexRange1}}}
+const BlockIndexRangeBlockIndexRangeSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{BlockIndexRange1},BlockSlice{BlockIndexRange1}}}
+const BlockBandedSubBlock{T} = BlockIndexRangeBlockIndexRangeSubBlockBandedMatrix{T}
+
+function unsafe_convert(::Type{Ptr{T}}, V::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}) where T
+    A = parent(V)
+    JR = parentindexes(V)[2]
+    K = first(parentindexes(V)[1].block)
+    J = Block(JR)
+    K ∈ blockcolrange(A, J) || throw(ArgumentError("Pointer is only defined when inside colrange"))
+    p = unsafe_convert(Ptr{T}, view(A, K, J))
+    p + sizeof(T)*(JR.block.indices[1][1]-1)*stride(V,2)
+end
+
+strides(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix) =
+    (1,parent(V).block_sizes.block_strides[Int(Block(parentindexes(V)[2]))])
+
+struct ShiftedLayout{T,ML<:MemoryLayout} <: MemoryLayout{T}
+    shift::Tuple{Int,Int}  # gives the shift to the start of the memory.
+                           # So shift == (0,0) is equivalent to layout
+                           # shift == (2,1) has the first two rows and first column all zero
+    layout::ML
+end
+
+function MemoryLayout(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}) where T
+    A = parent(V)
+    JR = parentindexes(V)[2]
+    K = first(parentindexes(V)[1].block)
+    J = Block(JR)
+    K ∈ blockcolrange(A, J) || throw(ArgumentError("TODO: Use ShiftedLayout"))
+    ColumnMajor{T}()
+end
+
+*(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}, b::AbstractVector{T}) where T<:BlasFloat =
+    mul!(Array{T}(uninitialized, size(V,1)), V, b, one(T), zero(T))
+
+BLAS.gemv!(trans::Char, α::T, A::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}, X::AbstractVector{T}, β::T, Y::AbstractVector{T}) where T <: BlasFloat =
+    gemv!(trans, α, A, X, β, Y)
+
+
+function unsafe_convert(::Type{Ptr{T}}, V::BlockBandedSubBlock{T}) where T
+    A = parent(V)
+    JR = parentindexes(V)[2]
+    K = parentindexes(V)[1].block.block
+    kr = parentindexes(V)[1].block.indices[1]
+    J = parentindexes(V)[2].block.block
+    jr = parentindexes(V)[2].block.indices[1]
+    p = unsafe_convert(Ptr{T}, view(A, K, J))
+    p + sizeof(T)*(kr[1]-1 + (jr[1]-1)*stride(V,2))
+end
+
+strides(V::BlockBandedSubBlock) =
+    (1,parent(V).block_sizes.block_strides[Int(parentindexes(V)[2].block.block)])
+
+MemoryLayout(V::BlockBandedSubBlock{T}) where T = ColumnMajor{T}()
+*(V::BlockBandedSubBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
+    mul!(Array{T}(uninitialized, size(V,1)), V, b, one(T), zero(T))
+BLAS.gemv!(trans::Char, α::T, A::BlockBandedSubBlock{T}, X::AbstractVector{T}, β::T, Y::AbstractVector{T}) where T <: BlasFloat =
+    gemv!(trans, α, A, X, β, Y)
+
+
 ######
 # back substitution
 ######
+
+@inline A_ldiv_B!(U::UpperTriangular{T, BLOCK}, b::StridedVecOrMat{T}) where BLOCK <: Union{BlockBandedBlock{T}, BlockBandedSubBlock{T}} where T<:BlasFloat =
+    trtrs!('U', 'N', 'N', parent(U), b)
 
 @inline A_ldiv_B!(U::UpperTriangular{T, BlockBandedBlock{T}}, b::StridedVecOrMat{T}) where {T<:BlasFloat} =
     trtrs!('U', 'N', 'N', parent(U), b)
@@ -268,31 +344,28 @@ function blockbanded_squareblocks_trtrs!(A::AbstractMatrix, b::AbstractVector)
     b
 end
 
-
-####
-
-const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int64}}}
-const DenseBlockSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{Block{1,Int}},BlockSlice{BlockIndexRange1}}}
-const DenseBlockRangeSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{BlockRange1},BlockSlice{BlockIndexRange1}}}
-
-function unsafe_convert(::Type{Ptr{T}}, V::DenseBlockRangeSubBlockBandedMatrix{T}) where T
+# Write U as [U_11 U_12; 0 U_22] and b = [b_1,b_2,b_3] to use efficient block versions
+function A_ldiv_B!(U::UpperTriangular{T,SV},
+                   b::AbstractVector{T}) where SV<:SubArray{T,2,BlockBandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}} where T
+    V = parent(U)
     A = parent(V)
-    JR = parentindexes(V)[2]
-    K = first(parentindexes(V)[1].block)
-    J = Block(JR)
-    K ∈ blockcolrange(A, J) || throw(ArgumentError("Pointer is only defined when inside colrange"))
-    p = unsafe_convert(Ptr{T}, view(A, K, J))
-    p + sizeof(T)*(JR.block.indices[1][1]-1)*stride(V,2)
+    kr, jr = parentindexes(V)
+
+    N,  N_n = _find_block(block_sizes(A), 1, kr[end])
+
+    V_22 = view(A, Block(N)[1:N_n],  Block(N)[1:N_n])
+    b_2 = view(b, parentindexes(V_22)[1].indices)
+    A_ldiv_B!(UpperTriangular(V_22), b_2)
+
+    V_12 = view(A, blockcolstart(A, N):Block(N-1),  Block(N)[1:N_n])
+    b̃_1 = view(b, parentindexes(V_12)[1].indices)
+    mul!(b̃_1, V_12, b_2, -one(T), one(T))
+
+    V_11 = view(A, Block.(1:N-1), Block.(1:N-1))
+    b_1 = view(b, parentindexes(V_11)[1].indices)
+    A_ldiv_B!(UpperTriangular(V_11), b_1)
+    b
 end
-
-strides(V::DenseBlockRangeSubBlockBandedMatrix) = (1,parent(V).block_sizes.block_strides[Int(Block(parentindexes(V)[2]))])
-
-struct ShiftedLayout{T,ML<:MemoryLayout} <: MemoryLayout{T}
-    shift::Int  # gives the shift to the start of the memory. So shift == 0 implies that the first rows are all zeor
-    layout::ML
-end
-
-MemoryLayout(V::DenseBlockRangeSubBlockBandedMatrix{T}) where T = ColumnMajor{T}()
 
 
 # function blockbanded_rectblocks_trtrs!(R::BlockBandedMatrix{T},b::Vector) where T
