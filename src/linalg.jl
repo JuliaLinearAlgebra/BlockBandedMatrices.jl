@@ -144,8 +144,7 @@ function *(A::BlockBandedMatrix{T}, B::BlockBandedMatrix{V}) where {T<:Number,V<
 
     l, u = A.l+B.l, A.u+B.u
     A_mul_B!(BlockBandedMatrix{promote_type(T,V)}(uninitialized,
-                                    BlockBandedSizes(BlockSizes((Arows,Bcols)), l, u),
-                                     l, u),
+                                    BlockBandedSizes(BlockSizes((Arows,Bcols)), l, u)),
              A, B)
 end
 
@@ -231,9 +230,56 @@ A_mul_B!(c::AbstractVector{T}, V::BlockBandedBlock{T}, b::AbstractVector{T}) whe
     mul!(c, V, b, one(T), zero(T))
 
 const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int64}}}
+const BlockRangeBlockSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{BlockRange1},BlockSlice{Block{1,Int}}}}
 const BlockRangeBlockIndexRangeSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{BlockRange1},BlockSlice{BlockIndexRange1}}}
 const BlockIndexRangeBlockIndexRangeSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{BlockIndexRange1},BlockSlice{BlockIndexRange1}}}
 const BlockBandedSubBlock{T} = BlockIndexRangeBlockIndexRangeSubBlockBandedMatrix{T}
+
+
+function MemoryLayout(V::BlockRangeBlockSubBlockBandedMatrix{T}) where T
+    A = parent(V)
+    KR = parentindexes(V)[1].block
+    J = parentindexes(V)[2].block
+    first(KR) ∈ blockcolrange(A, J) || throw(ArgumentError("TODO: Use ShiftedLayout"))
+    ColumnMajor{T}()
+end
+
+strides(V::BlockRangeBlockSubBlockBandedMatrix) =
+    (1,parent(V).block_sizes.block_strides[Int(parentindexes(V)[2].block)])
+
+function unsafe_convert(::Type{Ptr{T}}, V::BlockRangeBlockSubBlockBandedMatrix{T}) where T
+    A = parent(V)
+    JR = parentindexes(V)[2]
+    KR = parentindexes(V)[1].block
+    J = parentindexes(V)[2].block
+    p = unsafe_convert(Ptr{T}, view(A, first(KR), J))
+end
+
+*(V::BlockRangeBlockSubBlockBandedMatrix{T}, b::AbstractVector{T}) where T<:BlasFloat =
+    mul!(Array{T}(uninitialized, size(V,1)), V, b, one(T), zero(T))
+
+BLAS.gemv!(trans::Char, α::T, A::BlockRangeBlockSubBlockBandedMatrix{T}, X::AbstractVector{T}, β::T, Y::AbstractVector{T}) where T <: BlasFloat =
+    gemv!(trans, α, A, X, β, Y)
+
+
+# struct ShiftedLayout{T,ML<:MemoryLayout} <: MemoryLayout{T}
+#     shift::Tuple{Int,Int}  # gives the shift to the start of the memory.
+#                            # So shift == (0,0) is equivalent to layout
+#                            # shift == (2,1) has the first two rows and first column all zero
+#     layout::ML
+# end
+
+function MemoryLayout(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}) where T
+    A = parent(V)
+    JR = parentindexes(V)[2]
+    K = first(parentindexes(V)[1].block)
+    J = Block(JR)
+    K ∈ blockcolrange(A, J) || throw(ArgumentError("TODO: Use ShiftedLayout"))
+    ColumnMajor{T}()
+end
+
+strides(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix) =
+    (1,parent(V).block_sizes.block_strides[Int(Block(parentindexes(V)[2]))])
 
 function unsafe_convert(::Type{Ptr{T}}, V::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}) where T
     A = parent(V)
@@ -243,25 +289,6 @@ function unsafe_convert(::Type{Ptr{T}}, V::BlockRangeBlockIndexRangeSubBlockBand
     K ∈ blockcolrange(A, J) || throw(ArgumentError("Pointer is only defined when inside colrange"))
     p = unsafe_convert(Ptr{T}, view(A, K, J))
     p + sizeof(T)*(JR.block.indices[1][1]-1)*stride(V,2)
-end
-
-strides(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix) =
-    (1,parent(V).block_sizes.block_strides[Int(Block(parentindexes(V)[2]))])
-
-struct ShiftedLayout{T,ML<:MemoryLayout} <: MemoryLayout{T}
-    shift::Tuple{Int,Int}  # gives the shift to the start of the memory.
-                           # So shift == (0,0) is equivalent to layout
-                           # shift == (2,1) has the first two rows and first column all zero
-    layout::ML
-end
-
-function MemoryLayout(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}) where T
-    A = parent(V)
-    JR = parentindexes(V)[2]
-    K = first(parentindexes(V)[1].block)
-    J = Block(JR)
-    K ∈ blockcolrange(A, J) || throw(ArgumentError("TODO: Use ShiftedLayout"))
-    ColumnMajor{T}()
 end
 
 *(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}, b::AbstractVector{T}) where T<:BlasFloat =
@@ -319,11 +346,7 @@ function A_ldiv_B!(U::UpperTriangular{T, BM}, b::StridedVector) where BM <: Unio
     end
 end
 
-
-
-
-
-function blockbanded_squareblocks_trtrs!(A::AbstractMatrix, b::AbstractVector)
+function blockbanded_squareblocks_trtrs!(A::AbstractMatrix{T}, b::AbstractVector{T}) where T
     @boundscheck size(A,1) == size(b,1) || throw(BoundsError())
 
     n = size(b,1)
@@ -332,22 +355,39 @@ function blockbanded_squareblocks_trtrs!(A::AbstractMatrix, b::AbstractVector)
     N = nblocks(Bs,1)
 
     for K = N:-1:1
-        kr = globalrange(Bs, (K,K))[1]
-        v = view(b, kr)
-        for J = min(N,Int(blockrowstop(A,K))):-1:K+1
-            jr = globalrange(Bs, (K,J))[2]
-            gemv!('N', -one(eltype(A)), view(A,Block(K),Block(J)), view(b, jr), one(eltype(A)), v)
-        end
-        @inbounds A_ldiv_B!(UpperTriangular(view(A,Block(K),Block(K))), v)
+        V_22 = view(A, Block(K),  Block(K))
+        b_2 = view(b, parentindexes(V_22)[1].indices)
+        A_ldiv_B!(UpperTriangular(V_22), b_2)
+
+        V_12 = view(A, blockcolstart(A, K):Block(K-1), Block(K))
+        b̃_1 = view(b, parentindexes(V_12)[1].indices)
+        mul!(b̃_1, V_12, b_2, -one(T), one(T))
     end
 
     b
+end
+
+# we want to make sure the block are matching up to the blocksize
+function hasmatchingblocks(V::SubArray{T,2,BlockBandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}}) where T
+    A = parent(V)
+    kr, jr = parentindexes(V)
+    N,  N_n = _find_block(block_sizes(A), 1, kr[end])
+    M,  M_n = _find_block(block_sizes(A), 2, jr[end])
+    N == M && hasmatchingblocks(view(A, Block.(1:N), Block.(1:N)))
 end
 
 # Write U as [U_11 U_12; 0 U_22] and b = [b_1,b_2,b_3] to use efficient block versions
 function A_ldiv_B!(U::UpperTriangular{T,SV},
                    b::AbstractVector{T}) where SV<:SubArray{T,2,BlockBandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}} where T
     V = parent(U)
+    if hasmatchingblocks(V)
+        blockbanded_squareblocks_intrange_trtrs!(V, b)
+    else
+        blockbanded_rectblocks_intrange_trtrs!(V, b)
+    end
+end
+
+function blockbanded_squareblocks_intrange_trtrs!(V::AbstractMatrix{T}, b::AbstractVector{T}) where T
     A = parent(V)
     kr, jr = parentindexes(V)
 
@@ -364,6 +404,88 @@ function A_ldiv_B!(U::UpperTriangular{T,SV},
     V_11 = view(A, Block.(1:N-1), Block.(1:N-1))
     b_1 = view(b, parentindexes(V_11)[1].indices)
     A_ldiv_B!(UpperTriangular(V_11), b_1)
+    b
+end
+
+
+function squaredblocks(bs::BlockSizes{2})
+    bs.cumul_sizes[1][end] == bs.cumul_sizes[2][end] || throw(ArgumentError())
+    new_blocks = sort(union(bs.cumul_sizes...))
+    BlockSizes((new_blocks,new_blocks))
+end
+
+function _squaredblocks_newbandwidth(l, kr, jr, cs)
+    l_ret = 0
+    j_old = 2
+    for j = 2:length(cs)
+        j_old = 2
+        while cs[j] > jr[j_old]
+            j_old += 1
+        end
+        k_old = kr[min(j_old+l,length(kr))]
+        l_ret = max(l_ret,findfirst(cs, k_old)-j)
+    end
+    l_ret
+end
+
+function squaredblocks(bs::BlockBandedSizes)
+    l, u = blockbandwidths(bs)
+
+
+    kr, jr = bs.block_sizes.cumul_sizes
+    kr[end] == jr[end] || throw(ArgumentError())
+
+
+    new_bs = squaredblocks(bs.block_sizes)
+    cs = new_bs.cumul_sizes[1]
+
+    new_l, new_u = _squaredblocks_newbandwidth(l, kr, jr, cs), _squaredblocks_newbandwidth(u, jr, kr, cs)
+    BlockBandedSizes(new_bs, new_l, new_u)
+end
+
+function _squaredblocks_mapback(kr, cs)
+    N = length(cs)-1
+    ret = Vector{BlockIndexRange1}(uninitialized, N)
+    K_old = 1
+    for K = 1:N
+        cs[K] ≥ kr[K_old+1] && (K_old += 1)
+        ret[K] = Block(K_old)[cs[K]-kr[K_old]+1:cs[K+1]-kr[K_old]]
+    end
+    ret
+end
+
+
+
+function blockbanded_rectblocks_trtrs!(A::AbstractMatrix{T}, b::AbstractVector{T}) where T
+    @boundscheck size(A,1) == size(b,1) || throw(BoundsError())
+    bs = squaredblocks(A.block_sizes)
+    l, u = blockbandwidths(A)
+    l_new, u_new = blockbandwidths(bs)
+    cs = bs.block_sizes.cumul_sizes[1]
+
+    KR = A.block_sizes.block_sizes.cumul_sizes[1]
+    JR = A.block_sizes.block_sizes.cumul_sizes[2]
+
+    KR_map = _squaredblocks_mapback(KR, cs)
+    JR_map = _squaredblocks_mapback(JR, cs)
+
+    N = length(KR_map)
+
+    for J = N:-1:1
+        V_22 = view(A, KR_map[J], JR_map[J])
+        b_2  = view(b, parentindexes(V_22)[1].indices)
+        A_ldiv_B!(UpperTriangular(V_22), b_2)
+
+        for K = max(1,J-u_new):J-1
+            if KR_map[K].block ≥ JR_map[J].block - u # inside old blockbandwith
+                V_12 = view(A, KR_map[K], JR_map[J])
+                kr_sub = parentindexes(V_12)[1].indices
+                b̃_1 = view(b, kr_sub)
+                mul!(b̃_1, V_12, b_2, -one(T), one(T))
+            end
+        end
+    end
+
     b
 end
 
