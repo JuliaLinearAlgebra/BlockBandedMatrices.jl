@@ -1,6 +1,9 @@
 using BlockArrays, BlockBandedMatrices, Compat.Test
     import BandedMatrices: BandError
-    import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout
+    import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!,
+                                blockcolstop, blockrowstop, BlockSizes
+
+
 
 
 @testset "BlockBandedMatrix linear algebra" begin
@@ -113,4 +116,115 @@ end
 
     @time BLAS.axpy!(1.0, A, B)
     @test B ≈ AB
+end
+
+
+
+@testset "SubBlockBandedMatrix linear algebra" begin
+    l , u = 1,1
+    N = M = 5
+    cols = rows = 1:N
+    A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+        A.data .= randn(length(A.data))
+
+
+
+    V = view(A, Block.(1:3), Block.(1:3))
+
+    @test blockrowstop(V,1) == Block(2)
+    @test blockcolstop(V,1) == Block(2)
+
+    @test BlockBandedMatrices.block_sizes(V) == BlockSizes(1:3, 1:3)
+
+    b = randn(size(V,1))
+    r = UpperTriangular(Matrix(V)) \ b
+    @test BlockBandedMatrices.blockbanded_squareblocks_trtrs!(V, copy(b)) ≈ r
+
+    @test all(A_ldiv_B!(UpperTriangular(V), copy(b)) .=== BlockBandedMatrices.blockbanded_squareblocks_trtrs!(V, copy(b)))
+
+    V = view(A, Block.(2:3), Block(3))
+    @test unsafe_load(pointer(V)) == A[2,4]
+    @test unsafe_load(pointer(V)+sizeof(Float64)*stride(V,2)) == A[2,5]
+    @test MemoryLayout(V) == BandedMatrices.ColumnMajor{Float64}()
+
+    @test size(V) == (5,3)
+    b = randn(size(V,2))
+    @test all(V*b .=== Matrix(V)*b .=== BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(uninitialized, size(V,1))))
+
+    V = view(A, Block.(1:3), Block(3)[2:3])
+    @test_throws ArgumentError pointer(V)
+    @test_throws ArgumentError MemoryLayout(V)
+
+    b = randn(size(A,1))
+    @test UpperTriangular(A) \ b ≈ UpperTriangular(Matrix(A)) \ b
+
+    V = view(A, Block.(2:3), Block(3)[2:3])
+    @test unsafe_load(pointer(V)) == A[2,5]
+    @test unsafe_load(pointer(V)+sizeof(Float64)*stride(V,2)) == A[2,6]
+    @test MemoryLayout(V) == BandedMatrices.ColumnMajor{Float64}()
+
+    @test size(V) == (5,2)
+    b = randn(size(V,2))
+    @test all(V*b .=== Matrix(V)*b .=== BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(uninitialized, size(V,1))))
+
+    V = view(A, Block.(1:3), Block(3)[2:3])
+    @test_throws ArgumentError pointer(V)
+    @test_throws ArgumentError MemoryLayout(V)
+
+    b = randn(size(A,1))
+    @test UpperTriangular(A) \ b ≈ UpperTriangular(Matrix(A)) \ b
+
+    V_22 = view(A, Block(N)[1:N],  Block(N)[1:N])
+    @test MemoryLayout(V_22) == BandedMatrices.ColumnMajor{Float64}()
+
+    V = view(A, Block(N),  Block(N))
+    V_22 = view(A, Block(N)[1:N],  Block(N)[1:N])
+    @test unsafe_load(pointer(V_22)) == V_22[1,1] == V[1,1]
+    @test strides(V_22) == strides(V) == (1,9)
+    b = randn(N)
+    @test all(V*b .=== V_22*b .=== Matrix(V)*b .===
+        BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(uninitialized, size(V,1))))
+
+    @test all(UpperTriangular(V_22) \ b .=== A_ldiv_B!(UpperTriangular(V_22) , copy(b)) .=== A_ldiv_B!(UpperTriangular(V) , copy(b)) .===
+        A_ldiv_B!(UpperTriangular(Matrix(V_22)) , copy(b)))
+
+
+    V = view(A, Block.(rows), Block.(cols))
+    V2 = view(A, 1:size(A,1), 1:size(A,2))
+    b = randn(size(V,1))
+
+    @test all(Matrix(V) .=== Matrix(V2))
+    UpperTriangular(V2) \ b ≈ UpperTriangular(V) \ b
+
+
+    # l , u = 1,1
+    # N = M = 2
+    # cols = rows = 1:100
+    # A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+    #     A.data .= randn(length(A.data))
+    #     for k=1:size(A,1)
+    #         A[k,k] += 10
+    #     end
+    #
+    #
+    # V = view(A, Block.(rows), Block.(cols))
+    # V2 = view(A, 1:size(A,1), 1:size(A,2))
+    # b = randn(size(V,1))
+    #
+    # @test UpperTriangular(V2) \ b  ≈ UpperTriangular(V) \ b
+
+end
+
+@testset "Rectangular blocks BlockBandedMatrix linear algebra" begin
+    l , u = 0,1
+    rows = [3,4,5]
+    cols = [2,3,4,3]
+
+    A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+        A.data .= randn(length(A.data))
+
+
+    b = randn(size(A,1))
+    @test all(UpperTriangular(A) \ b .=== BlockBandedMatrices.blockbanded_rectblocks_trtrs!(A, copy(b)))
+    @test UpperTriangular(A) \ b ≈ UpperTriangular(Matrix(A)) \ b
 end

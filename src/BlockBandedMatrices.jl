@@ -5,7 +5,7 @@ using BlockArrays, BandedMatrices, FillArrays, Compat
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,
-                        _find_block
+                        _unblock, _find_block
 
 import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
@@ -18,15 +18,21 @@ import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         isdiag, +, *, -, /, \, strides, zeros, eye, size,
-                        unsafe_convert, copy!, fill!
+                        unsafe_convert, copy!, fill!, length, done, first, last, next,
+                        start, iteratorsize, eltype, getindex, to_indices, to_index,
+                        reindex, _maybetail, tail
 
 import Base.LinAlg: A_ldiv_B!, A_mul_B!
 import Base.BLAS: BlasInt, BlasFloat, @blasfunc, libblas
 import Base.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
 
+import Compat: axes
+
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths
+
+include("blockindexrange.jl")
 
 include("lapack.jl")
 
