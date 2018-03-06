@@ -5,7 +5,7 @@ using BlockArrays, BandedMatrices, FillArrays, Compat
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,
-                        _unblock, _find_block
+                        _unblock, _find_block, BlockIndexRange
 
 import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
@@ -31,8 +31,6 @@ import Compat: axes
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths
-
-include("blockindexrange.jl")
 
 include("lapack.jl")
 
