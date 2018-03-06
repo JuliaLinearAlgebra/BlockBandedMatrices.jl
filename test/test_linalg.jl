@@ -1,7 +1,7 @@
 using BlockArrays, BlockBandedMatrices, Compat.Test
     import BandedMatrices: BandError
     import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!,
-                                blockcolstop, blockrowstop, BlockSizes
+                                blockcolstop, blockrowstop, BlockSizes, block_sizes
 
 
 
@@ -195,24 +195,6 @@ end
 
     @test all(Matrix(V) .=== Matrix(V2))
     UpperTriangular(V2) \ b ≈ UpperTriangular(V) \ b
-
-
-    # l , u = 1,1
-    # N = M = 2
-    # cols = rows = 1:100
-    # A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
-    #     A.data .= randn(length(A.data))
-    #     for k=1:size(A,1)
-    #         A[k,k] += 10
-    #     end
-    #
-    #
-    # V = view(A, Block.(rows), Block.(cols))
-    # V2 = view(A, 1:size(A,1), 1:size(A,2))
-    # b = randn(size(V,1))
-    #
-    # @test UpperTriangular(V2) \ b  ≈ UpperTriangular(V) \ b
-
 end
 
 @testset "Rectangular blocks BlockBandedMatrix linear algebra" begin
@@ -235,4 +217,10 @@ end
                     BlockBandedMatrices.blockbanded_rectblocks_trtrs!(A, copy(b)) .===
                     BlockBandedMatrices.blockbanded_rectblocks_trtrs!(V, copy(b)))
     @test UpperTriangular(A) \ b ≈ UpperTriangular(V) \ b ≈ UpperTriangular(Matrix(A)) \ b
+
+    V = view(A, 1:11, 1:11)
+    b = randn(size(V,1))
+    @test all(UpperTriangular(V) \ b .===
+                    BlockBandedMatrices.blockbanded_rectblocks_intrange_trtrs!(V, copy(b)))
+    @test UpperTriangular(V) \ b ≈ UpperTriangular(Matrix(V)) \ b ≈ UpperTriangular(A[1:11,1:11]) \ b
 end

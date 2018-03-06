@@ -409,7 +409,6 @@ end
 
 
 function squaredblocks(bs::BlockSizes{2})
-    bs.cumul_sizes[1][end] == bs.cumul_sizes[2][end] || throw(ArgumentError())
     new_blocks = sort(union(bs.cumul_sizes...))
     BlockSizes((new_blocks,new_blocks))
 end
@@ -433,7 +432,7 @@ function squaredblocks(bs::BlockBandedSizes)
 
 
     kr, jr = bs.block_sizes.cumul_sizes
-    kr[end] == jr[end] || throw(ArgumentError())
+    kr[end] == jr[end] || throw(ArgumentError("Can only turn a square matrix into squared blocks"))
 
 
     new_bs = squaredblocks(bs.block_sizes)
@@ -467,8 +466,7 @@ function blockbanded_rectblocks_trtrs!(A::AbstractMatrix{T}, b::AbstractVector{T
     l_new, u_new = blockbandwidths(bs_square)
     cs = bs_square.block_sizes.cumul_sizes[1]
 
-    KR = bbs.block_sizes.cumul_sizes[1]
-    JR = bbs.block_sizes.cumul_sizes[2]
+    KR, JR = bbs.block_sizes.cumul_sizes
 
     KR_map = _squaredblocks_mapback(KR, cs)
     JR_map = _squaredblocks_mapback(JR, cs)
@@ -492,6 +490,72 @@ function blockbanded_rectblocks_trtrs!(A::AbstractMatrix{T}, b::AbstractVector{T
 
     b
 end
+
+# Make KR stop at size n
+function _cumul_maxsize!(KR, n)
+    for k in eachindex(KR)
+        if KR[k] ≥ n+1
+            resize!(KR, k-1)
+            push!(KR, n+1)
+            break
+        end
+    end
+    KR
+end
+
+function squaredblocks(bs::BlockBandedSizes, n::Int)
+    l, u = blockbandwidths(bs)
+    kr, jr = bs.block_sizes.cumul_sizes
+    new_bs = squaredblocks(bs.block_sizes)
+    cs = new_bs.cumul_sizes[1]
+    _cumul_maxsize!(cs,n)
+    new_l, new_u = _squaredblocks_newbandwidth(l, kr, jr, cs), _squaredblocks_newbandwidth(u, jr, kr, cs)
+    BlockBandedSizes(new_bs, new_l, new_u)
+end
+
+
+
+function blockbanded_rectblocks_intrange_trtrs!(V::AbstractMatrix{T}, b::AbstractVector{T}) where T
+    @assert 1 == first(parentindexes(V)[1]) == first(parentindexes(V)[2])
+    P = parent(V)
+    n, m = size(V)
+    N, N_n = _find_block(block_sizes(P), 1, n)
+    M, M_n = _find_block(block_sizes(P), 2, m)
+
+    A = view(P, Block.(1:N), Block.(1:M))
+    bbs = block_banded_sizes(A)
+    KR, JR = bbs.block_sizes.cumul_sizes
+    bs_square = squaredblocks(bbs, n)
+    l_new, u_new = blockbandwidths(bs_square)
+
+    cs = bs_square.block_sizes.cumul_sizes[1]
+    KR_map = _squaredblocks_mapback(KR, cs)
+    JR_map = _squaredblocks_mapback(JR, cs)
+
+    l, u = blockbandwidths(bbs)
+
+    l_new, u_new = blockbandwidths(bs_square)
+
+    N = length(KR_map)
+
+    for J = N:-1:1
+        V_22 = view(A, KR_map[J], JR_map[J])
+        b_2  = view(b, parentindexes(V_22)[1].indices)
+        A_ldiv_B!(UpperTriangular(V_22), b_2)
+
+        for K = max(1,J-u_new):J-1
+            if KR_map[K].block ≥ JR_map[J].block - u # inside old blockbandwith
+                V_12 = view(A, KR_map[K], JR_map[J])
+                kr_sub = parentindexes(V_12)[1].indices
+                b̃_1 = view(b, kr_sub)
+                mul!(b̃_1, V_12, b_2, -one(T), one(T))
+            end
+        end
+    end
+
+    b
+end
+
 
 
 # function blockbanded_rectblocks_trtrs!(R::BlockBandedMatrix{T},b::Vector) where T
