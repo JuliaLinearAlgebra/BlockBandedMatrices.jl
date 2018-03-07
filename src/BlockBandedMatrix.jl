@@ -107,7 +107,7 @@ end
 
 function BlockBandedMatrix{T}(Z::Zeros, block_sizes::BlockBandedSizes) where T
    if size(Z) ≠ size(block_sizes)
-       throw(DimensionMismatch("Size of input $(size(Z)) must be consistent with $(sum.(dims))"))
+       throw(DimensionMismatch("Size of input $(size(Z)) must be consistent with $(size(block_sizes))"))
    end
    _BlockBandedMatrix(zeros(T, bb_numentries(block_sizes)), block_sizes)
 end

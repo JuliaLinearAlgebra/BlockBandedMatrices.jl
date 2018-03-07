@@ -223,4 +223,16 @@ end
     @test all(UpperTriangular(V) \ b .===
                     BlockBandedMatrices.blockbanded_rectblocks_intrange_trtrs!(V, copy(b)))
     @test UpperTriangular(V) \ b ≈ UpperTriangular(Matrix(V)) \ b ≈ UpperTriangular(A[1:11,1:11]) \ b
+
+    # bug from SingularIntegralEquations, fixed by k_old check in _squaredblocks_newbandwidth
+    A = BlockBandedMatrix{Float64}(uninitialized, ([5; fill(4,470)], [7; fill(4,368)]), (102,269))
+        A.data .= randn(length(A.data))
+        for k = 1:min(size(A,1), size(A,2))
+            A[k,k] += 10
+        end
+
+    V = view(A, 1:400,1:400)
+    b = randn(400)
+    @test all(UpperTriangular(V) \ b .=== BlockBandedMatrices.blockbanded_rectblocks_intrange_trtrs!(V, copy(b)))
+    @test UpperTriangular(V) \ b ≈ UpperTriangular(Matrix(V)) \ b
 end

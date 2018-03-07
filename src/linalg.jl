@@ -422,7 +422,11 @@ function _squaredblocks_newbandwidth(l, kr, jr, cs)
             j_old += 1
         end
         k_old = kr[min(j_old+l,length(kr))]
-        l_ret = max(l_ret,findfirst(cs, k_old)-j)
+        if k_old ≥ last(cs)
+            l_ret = max(l_ret,last(cs)-j)
+        else
+            l_ret = max(l_ret,findfirst(cs, k_old)-j)
+        end
     end
     l_ret
 end
