@@ -72,8 +72,6 @@ end
     C = copy(V)
     BLAS.gemm!('N', 'N', 2.0, V, V, 3.0, C)
     @test C == W
-    BLAS.gemm!('N', 'N', 2.0, V, V, 3.0, V)
-    @test V == W
 
     BLAS.gemm!('N', 'N', 2.0, ones(V), V, 0.0, C)
     @test 2.0*ones(V)*V == C
