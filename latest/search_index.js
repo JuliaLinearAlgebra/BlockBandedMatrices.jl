@@ -17,6 +17,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "index.html#BlockBandedMatrices.BlockBandedMatrix",
+    "page": "Home",
+    "title": "BlockBandedMatrices.BlockBandedMatrix",
+    "category": "type",
+    "text": "BlockBandedMatrix{T}(uninitialized, (rows, cols), (l, u))\n\nreturns an uninitialized sum(rows)×sum(cols) block-banded matrix A of type T with block-bandwidths (l,u) and where A[Block(K,J)] is a Matrix{T} of size rows[K]×cols[J].\n\n\n\n"
+},
+
+{
+    "location": "index.html#BlockBandedMatrices.BandedBlockBandedMatrix",
+    "page": "Home",
+    "title": "BlockBandedMatrices.BandedBlockBandedMatrix",
+    "category": "type",
+    "text": "BandedBlockBandedMatrix{T}(uninitialized, (rows, cols), (l, u), (λ, μ))\n\nreturns an uninitialized sum(rows)×sum(cols) banded-block-banded matrix A of type T with block-bandwidths (l,u) and where A[Block(K,J)] is a BandedMatrix{T} of size rows[K]×cols[J] with bandwidths (λ,μ).\n\n\n\n"
+},
+
+{
     "location": "index.html#Creating-block-banded-and-banded-block-banded-matrices-1",
     "page": "Home",
     "title": "Creating block-banded and banded-block-banded matrices",
@@ -38,6 +54,22 @@ var documenterSearchIndex = {"docs": [
     "title": "BlockBandedMatrices.blockbandwidth",
     "category": "function",
     "text": "blockbandwidth(A,i)\n\nReturns the lower blockbandwidth (i==1) or the upper blockbandwidth (i==2).\n\n\n\n"
+},
+
+{
+    "location": "index.html#BlockBandedMatrices.subblockbandwidths",
+    "page": "Home",
+    "title": "BlockBandedMatrices.subblockbandwidths",
+    "category": "function",
+    "text": "subblockbandwidths(A)\n\nreturns the sub-block bandwidths of A, where A is a banded-block-banded matrix. In other words, A[Block(K,J)] will return a BandedMatrix with bandwidths given by subblockbandwidths(A).\n\n\n\n"
+},
+
+{
+    "location": "index.html#BlockBandedMatrices.subblockbandwidth",
+    "page": "Home",
+    "title": "BlockBandedMatrices.subblockbandwidth",
+    "category": "function",
+    "text": "subblockbandwidth(A, i)\n\nreturns the sub-block lower (i == 1) or upper (i == 2) bandwidth of A, where A is a banded-block-banded matrix. In other words, A[Block(K,J)] will return a BandedMatrix with the returned lower/upper bandwidth.\n\n\n\n"
 },
 
 {
