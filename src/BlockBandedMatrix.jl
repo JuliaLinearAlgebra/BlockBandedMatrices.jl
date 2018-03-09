@@ -101,13 +101,15 @@ end
 @inline BlockBandedMatrix{T}(::Uninitialized, block_sizes::BlockBandedSizes) where T =
     _BlockBandedMatrix(Vector{T}(uninitialized, bb_numentries(block_sizes)), block_sizes)
 
-@doc """
+"""
     BlockBandedMatrix{T}(uninitialized, (rows, cols), (l, u))
 
 returns an uninitialized `sum(rows)`×`sum(cols)` block-banded matrix `A`
 of type `T` with block-bandwidths `(l,u)` and where `A[Block(K,J)]`
 is a `Matrix{T}` of size `rows[K]`×`cols[J]`.
 """
+BlockBandedMatrix
+
 @inline BlockBandedMatrix{T}(::Uninitialized, dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) where T =
     BlockBandedMatrix{T}(uninitialized, BlockBandedSizes(dims..., lu...))
 
