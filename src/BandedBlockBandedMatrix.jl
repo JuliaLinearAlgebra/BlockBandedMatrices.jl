@@ -83,6 +83,13 @@ BandedBlockBandedMatrix{T}(::Uninitialized, block_sizes::BandedBlockBandedSizes)
     _BandedBlockBandedMatrix(
         PseudoBlockArray{T}(uninitialized, block_sizes.data_block_sizes), block_sizes)
 
+@doc """
+    BlockBandedMatrix{T}(uninitialized, (rows, cols), (l, u), (λ, μ))
+
+returns an uninitialized `sum(rows)`×`sum(cols)` banded-block-banded matrix `A`
+of type `T` with block-bandwidths `(l,u)` and where `A[Block(K,J)]`
+is a `BandedMatrix{T}` of size `rows[K]`×`cols[J]` with bandwidths `(λ,μ)`.
+"""
 BandedBlockBandedMatrix{T}(::Uninitialized, dims::NTuple{2, AbstractVector{Int}},
                         lu::NTuple{2, Int}, λμ::NTuple{2, Int}) where T =
     BandedBlockBandedMatrix{T}(uninitialized, BandedBlockBandedSizes(dims..., lu..., λμ...))
@@ -345,8 +352,21 @@ end
 #     end
 # end
 
+@doc """
+    subblockbandwidths(A)
 
+returns the sub-block bandwidths of `A`, where `A` is a banded-block-banded
+matrix. In other words, `A[Block(K,J)]` will return a `BandedMatrix` with
+bandwidths given by `subblockbandwidths(A)`.
+"""
 subblockbandwidths(A::BandedBlockBandedMatrix) = A.λ, A.μ
+@doc """
+    subblockbandwidth(A, i)
+
+returns the sub-block lower (`i == 1`) or upper (`i == 2`) bandwidth of `A`,
+where `A` is a banded-block-banded matrix. In other words, `A[Block(K,J)]` will
+return a `BandedMatrix` with the returned lower/upper bandwidth.
+"""
 subblockbandwidth(A::BandedBlockBandedMatrix, k::Integer) = ifelse(k==1 , A.λ , A.μ)
 
 
