@@ -2,4 +2,4 @@ julia 0.6
 BandedMatrices 0.4
 BlockArrays 0.3.1
 Compat 0.41
-FillArrays 0.0.2
+FillArrays 0.0.1
