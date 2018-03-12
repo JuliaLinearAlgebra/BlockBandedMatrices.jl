@@ -164,13 +164,13 @@ function BandedBlockBandedMatrix{T}(A::AbstractMatrix, block_sizes::BandedBlockB
         B = view(A, kr, jr)
         R = view(ret, K, J)
         rows, cols = size(B)
-        for λ = 1:λμ[1], j = 1:min(rows, cols+1)-λ
+        for λ = 1:λμ[1], j = 1:min(rows-λ, cols)
             view(R, j+λ, j) .= view(B, j+λ, j)
         end
         for i = 1:min(rows, cols)
             view(R, i, i) .= view(B, i, i)
         end
-        for μ = 1:λμ[2], k = 1:min(rows+1, cols)-μ
+        for μ = 1:λμ[2], k = 1:min(rows, cols-μ)
             view(R, k, k+μ) .= view(B, k, k+μ)
         end
     end

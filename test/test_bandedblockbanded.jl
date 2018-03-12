@@ -31,6 +31,20 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Compat.Test
     @test Matrix(B) ==
         [1 2 3 4 0; 6 7 8 9 10; 0 0 13 14 0; 0 0 18 19 20; 0 0 0 24 25]
 
+    l,u,λ,μ = 0,0,4,0
+    cols = 1:2:3
+    rows = 2*cols
+    A = BandedBlockBandedMatrix(ones(sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ))
+    B = [1.0 0.0 0.0 0.0;
+         1.0 0.0 0.0 0.0;
+         0.0 1.0 0.0 0.0;
+         0.0 1.0 1.0 0.0;
+         0.0 1.0 1.0 1.0;
+         0.0 1.0 1.0 1.0;
+         0.0 1.0 1.0 1.0;
+         0.0 0.0 1.0 1.0]
+    @test Matrix(A) == B
+
 end
 
 
