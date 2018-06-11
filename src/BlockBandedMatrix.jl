@@ -7,7 +7,7 @@ struct BlockBandedLayout <: AbstractBlockBandedLayout end
 #### Routines for BandedSizes
 function bb_blockstarts(b_size, l, u)
     N,M = nblocks(b_size)
-    b_start = BandedMatrix{Int}(uninitialized, N, M, l, u)
+    b_start = BandedMatrix{Int}(undef, N, M, l, u)
     -l > u && return b_start
 
     ind_shift = 0
@@ -98,20 +98,20 @@ end
 @inline _BlockBandedMatrix(data::AbstractVector, dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) =
     _BlockBandedMatrix(data, BlockBandedSizes(dims..., lu...))
 
-@inline BlockBandedMatrix{T}(::Uninitialized, block_sizes::BlockBandedSizes) where T =
-    _BlockBandedMatrix(Vector{T}(uninitialized, bb_numentries(block_sizes)), block_sizes)
+@inline BlockBandedMatrix{T}(::UndefInitializer, block_sizes::BlockBandedSizes) where T =
+    _BlockBandedMatrix(Vector{T}(undef, bb_numentries(block_sizes)), block_sizes)
 
 """
-    BlockBandedMatrix{T}(uninitialized, (rows, cols), (l, u))
+    BlockBandedMatrix{T}(undef, (rows, cols), (l, u))
 
-returns an uninitialized `sum(rows)`×`sum(cols)` block-banded matrix `A`
+returns an undef `sum(rows)`×`sum(cols)` block-banded matrix `A`
 of type `T` with block-bandwidths `(l,u)` and where `A[Block(K,J)]`
 is a `Matrix{T}` of size `rows[K]`×`cols[J]`.
 """
 BlockBandedMatrix
 
-@inline BlockBandedMatrix{T}(::Uninitialized, dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) where T =
-    BlockBandedMatrix{T}(uninitialized, BlockBandedSizes(dims..., lu...))
+@inline BlockBandedMatrix{T}(::UndefInitializer, dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) where T =
+    BlockBandedMatrix{T}(undef, BlockBandedSizes(dims..., lu...))
 
 
 

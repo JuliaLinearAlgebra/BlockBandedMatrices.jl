@@ -10,7 +10,7 @@ using BlockArrays, BlockBandedMatrices, Compat.Test
     l , u = 1,1
     N = M = 4
     cols = rows = 1:N
-    A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+    A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
         A.data .= 1:length(A.data)
 
     V = view(A, Block(N), Block(N))
@@ -63,7 +63,7 @@ end
 
 
 
-    A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+    A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
         A.data .= 1:length(A.data)
 
     V = view(A, Block(2,2))
@@ -122,7 +122,7 @@ end
     l , u = 1,1
     N = M = 5
     cols = rows = 1:N
-    A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+    A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
         A.data .= randn(length(A.data))
 
 
@@ -147,7 +147,7 @@ end
 
     @test size(V) == (5,3)
     b = randn(size(V,2))
-    @test all(V*b .=== Matrix(V)*b .=== BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(uninitialized, size(V,1))))
+    @test all(V*b .=== Matrix(V)*b .=== BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
     V = view(A, Block.(1:3), Block(3)[2:3])
     @test_throws ArgumentError pointer(V)
@@ -163,7 +163,7 @@ end
 
     @test size(V) == (5,2)
     b = randn(size(V,2))
-    @test all(V*b .=== Matrix(V)*b .=== BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(uninitialized, size(V,1))))
+    @test all(V*b .=== Matrix(V)*b .=== BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
     V = view(A, Block.(1:3), Block(3)[2:3])
     @test_throws ArgumentError pointer(V)
@@ -181,7 +181,7 @@ end
     @test strides(V_22) == strides(V) == (1,9)
     b = randn(N)
     @test all(V*b .=== V_22*b .=== Matrix(V)*b .===
-        BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(uninitialized, size(V,1))))
+        BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
     @test all(UpperTriangular(V_22) \ b .=== A_ldiv_B!(UpperTriangular(V_22) , copy(b)) .=== A_ldiv_B!(UpperTriangular(V) , copy(b)) .===
         A_ldiv_B!(UpperTriangular(Matrix(V_22)) , copy(b)))
@@ -200,7 +200,7 @@ end
     rows = [3,4,5]
     cols = [2,3,4,3]
 
-    A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+    A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
         A.data .= randn(length(A.data))
 
     b = randn(size(A,1))
@@ -223,7 +223,7 @@ end
     @test UpperTriangular(V) \ b ≈ UpperTriangular(Matrix(V)) \ b ≈ UpperTriangular(A[1:11,1:11]) \ b
 
     # bug from SingularIntegralEquations, fixed by k_old check in _squaredblocks_newbandwidth
-    A = BlockBandedMatrix{Float64}(uninitialized, ([5; fill(4,470)], [7; fill(4,368)]), (102,269))
+    A = BlockBandedMatrix{Float64}(undef, ([5; fill(4,470)], [7; fill(4,368)]), (102,269))
         A.data .= randn(length(A.data))
         for k = 1:min(size(A,1), size(A,2))
             A[k,k] += 10

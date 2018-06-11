@@ -1,4 +1,4 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Compat.Test
+using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Compat, Compat.Test
     import BlockBandedMatrices: _BlockBandedMatrix
 
 @testset "BlockBandedMatrix constructors" begin
@@ -29,7 +29,7 @@ end
     l , u = 1,1
     N = M = 4
     cols = rows = 1:N
-    A = BlockBandedMatrix{Int}(uninitialized, (rows,cols), (l,u))
+    A = BlockBandedMatrix{Int}(undef, (rows,cols), (l,u))
         A.data .= 1:length(A.data)
 
     @test A[1,1] == 1
@@ -91,7 +91,7 @@ end
     l , u = 1,1
     N = M = 10
     cols = rows = 1:N
-    A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+    A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
         A.data .= 1:length(A.data)
 
     A[1,1] = 5
@@ -107,7 +107,7 @@ end
     N = M = 5
     cols = rows = 1:N
 
-    A = BlockBandedMatrix{Int}(uninitialized, (rows,cols), (l,u))
+    A = BlockBandedMatrix{Int}(undef, (rows,cols), (l,u))
     A.data .= 1:length(A.data)
 
     @test A[1,2] == 7
@@ -120,7 +120,7 @@ end
     l , u = 1,1
     N = M = 10
     cols = rows = fill(100,N)
-    A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+    A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
         A.data .= 1:length(A.data)
 
     V = view(A, Block(N,N))
@@ -151,7 +151,7 @@ end
     l , u = 1,1
     N = M = 10
     cols = rows = 1:N
-    A = BlockBandedMatrix{Float64}(uninitialized, (rows,cols), (l,u))
+    A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
         A.data .= randn(length(A.data))
 
     fill!(view(A, Block(2,1)), 2.0)

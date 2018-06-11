@@ -79,22 +79,22 @@ end
 @inline _BandedBlockBandedMatrix(data::AbstractMatrix, block_sizes::BandedBlockBandedSizes) =
     _BandedBlockBandedMatrix(PseudoBlockArray(data, block_sizes.data_block_sizes), block_sizes)
 
-BandedBlockBandedMatrix{T}(::Uninitialized, block_sizes::BandedBlockBandedSizes) where T =
+BandedBlockBandedMatrix{T}(::UndefInitializer, block_sizes::BandedBlockBandedSizes) where T =
     _BandedBlockBandedMatrix(
-        PseudoBlockArray{T}(uninitialized, block_sizes.data_block_sizes), block_sizes)
+        PseudoBlockArray{T}(undef, block_sizes.data_block_sizes), block_sizes)
 
 """
-    BandedBlockBandedMatrix{T}(uninitialized, (rows, cols), (l, u), (λ, μ))
+    BandedBlockBandedMatrix{T}(undef, (rows, cols), (l, u), (λ, μ))
 
-returns an uninitialized `sum(rows)`×`sum(cols)` banded-block-banded matrix `A`
+returns an undef `sum(rows)`×`sum(cols)` banded-block-banded matrix `A`
 of type `T` with block-bandwidths `(l,u)` and where `A[Block(K,J)]`
 is a `BandedMatrix{T}` of size `rows[K]`×`cols[J]` with bandwidths `(λ,μ)`.
 """
 BandedBlockBandedMatrix
 
-BandedBlockBandedMatrix{T}(::Uninitialized, dims::NTuple{2, AbstractVector{Int}},
+BandedBlockBandedMatrix{T}(::UndefInitializer, dims::NTuple{2, AbstractVector{Int}},
                         lu::NTuple{2, Int}, λμ::NTuple{2, Int}) where T =
-    BandedBlockBandedMatrix{T}(uninitialized, BandedBlockBandedSizes(dims..., lu..., λμ...))
+    BandedBlockBandedMatrix{T}(undef, BandedBlockBandedSizes(dims..., lu..., λμ...))
 
 
 # Auxiliary outer constructors

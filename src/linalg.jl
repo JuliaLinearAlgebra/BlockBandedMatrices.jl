@@ -120,7 +120,7 @@ function +(A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{V}) where {
 
     bs = BandedBlockBandedSizes(BlockSizes((Arows,Acols)), max(A.l,B.l), max(A.u,B.u), max(A.λ,B.λ), max(A.μ,B.μ))
     TV = promote_type(T,V)
-    ret = BandedBlockBandedMatrix{TV}(uninitialized, bs)
+    ret = BandedBlockBandedMatrix{TV}(undef, bs)
     copy!(ret, A)
     BLAS.axpy!(one(TV), B, ret)
 end
@@ -143,7 +143,7 @@ function *(A::BlockBandedMatrix{T}, B::BlockBandedMatrix{V}) where {T<:Number,V<
     n,m = size(A,1), size(B,2)
 
     l, u = A.l+B.l, A.u+B.u
-    A_mul_B!(BlockBandedMatrix{promote_type(T,V)}(uninitialized,
+    A_mul_B!(BlockBandedMatrix{promote_type(T,V)}(undef,
                                     BlockBandedSizes(BlockSizes((Arows,Bcols)), l, u)),
              A, B)
 end
@@ -168,7 +168,7 @@ function *(A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{V}) where {
 
     bs = BandedBlockBandedSizes(BlockSizes((Arows,Bcols)), A.l+B.l, A.u+B.u, A.λ+B.λ, A.μ+B.μ)
 
-    A_mul_B!(BandedBlockBandedMatrix{promote_type(T,V)}(uninitialized, bs),
+    A_mul_B!(BandedBlockBandedMatrix{promote_type(T,V)}(undef, bs),
              A, B)
 end
 
@@ -256,7 +256,7 @@ function unsafe_convert(::Type{Ptr{T}}, V::BlockRangeBlockSubBlockBandedMatrix{T
 end
 
 *(V::BlockRangeBlockSubBlockBandedMatrix{T}, b::AbstractVector{T}) where T<:BlasFloat =
-    mul!(Array{T}(uninitialized, size(V,1)), V, b, one(T), zero(T))
+    mul!(Array{T}(undef, size(V,1)), V, b, one(T), zero(T))
 
 BLAS.gemv!(trans::Char, α::T, A::BlockRangeBlockSubBlockBandedMatrix{T}, X::AbstractVector{T}, β::T, Y::AbstractVector{T}) where T <: BlasFloat =
     gemv!(trans, α, A, X, β, Y)
@@ -292,7 +292,7 @@ function unsafe_convert(::Type{Ptr{T}}, V::BlockRangeBlockIndexRangeSubBlockBand
 end
 
 *(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}, b::AbstractVector{T}) where T<:BlasFloat =
-    mul!(Array{T}(uninitialized, size(V,1)), V, b, one(T), zero(T))
+    mul!(Array{T}(undef, size(V,1)), V, b, one(T), zero(T))
 
 BLAS.gemv!(trans::Char, α::T, A::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}, X::AbstractVector{T}, β::T, Y::AbstractVector{T}) where T <: BlasFloat =
     gemv!(trans, α, A, X, β, Y)
@@ -314,7 +314,7 @@ strides(V::BlockBandedSubBlock) =
 
 MemoryLayout(V::BlockBandedSubBlock) = ColumnMajor()
 *(V::BlockBandedSubBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
-    mul!(Array{T}(uninitialized, size(V,1)), V, b, one(T), zero(T))
+    mul!(Array{T}(undef, size(V,1)), V, b, one(T), zero(T))
 BLAS.gemv!(trans::Char, α::T, A::BlockBandedSubBlock{T}, X::AbstractVector{T}, β::T, Y::AbstractVector{T}) where T <: BlasFloat =
     gemv!(trans, α, A, X, β, Y)
 
@@ -448,7 +448,7 @@ end
 
 function _squaredblocks_mapback(kr, cs)
     N = length(cs)-1
-    ret = Vector{BlockIndexRange1}(uninitialized, N)
+    ret = Vector{BlockIndexRange1}(undef, N)
     K_old = 1
     for K = 1:N
         cs[K] ≥ kr[K_old+1] && (K_old += 1)
