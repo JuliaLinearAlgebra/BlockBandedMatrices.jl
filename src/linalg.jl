@@ -236,12 +236,12 @@ const BlockIndexRangeBlockIndexRangeSubBlockBandedMatrix{T} = SubArray{T,2,Block
 const BlockBandedSubBlock{T} = BlockIndexRangeBlockIndexRangeSubBlockBandedMatrix{T}
 
 
-function MemoryLayout(V::BlockRangeBlockSubBlockBandedMatrix{T}) where T
+function MemoryLayout(V::BlockRangeBlockSubBlockBandedMatrix)
     A = parent(V)
     KR = parentindexes(V)[1].block
     J = parentindexes(V)[2].block
     first(KR) ∈ blockcolrange(A, J) || throw(ArgumentError("TODO: Use ShiftedLayout"))
-    ColumnMajor{T}()
+    ColumnMajor()
 end
 
 strides(V::BlockRangeBlockSubBlockBandedMatrix) =
@@ -262,20 +262,20 @@ BLAS.gemv!(trans::Char, α::T, A::BlockRangeBlockSubBlockBandedMatrix{T}, X::Abs
     gemv!(trans, α, A, X, β, Y)
 
 
-# struct ShiftedLayout{T,ML<:MemoryLayout} <: MemoryLayout{T}
+# struct ShiftedLayout{T,ML<:MemoryLayout} <: MemoryLayout
 #     shift::Tuple{Int,Int}  # gives the shift to the start of the memory.
 #                            # So shift == (0,0) is equivalent to layout
 #                            # shift == (2,1) has the first two rows and first column all zero
 #     layout::ML
 # end
 
-function MemoryLayout(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}) where T
+function MemoryLayout(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix)
     A = parent(V)
     JR = parentindexes(V)[2]
     K = first(parentindexes(V)[1].block)
     J = Block(JR)
     K ∈ blockcolrange(A, J) || throw(ArgumentError("TODO: Use ShiftedLayout"))
-    ColumnMajor{T}()
+    ColumnMajor()
 end
 
 strides(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix) =
@@ -312,7 +312,7 @@ end
 strides(V::BlockBandedSubBlock) =
     (1,parent(V).block_sizes.block_strides[Int(parentindexes(V)[2].block.block)])
 
-MemoryLayout(V::BlockBandedSubBlock{T}) where T = ColumnMajor{T}()
+MemoryLayout(V::BlockBandedSubBlock) = ColumnMajor()
 *(V::BlockBandedSubBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
     mul!(Array{T}(uninitialized, size(V,1)), V, b, one(T), zero(T))
 BLAS.gemv!(trans::Char, α::T, A::BlockBandedSubBlock{T}, X::AbstractVector{T}, β::T, Y::AbstractVector{T}) where T <: BlasFloat =

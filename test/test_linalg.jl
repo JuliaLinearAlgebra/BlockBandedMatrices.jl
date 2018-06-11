@@ -143,7 +143,7 @@ end
     V = view(A, Block.(2:3), Block(3))
     @test unsafe_load(pointer(V)) == A[2,4]
     @test unsafe_load(pointer(V)+sizeof(Float64)*stride(V,2)) == A[2,5]
-    @test MemoryLayout(V) == BandedMatrices.ColumnMajor{Float64}()
+    @test MemoryLayout(V) == BandedMatrices.ColumnMajor()
 
     @test size(V) == (5,3)
     b = randn(size(V,2))
@@ -159,7 +159,7 @@ end
     V = view(A, Block.(2:3), Block(3)[2:3])
     @test unsafe_load(pointer(V)) == A[2,5]
     @test unsafe_load(pointer(V)+sizeof(Float64)*stride(V,2)) == A[2,6]
-    @test MemoryLayout(V) == BandedMatrices.ColumnMajor{Float64}()
+    @test MemoryLayout(V) == BandedMatrices.ColumnMajor()
 
     @test size(V) == (5,2)
     b = randn(size(V,2))
@@ -173,7 +173,7 @@ end
     @test UpperTriangular(A) \ b ≈ UpperTriangular(Matrix(A)) \ b
 
     V_22 = view(A, Block(N)[1:N],  Block(N)[1:N])
-    @test MemoryLayout(V_22) == BandedMatrices.ColumnMajor{Float64}()
+    @test MemoryLayout(V_22) == BandedMatrices.ColumnMajor()
 
     V = view(A, Block(N),  Block(N))
     V_22 = view(A, Block(N)[1:N],  Block(N)[1:N])

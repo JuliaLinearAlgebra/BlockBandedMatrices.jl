@@ -1,6 +1,6 @@
 
 
-struct BandedBlockBandedLayout{T} <: AbstractBlockBandedLayout{T} end
+struct BandedBlockBandedLayout <: AbstractBlockBandedLayout end
 
 
 struct BandedBlockBandedSizes
@@ -56,7 +56,7 @@ function _BandedBlockBandedMatrix end
 
 
 # Represents a block banded matrix with banded blocks
-#   similar to BandedMatrix{BandedMatrix{T}}
+#   similar to BandedMatrix{BandedMatrix{T,Matrix{T}}}
 # Here the data is stored by blocks, in a way that is consistent with
 # BandedMatrix
 #
@@ -198,7 +198,7 @@ BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 # BandedBlockBandedMatrix Interface #
 ################################
 
-MemoryLayout(::BandedBlockBandedMatrix{T}) where T = BandedBlockBandedLayout{T}()
+MemoryLayout(::BandedBlockBandedMatrix) = BandedBlockBandedLayout()
 
 isbandedblockbanded(_) = false
 isbandedblockbanded(::BandedBlockBandedMatrix) = true

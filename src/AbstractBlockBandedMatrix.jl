@@ -2,7 +2,7 @@
 
 # A BlockBandedMatrix is a BlockMatrix, but is not a BandedMatrix
 abstract type AbstractBlockBandedMatrix{T} <: AbstractBlockMatrix{T} end
-abstract type AbstractBlockBandedLayout{T} <: MemoryLayout{T} end
+abstract type AbstractBlockBandedLayout <: MemoryLayout end
 
 
 

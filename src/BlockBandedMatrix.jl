@@ -1,7 +1,7 @@
 ####
 # BlockBandedMatrix memory layout
 
-struct BlockBandedLayout{T} <: AbstractBlockBandedLayout{T} end
+struct BlockBandedLayout <: AbstractBlockBandedLayout end
 
 
 #### Routines for BandedSizes
@@ -169,7 +169,7 @@ end
 # BlockBandedMatrix Interface #
 ################################
 
-MemoryLayout(::BlockBandedMatrix{T}) where T = BlockBandedLayout{T}()
+MemoryLayout(::BlockBandedMatrix) = BlockBandedLayout()
 blockbandwidth(A::BlockBandedMatrix, i::Int) = ifelse(i==1, A.l, A.u)
 
 
@@ -314,7 +314,7 @@ blocks(V::BlockBandedBlock)::Tuple{Int,Int} = first(first(parentindexes(V)).bloc
 ######################################
 
 
-MemoryLayout(::BlockBandedBlock{T}) where T = ColumnMajor{T}()
+MemoryLayout(::BlockBandedBlock) = ColumnMajor()
 
 function Base.unsafe_convert(::Type{Ptr{T}}, V::BlockBandedBlock{T}) where T
     A = parent(V)

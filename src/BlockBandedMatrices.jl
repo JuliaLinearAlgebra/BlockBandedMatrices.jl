@@ -30,7 +30,7 @@ import Base.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, c
 import Compat: axes
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
-        subblockbandwidth, subblockbandwidths
+        subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block
 
 include("lapack.jl")
 
