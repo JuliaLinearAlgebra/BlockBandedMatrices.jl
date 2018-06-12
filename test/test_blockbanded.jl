@@ -13,16 +13,16 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Compat, Comp
         zeros(Int, 10, 10)
 
     @test Matrix(BlockBandedMatrix(Eye(sum(rows),sum(cols)), (rows,cols), (l,u))) ==
-        eye(Float64, 10, 10)
+        Matrix{Float64}(I, 10, 10)
 
     @test Matrix(BlockBandedMatrix{Int}(Eye(sum(rows),sum(cols)), (rows,cols), (l,u))) ==
-        eye(Int, 10, 10)
+        Matrix{Int}(I, 10, 10)
 
     @test Matrix(BlockBandedMatrix(I, (rows,cols), (l,u))) ==
-        eye(Float64, 10, 10)
+        Matrix{Float64}(I, 10, 10)
 
     @test Matrix(BlockBandedMatrix{Int}(I, (rows,cols), (l,u))) ==
-        eye(Int, 10, 10)
+        Matrix{Int}(I, 10, 10)
 end
 
 @testset "BlockBandedMatrix block indexing" begin
@@ -101,7 +101,7 @@ end
     A[1,4] = 0
     @test A[1,4] == 0
 
-    @test A[1:10,1:10] ≈ full(A)[1:10,1:10]
+    @test A[1:10,1:10] ≈ Matrix(A)[1:10,1:10]
 
     l , u = 2,1
     N = M = 5

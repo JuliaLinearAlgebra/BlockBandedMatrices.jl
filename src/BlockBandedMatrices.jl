@@ -2,6 +2,7 @@ __precompile__()
 
 module BlockBandedMatrices
 using BlockArrays, BandedMatrices, FillArrays, Compat
+using Compat.LinearAlgebra
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,
@@ -17,17 +18,26 @@ import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
-                        isdiag, +, *, -, /, \, strides, zeros, eye, size,
-                        unsafe_convert, copy!, fill!, length, done, first, last, next,
-                        start, iteratorsize, eltype, getindex, to_indices, to_index,
+                        +, *, -, /, \, strides, zeros, size,
+                        unsafe_convert, fill!, length, done, first, last, next,
+                        start, eltype, getindex, to_indices, to_index,
                         reindex, _maybetail, tail, @_propagate_inbounds_meta
 
-import Base.LinAlg: A_ldiv_B!, A_mul_B!
-import Base.BLAS: BlasInt, BlasFloat, @blasfunc, libblas
-import Base.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
+import Compat.LinearAlgebra: A_ldiv_B!, A_mul_B!, UniformScaling, isdiag
+import Compat.LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas
+import Compat.LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
 
-import Compat: axes
+
+import Compat: axes, copyto!
+
+if VERSION < v"0.7-"
+    const rmul! = scale!
+    const lmul! = scale!
+    const parentindices = parentindexes
+else
+    import LinearAlgebra: rmul!, lmul!
+end
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block

@@ -1,4 +1,4 @@
-using BlockBandedMatrices, Base.Test
+using BlockBandedMatrices, Compat, Compat.Test
 
 include("test_blockbanded.jl")
 include("test_bandedblockbanded.jl")

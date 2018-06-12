@@ -6,21 +6,21 @@ abstract type AbstractBlockBandedLayout <: MemoryLayout end
 
 
 
-doc"""
+"""
     blockbandwidths(A)
 
 Returns a tuple containing the upper and lower blockbandwidth of `A`.
 """
 blockbandwidths(A::AbstractMatrix) = blockbandwidth(A,1),blockbandwidth(A,2)
 
-doc"""
+"""
     blockbandwidth(A,i)
 
 Returns the lower blockbandwidth (`i==1`) or the upper blockbandwidth (`i==2`).
 """
 blockbandwidth(A::AbstractMatrix, k::Integer) = k==1 ? nblocks(A,1)-1 : nblocks(A,2)-1
 
-doc"""
+"""
     bandrange(A)
 
 Returns the range `-blockbandwidth(A,1):blockbandwidth(A,2)`.
@@ -48,7 +48,7 @@ end
 @inline blockrowlength(A::AbstractVecOrMat, i) = max(Int(blockrowstop(A, i)) - Int(blockrowstart(A, i)) + 1, 0)
 
 
-doc"""
+"""
     isblockbanded(A)
 
 returns true if a matrix implements the block banded interface.

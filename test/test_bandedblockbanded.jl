@@ -15,16 +15,16 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Compat.Test
         zeros(Int, 10, 10)
 
     @test Matrix(BandedBlockBandedMatrix(Eye(sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ))) ==
-        eye(Float64, 10, 10)
+        Matrix{Float64}(I, 10, 10)
 
     @test Matrix(BandedBlockBandedMatrix{Int}(Eye(sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ))) ==
-        eye(Int, 10, 10)
+        Matrix{Int}(I, 10, 10)
 
     @test Matrix(BandedBlockBandedMatrix(I, (rows,cols), (l,u), (λ,μ))) ==
-        eye(Float64, 10, 10)
+        Matrix{Float64}(I, 10, 10)
 
     @test Matrix(BandedBlockBandedMatrix{Int}(I, (rows,cols), (l,u), (λ,μ))) ==
-        eye(Int, 10, 10)
+        Matrix{Int}(I, 10, 10)
 
     A = [1 2 3 4 5; 6 7 8 9 10; 11 12 13 14 15; 16 17 18 19 20; 21 22 23 24 25]
     B = BandedBlockBandedMatrix(A, ([2,3], [2,3]), (0,1), (1,1))
@@ -34,7 +34,7 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Compat.Test
     l,u,λ,μ = 0,0,4,0
     cols = 1:2:3
     rows = 2*cols
-    A = BandedBlockBandedMatrix(ones(sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ))
+    A = BandedBlockBandedMatrix(fill(1.0,sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ))
     B = [1.0 0.0 0.0 0.0;
          1.0 0.0 0.0 0.0;
          0.0 1.0 0.0 0.0;
@@ -216,7 +216,7 @@ end
     @test A[1,4] == 0
 
     # TODO: return a BandedMatrix
-    @test A[1:10,1:10] ≈ full(A)[1:10,1:10]
+    @test A[1:10,1:10] ≈ Matrix(A)[1:10,1:10]
 end
 
 
@@ -343,13 +343,13 @@ end
 ### test other types
 @testset "BandedBlockBandedMatrix{Float32}"  begin
     A = BandedBlockBandedMatrix{Float32}(Zeros{Float32}(10,10),
-                                (ones(Int,10), ones(Int,10)), (1,1), (1,1))
+                                (fill(1,10), fill(1,10)), (1,1), (1,1))
 
     @test eltype(A) == Float32
 
 
     A = BandedBlockBandedMatrix(Zeros{Float32}(10,10),
-                                (ones(Int,10), ones(Int,10)), (1,1), (1,1))
+                                (fill(1,10), fill(1,10)), (1,1), (1,1))
 
     @test eltype(A) == Float32
 end
@@ -394,11 +394,11 @@ end
 
 
     B = _BandedBlockBandedMatrix(copy(dataB), (rows,cols), (l+1,u+1), (λ+1,μ+1))
-    copy!(view(B, Block(N,N)), view(A, Block(N,N)))
+    copyto!(view(B, Block(N,N)), view(A, Block(N,N)))
     @test B[Block(N,N)] == A[Block(N,N)]
 
     B = _BandedBlockBandedMatrix(copy(dataB), (rows,cols), (l+1,u+1), (λ+1,μ+1))
-    copy!(B, A)
+    copyto!(B, A)
     @test norm(B[Block(3,1)]) == 0
     @test  B ≈ A
     @test Matrix(B) ≈ Matrix(A)

@@ -27,7 +27,7 @@ end
 
 function bb_blockstrides(b_size, l, u)
     N, M = nblocks(b_size)
-    b_strides = Vector{Int}(M)
+    b_strides = Vector{Int}(undef, M)
     for J=1:M
         KR = max(1,J-u):min(J+l,N)
         if !isempty(KR)
@@ -136,13 +136,13 @@ function BlockBandedMatrix{T}(E::Eye, block_sizes::BlockBandedSizes) where T
         throw(DimensionMismatch("Size of input $(size(E)) must be consistent with $(sum.(dims))"))
     end
     ret = BlockBandedMatrix(Zeros{T}(size(E)), block_sizes)
-    ret[diagind(ret)] = one(T)
+    ret[diagind(ret)] .= one(T)
     ret
 end
 
 function BlockBandedMatrix{T}(A::UniformScaling, block_sizes::BlockBandedSizes) where T
     ret = BlockBandedMatrix(Zeros{T}(size(block_sizes)), block_sizes)
-    ret[diagind(ret)] = convert(T, A.λ)
+    ret[diagind(ret)] .= convert(T, A.λ)
     ret
 end
 
@@ -164,6 +164,8 @@ function convert(::Type{BlockBandedMatrix}, A::AbstractMatrix)
     BlockBandedMatrix(A, BlockBandedSizes(A.block_sizes))
 end
 
+
+BlockBandedMatrix(A::AbstractMatrix) = convert(BlockBandedMatrix, A)
 
 ################################
 # BlockBandedMatrix Interface #
@@ -272,14 +274,14 @@ end
 #     end
 # end
 #
-# @generated function Base.copy!(block_array::BlockArray{T, N, R}, arr::R) where {T,N,R <: AbstractArray}
+# @generated function Base.copyto!(block_array::BlockArray{T, N, R}, arr::R) where {T,N,R <: AbstractArray}
 #     return quote
 #         block_sizes = block_array.block_sizes
 #
 #         @nloops $N i i->(1:nblocks(block_sizes, i)) begin
 #             block_index = @ntuple $N i
 #             indices = globalrange(block_sizes, block_index)
-#             copy!(getblock(block_array, block_index...), arr[indices...])
+#             copyto!(getblock(block_array, block_index...), arr[indices...])
 #         end
 #
 #         return block_array
@@ -306,8 +308,8 @@ const BlockBandedBlock{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice1,
 
 
 # gives the columns of parent(V).data that encode the block
-blocks(V::BlockBandedBlock)::Tuple{Int,Int} = first(first(parentindexes(V)).block.n),
-                                                    first(last(parentindexes(V)).block.n)
+blocks(V::BlockBandedBlock)::Tuple{Int,Int} = first(first(parentindices(V)).block.n),
+                                                    first(last(parentindices(V)).block.n)
 
 ######################################
 # Matrix interface  for Blocks #

@@ -35,6 +35,8 @@ end
 convert(::Type{BlockBandedSizes}, B::BandedBlockBandedSizes) =
     BlockBandedSizes(B.block_sizes, B.l, B.u)
 
+BlockBandedSizes(B::BandedBlockBandedSizes) = convert(BlockBandedSizes, B)
+
 function check_data_sizes(data::AbstractBlockMatrix, B::BandedBlockBandedSizes)
     bs = data.block_sizes
     c_rows, c_cols = bs.cumul_sizes
@@ -105,7 +107,7 @@ BandedBlockBandedMatrix{T}(::UndefInitializer, dims::NTuple{2, AbstractVector{In
 
 function convert(::Type{BandedBlockBandedMatrix{T}}, B::BandedMatrix) where T
     if isdiag(B)
-        _BandedBlockBandedMatrix(copy(B.data), (ones(Int,size(B,1)),ones(Int,size(B,2))), (0,0), (0,0))
+        _BandedBlockBandedMatrix(copy(B.data), (fill(1,size(B,1)),fill(1,size(B,2))), (0,0), (0,0))
     else
         _BandedBlockBandedMatrix(copy(B.data), [size(B,1)], [size(B,2)], (0,0), (B.l,B.u))
     end
@@ -131,14 +133,14 @@ function BandedBlockBandedMatrix{T}(E::Eye, dims::NTuple{2,AbstractVector{Int}},
         throw(DimensionMismatch())
     end
     ret = BandedBlockBandedMatrix(Zeros{T}(E), dims, lu, λμ)
-    ret[diagind(ret)] = one(T)
+    ret[diagind(ret)] .= one(T)
     ret
 end
 
 function BandedBlockBandedMatrix{T}(A::UniformScaling, dims::NTuple{2, AbstractVector{Int}},
                                     lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T
     ret = BandedBlockBandedMatrix(Zeros{T}(sum.(dims)), dims, lu, λμ)
-    ret[diagind(ret)] = convert(T, A.λ)
+    ret[diagind(ret)] .= convert(T, A.λ)
     ret
 end
 
@@ -277,14 +279,14 @@ function Base.fill!(A::BandedBlockBandedMatrix, x)
     A
 end
 
-function Base.scale!(A::BandedBlockBandedMatrix, x::Number)
-    scale!(A.data, x)
+function rmul!(A::BandedBlockBandedMatrix, x::Number)
+    rmul!(A.data, x)
     A
 end
 
 
-function Base.scale!(x::Number, A::BandedBlockBandedMatrix)
-    scale!(x, A.data)
+function lmul!(x::Number, A::BandedBlockBandedMatrix)
+    lmul!(x, A.data)
     A
 end
 
@@ -334,14 +336,14 @@ end
 #     end
 # end
 #
-# @generated function Base.copy!(block_array::BlockArray{T, N, R}, arr::R) where {T,N,R <: AbstractArray}
+# @generated function Base.copyto!(block_array::BlockArray{T, N, R}, arr::R) where {T,N,R <: AbstractArray}
 #     return quote
 #         block_sizes = block_array.block_sizes
 #
 #         @nloops $N i i->(1:nblocks(block_sizes, i)) begin
 #             block_index = @ntuple $N i
 #             indices = globalrange(block_sizes, block_index)
-#             copy!(getblock(block_array, block_index...), arr[indices...])
+#             copyto!(getblock(block_array, block_index...), arr[indices...])
 #         end
 #
 #         return block_array
@@ -386,7 +388,7 @@ const BandedBlockBandedBlock{T} = SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{
 
 function inblockbands(V::BandedBlockBandedBlock)
     A = parent(V)
-    K_sl, J_sl = parentindexes(V)
+    K_sl, J_sl = parentindices(V)
     K, J = K_sl.block, J_sl.block
     -A.l ≤ Int(J-K) ≤ A.u
 end
@@ -400,14 +402,14 @@ end
 
 
 # gives the columns of parent(V).data that encode the block
-blocks(V::BandedBlockBandedBlock)::Tuple{Int,Int} = Int(first(parentindexes(V)).block),
-                                                    Int(last(parentindexes(V)).block)
+blocks(V::BandedBlockBandedBlock)::Tuple{Int,Int} = Int(first(parentindices(V)).block),
+                                                    Int(last(parentindices(V)).block)
 
 
 function dataview(V::BandedBlockBandedBlock)
     A = parent(V)
     u = A.u
-    K_sl, J_sl = parentindexes(V)
+    K_sl, J_sl = parentindices(V)
     K, J = K_sl.block, J_sl.block
     view(A.data, u + K - J + 1, J)
 end
@@ -456,6 +458,9 @@ function convert(::Type{BandedMatrix{T}}, V::BandedBlockBandedBlock) where {T}
 end
 
 convert(::Type{BandedMatrix}, V::BandedBlockBandedBlock) = convert(BandedMatrix{eltype(V)}, V)
+
+BandedMatrix{T}(V::BandedBlockBandedBlock) where T = convert(BandedMatrix{T}, V)
+BandedMatrix(V::BandedBlockBandedBlock) = convert(BandedMatrix, V)
 
 
 

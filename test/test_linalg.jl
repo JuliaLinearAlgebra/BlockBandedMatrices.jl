@@ -20,21 +20,21 @@ using BlockArrays, BlockBandedMatrices, Compat.Test
     @test unsafe_load(pointer(V)) == 46
     @test unsafe_load(pointer(V) + stride(V,2)*sizeof(Float64)) == 53
 
-    v = ones(4)
+    v = fill(1.0,4)
     U = UpperTriangular(view(A, Block(N), Block(N)))
     w = Matrix(U) \ v
     U \ v == w
-    @test v == ones(4)
+    @test v == fill(1.0,4)
     @test A_ldiv_B!(U , v) === v
     @test v == w
 
-    v = ones(size(A,1))
+    v = fill(1.0,size(A,1))
 
     U = UpperTriangular(A)
     w = Matrix(U) \ v
     @test U \ v ≈ w
 
-    @test v == ones(size(A,1))
+    @test v == fill(1.0,size(A,1))
     @test A_ldiv_B!(U, v) === v
     @test v ≈ w
 end
@@ -50,11 +50,6 @@ end
 
     V = view(A, Block(2), Block(2))
     @test unsafe_load(Base.unsafe_convert(Ptr{Float64}, V)) == 13.0
-
-
-
-
-    @which Base.unsafe_convert(Ptr{Float64}, V)
 
     C =  A*A
     @test C isa BandedBlockBandedMatrix
@@ -73,11 +68,11 @@ end
     BLAS.gemm!('N', 'N', 2.0, V, V, 3.0, C)
     @test C == W
 
-    BLAS.gemm!('N', 'N', 2.0, ones(V), V, 0.0, C)
-    @test 2.0*ones(V)*V == C
+    BLAS.gemm!('N', 'N', 2.0, fill!(similar(V),1.0), V, 0.0, C)
+    @test 2.0*fill!(similar(V),1.0)*V == C
 
-    BLAS.gemm!('N', 'N', 2.0, V, ones(V), 0.0, C)
-    @test 2.0*V*ones(V) == C
+    BLAS.gemm!('N', 'N', 2.0, V, fill!(similar(V),1.0), 0.0, C)
+    @test 2.0*V*fill!(similar(V),1.0) == C
 
 
 
