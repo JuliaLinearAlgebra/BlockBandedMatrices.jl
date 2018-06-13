@@ -23,7 +23,7 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         start, eltype, getindex, to_indices, to_index,
                         reindex, _maybetail, tail, @_propagate_inbounds_meta
 
-import Compat.LinearAlgebra: A_ldiv_B!, A_mul_B!, UniformScaling, isdiag
+import Compat.LinearAlgebra: UniformScaling, isdiag
 import Compat.LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas
 import Compat.LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
@@ -32,11 +32,14 @@ import Compat.LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror
 import Compat: axes, copyto!
 
 if VERSION < v"0.7-"
+    import Compat.LinearAlgebra: A_ldiv_B!, A_mul_B!
     const rmul! = scale!
     const lmul! = scale!
+    const ldiv! = A_ldiv_B!
     const parentindices = parentindexes
 else
-    import LinearAlgebra: rmul!, lmul!
+    import LinearAlgebra: rmul!, lmul!, ldiv!, rdiv!
+    findfirst(A, v) = something(Base.findfirst(isequal(v), A))
 end
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,

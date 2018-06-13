@@ -1,9 +1,11 @@
-using BlockArrays, BlockBandedMatrices, Compat.Test
+using BlockArrays, BandedMatrices, BlockBandedMatrices, Compat.Test
     import BandedMatrices: BandError
     import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!,
                                 blockcolstop, blockrowstop, BlockSizes, block_sizes
 
-
+if VERSION < v"0.7-"
+    const ldiv! = A_ldiv_B!
+end
 
 
 @testset "BlockBandedMatrix linear algebra" begin
@@ -25,7 +27,7 @@ using BlockArrays, BlockBandedMatrices, Compat.Test
     w = Matrix(U) \ v
     U \ v == w
     @test v == fill(1.0,4)
-    @test A_ldiv_B!(U , v) === v
+    @test ldiv!(U , v) === v
     @test v == w
 
     v = fill(1.0,size(A,1))
@@ -35,7 +37,7 @@ using BlockArrays, BlockBandedMatrices, Compat.Test
     @test U \ v ≈ w
 
     @test v == fill(1.0,size(A,1))
-    @test A_ldiv_B!(U, v) === v
+    @test ldiv!(U, v) === v
     @test v ≈ w
 end
 
@@ -120,8 +122,6 @@ end
     A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
         A.data .= randn(length(A.data))
 
-
-
     V = view(A, Block.(1:3), Block.(1:3))
 
     @test blockrowstop(V,1) == Block(2)
@@ -133,7 +133,7 @@ end
     r = UpperTriangular(Matrix(V)) \ b
     @test BlockBandedMatrices.blockbanded_squareblocks_trtrs!(V, copy(b)) ≈ r
 
-    @test all(A_ldiv_B!(UpperTriangular(V), copy(b)) .=== BlockBandedMatrices.blockbanded_squareblocks_trtrs!(V, copy(b)))
+    @test all(ldiv!(UpperTriangular(V), copy(b)) .=== BlockBandedMatrices.blockbanded_squareblocks_trtrs!(V, copy(b)))
 
     V = view(A, Block.(2:3), Block(3))
     @test unsafe_load(pointer(V)) == A[2,4]
@@ -178,8 +178,8 @@ end
     @test all(V*b .=== V_22*b .=== Matrix(V)*b .===
         BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
-    @test all(UpperTriangular(V_22) \ b .=== A_ldiv_B!(UpperTriangular(V_22) , copy(b)) .=== A_ldiv_B!(UpperTriangular(V) , copy(b)) .===
-        A_ldiv_B!(UpperTriangular(Matrix(V_22)) , copy(b)))
+    @test all(UpperTriangular(V_22) \ b .=== ldiv!(UpperTriangular(V_22) , copy(b)) .=== ldiv!(UpperTriangular(V) , copy(b)) .===
+        ldiv!(UpperTriangular(Matrix(V_22)) , copy(b)))
 
 
     V = view(A, Block.(rows), Block.(cols))

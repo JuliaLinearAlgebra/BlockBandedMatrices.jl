@@ -30,10 +30,10 @@ function _mul!(Y::AbstractMatrix, A::AbstractMatrix, X::AbstractMatrix, α, β,
     Y
 end
 
-A_mul_B!(y::AbstractVector, A::AbstractBlockBandedMatrix, b::AbstractVector) =
+mul!(y::AbstractVector, A::AbstractBlockBandedMatrix, b::AbstractVector) =
     mul!(fill!(y, zero(eltype(y))), A, b, one(eltype(A)), zero(eltype(y)))
 
-A_mul_B!(y::AbstractMatrix, A::AbstractBlockBandedMatrix, b::AbstractMatrix) =
+mul!(y::AbstractMatrix, A::AbstractBlockBandedMatrix, b::AbstractMatrix) =
     mul!(fill!(y, zero(eltype(y))), A, b, one(eltype(A)), zero(eltype(y)))
 
 
@@ -54,6 +54,10 @@ end
 
 
 const BBBOrStridedVecOrMat{T} = Union{BlockBandedBlock{T}, StridedVecOrMat{T}}
+
+*(V::BlockBandedBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
+    mul!(Array{T}(undef, size(V,1)), V, b, one(T), zero(T))
+
 if VERSION < v"0.7-"
     BLAS.gemv!(trans::Char, α::T, A::BlockBandedBlock{T}, X::AbstractVector{T}, β::T, Y::AbstractVector{T}) where T <: BlasFloat =
         gemv!(trans, α, A, X, β, Y)
@@ -144,7 +148,7 @@ function *(A::BlockBandedMatrix{T}, B::BlockBandedMatrix{V}) where {T<:Number,V<
     n,m = size(A,1), size(B,2)
 
     l, u = A.l+B.l, A.u+B.u
-    A_mul_B!(BlockBandedMatrix{promote_type(T,V)}(undef,
+    mul!(BlockBandedMatrix{promote_type(T,V)}(undef,
                                     BlockBandedSizes(BlockSizes((Arows,Bcols)), l, u)),
              A, B)
 end
@@ -169,7 +173,7 @@ function *(A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{V}) where {
 
     bs = BandedBlockBandedSizes(BlockSizes((Arows,Bcols)), A.l+B.l, A.u+B.u, A.λ+B.λ, A.μ+B.μ)
 
-    A_mul_B!(BandedBlockBandedMatrix{promote_type(T,V)}(undef, bs),
+    mul!(BandedBlockBandedMatrix{promote_type(T,V)}(undef, bs),
              A, B)
 end
 
@@ -227,8 +231,8 @@ end
 # BlockIndexRange subblocks
 ####
 
-A_mul_B!(c::AbstractVector{T}, V::BlockBandedBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
-    mul!(c, V, b, one(T), zero(T))
+mul!(c::AbstractVector{T}, V::BlockBandedBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
+    BandedMatrices.mul!(c, V, b, one(T), zero(T))
 
 const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int64}}}
 const BlockRangeBlockSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{BlockRange1},BlockSlice{Block{1,Int}}}}
@@ -329,17 +333,17 @@ end
 # back substitution
 ######
 
-@inline A_ldiv_B!(U::UpperTriangular{T, BLOCK}, b::StridedVecOrMat{T}) where BLOCK <: Union{BlockBandedBlock{T}, BlockBandedSubBlock{T}} where T<:BlasFloat =
+@inline ldiv!(U::UpperTriangular{T, BLOCK}, b::StridedVecOrMat{T}) where BLOCK <: Union{BlockBandedBlock{T}, BlockBandedSubBlock{T}} where T<:BlasFloat =
     trtrs!('U', 'N', 'N', parent(U), b)
 
-@inline A_ldiv_B!(U::UpperTriangular{T, BlockBandedBlock{T}}, b::StridedVecOrMat{T}) where {T<:BlasFloat} =
+@inline ldiv!(U::UpperTriangular{T, BlockBandedBlock{T}}, b::StridedVecOrMat{T}) where {T<:BlasFloat} =
     trtrs!('U', 'N', 'N', parent(U), b)
 
 
 @inline hasmatchingblocks(A) =
     block_sizes(A).cumul_sizes[1] == block_sizes(A).cumul_sizes[2]
 
-function A_ldiv_B!(U::UpperTriangular{T, BM}, b::StridedVector) where BM <: Union{BlockBandedMatrix{T}, BlockBandedSubBlockBandedMatrix{T}} where T
+function ldiv!(U::UpperTriangular{T, BM}, b::StridedVector) where BM <: Union{BlockBandedMatrix{T}, BlockBandedSubBlockBandedMatrix{T}} where T
     A = parent(U)
 
     @boundscheck size(A,1) == length(b) || throw(BoundsError(A))
@@ -363,7 +367,7 @@ function blockbanded_squareblocks_trtrs!(A::AbstractMatrix{T}, b::AbstractVector
     for K = N:-1:1
         V_22 = view(A, Block(K),  Block(K))
         b_2 = view(b, parentindices(V_22)[1].indices)
-        A_ldiv_B!(UpperTriangular(V_22), b_2)
+        ldiv!(UpperTriangular(V_22), b_2)
 
         V_12 = view(A, blockcolstart(A, K):Block(K-1), Block(K))
         b̃_1 = view(b, parentindices(V_12)[1].indices)
@@ -383,7 +387,7 @@ function hasmatchingblocks(V::SubArray{T,2,BlockBandedMatrix{T},Tuple{UnitRange{
 end
 
 # Write U as [U_11 U_12; 0 U_22] and b = [b_1,b_2,b_3] to use efficient block versions
-function A_ldiv_B!(U::UpperTriangular{T,SV},
+function ldiv!(U::UpperTriangular{T,SV},
                    b::AbstractVector{T}) where SV<:SubArray{T,2,BlockBandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}} where T
     V = parent(U)
     if hasmatchingblocks(V)
@@ -401,7 +405,7 @@ function blockbanded_squareblocks_intrange_trtrs!(V::AbstractMatrix{T}, b::Abstr
 
     V_22 = view(A, Block(N)[1:N_n],  Block(N)[1:N_n])
     b_2 = view(b, parentindices(V_22)[1].indices)
-    A_ldiv_B!(UpperTriangular(V_22), b_2)
+    ldiv!(UpperTriangular(V_22), b_2)
 
     V_12 = view(A, blockcolstart(A, N):Block(N-1),  Block(N)[1:N_n])
     b̃_1 = view(b, parentindices(V_12)[1].indices)
@@ -409,7 +413,7 @@ function blockbanded_squareblocks_intrange_trtrs!(V::AbstractMatrix{T}, b::Abstr
 
     V_11 = view(A, Block.(1:N-1), Block.(1:N-1))
     b_1 = view(b, parentindices(V_11)[1].indices)
-    A_ldiv_B!(UpperTriangular(V_11), b_1)
+    ldiv!(UpperTriangular(V_11), b_1)
     b
 end
 
@@ -486,7 +490,7 @@ function blockbanded_rectblocks_trtrs!(A::AbstractMatrix{T}, b::AbstractVector{T
     for J = N:-1:1
         V_22 = view(A, KR_map[J], JR_map[J])
         b_2  = view(b, parentindices(V_22)[1].indices)
-        A_ldiv_B!(UpperTriangular(V_22), b_2)
+        ldiv!(UpperTriangular(V_22), b_2)
 
         for K = max(1,J-u_new):J-1
             if KR_map[K].block ≥ JR_map[J].block - u # inside old blockbandwith
@@ -551,7 +555,7 @@ function blockbanded_rectblocks_intrange_trtrs!(V::AbstractMatrix{T}, b::Abstrac
     for J = N:-1:1
         V_22 = view(A, KR_map[J], JR_map[J])
         b_2  = view(b, parentindices(V_22)[1].indices)
-        A_ldiv_B!(UpperTriangular(V_22), b_2)
+        ldiv!(UpperTriangular(V_22), b_2)
 
         for K = max(1,J-u_new):J-1
             if KR_map[K].block ≥ JR_map[J].block - u # inside old blockbandwith
