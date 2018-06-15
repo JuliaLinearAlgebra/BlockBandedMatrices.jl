@@ -267,6 +267,15 @@ end
     return v
 end
 
+## structured matrix methods ##
+if VERSION ≥ v"0.7-"
+    function Base.replace_in_print_matrix(A::BandedBlockBandedMatrix, i::Integer, j::Integer, s::AbstractString)
+        bi = global2blockindex(A.block_sizes, (i, j))
+        I,J = bi.I
+        i,j = bi.α
+        -A.l ≤ J-I ≤ A.u && -A.λ ≤ j-i ≤ A.μ ? s : Base.replace_with_centered_mark(s)
+    end
+end
 
 
 ######

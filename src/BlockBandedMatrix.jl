@@ -230,6 +230,15 @@ end
     return v
 end
 
+## structured matrix methods ##
+if VERSION ≥ v"0.7-"
+    function Base.replace_in_print_matrix(A::BlockBandedMatrix, i::Integer, j::Integer, s::AbstractString)
+        bi = global2blockindex(A.block_sizes, (i, j))
+        I,J = bi.I
+        -A.l ≤ J-I ≤ A.u ? s : Base.replace_with_centered_mark(s)
+    end
+end
+
 ############
 # Indexing #
 ############
