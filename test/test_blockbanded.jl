@@ -167,3 +167,9 @@ end
     fill!(A, 0.0)
     @test Matrix(A) == zeros(size(A))
 end
+
+@testset "BlockBandedMatrix type inferrence bug (#9)" begin
+    s = BlockBandedMatrices.BlockBandedSizes([1, 2], [1, 2], 0, 0)
+    f(s) = s.block_starts.data
+    @inferred(f(s))
+end

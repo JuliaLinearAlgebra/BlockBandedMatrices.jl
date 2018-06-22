@@ -41,7 +41,7 @@ end
 
 struct BlockBandedSizes
     block_sizes::BlockSizes{2}
-    block_starts::BandedMatrix{Int} # gives index where the blocks start
+    block_starts::BandedMatrix{Int,Matrix{Int}} # gives index where the blocks start
     block_strides::Vector{Int} # gives stride to next block for J-th column
 end
 

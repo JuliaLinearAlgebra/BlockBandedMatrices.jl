@@ -251,8 +251,8 @@ end
     view(V, band(0)) .= -3
     @test all(A[Block(3,4)][band(0)] .== -3)
 
-    @test BandedMatrix(V) isa BandedMatrix{Int}
-    @test BandedMatrix{Float64}(V) isa BandedMatrix{Float64}
+    @test BandedMatrix(V) isa BandedMatrix{Int,Matrix{Int}}
+    @test BandedMatrix{Float64}(V) isa BandedMatrix{Float64,Matrix{Float64}}
     @test BandedMatrix{Float64}(BandedMatrix(V)) == BandedMatrix{Float64}(V)
     @test A[4:6,7:10] ≈ BandedMatrix(V)
 
