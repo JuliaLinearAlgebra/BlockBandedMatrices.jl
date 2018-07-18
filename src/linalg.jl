@@ -37,6 +37,10 @@ mul!(y::AbstractMatrix, A::AbstractBlockBandedMatrix, b::AbstractMatrix) =
     mul!(fill!(y, zero(eltype(y))), A, b, one(eltype(A)), zero(eltype(y)))
 
 
+function *(A::AbstractBlockBandedMatrix{T}, b::AbstractVector{V}) where {T,V}
+    mul!(Vector{promote_type(T,V)}(undef, size(A,1)), A, b)
+end
+
 #############
 # BLAS overrides
 #############
