@@ -19,8 +19,8 @@ import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         +, *, -, /, \, strides, zeros, size,
-                        unsafe_convert, fill!, length, done, first, last, next,
-                        start, eltype, getindex, to_indices, to_index,
+                        unsafe_convert, fill!, length, first, last, 
+                        eltype, getindex, to_indices, to_index,
                         reindex, _maybetail, tail, @_propagate_inbounds_meta
 
 import Compat.LinearAlgebra: UniformScaling, isdiag
