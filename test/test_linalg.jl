@@ -1,11 +1,7 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, Compat.Test
+using BlockArrays, BandedMatrices, BlockBandedMatrices, Test
     import BandedMatrices: BandError
     import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!,
                                 blockcolstop, blockrowstop, BlockSizes, block_sizes
-
-if VERSION < v"0.7-"
-    const ldiv! = A_ldiv_B!
-end
 
 
 @testset "BlockBandedMatrix linear algebra" begin

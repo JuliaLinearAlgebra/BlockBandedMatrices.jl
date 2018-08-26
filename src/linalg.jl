@@ -62,13 +62,6 @@ const BBBOrStridedVecOrMat{T} = Union{BlockBandedBlock{T}, StridedVecOrMat{T}}
 *(V::BlockBandedBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
     mul!(Array{T}(undef, size(V,1)), V, b, one(T), zero(T))
 
-if VERSION < v"0.7-"
-    BLAS.gemv!(trans::Char, α::T, A::BlockBandedBlock{T}, X::AbstractVector{T}, β::T, Y::AbstractVector{T}) where T <: BlasFloat =
-        gemv!(trans, α, A, X, β, Y)
-    BLAS.gemm!(transA::Char, transB::Char, α::T, A::BBBOrStridedVecOrMat{T}, B::BBBOrStridedVecOrMat{T}, β::T, C::BBBOrStridedVecOrMat{T}) where T <: BlasFloat =
-        gemm!(transA, transB, α, A, B, β, C)
-end
-
 
 function checkblocks(A, B)
     Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
@@ -268,11 +261,6 @@ end
     mul!(Array{T}(undef, size(V,1)), V, b, one(T), zero(T))
 
 
-if VERSION < v"0.7-"
-    BLAS.gemv!(trans::Char, α::T, A::BlockRangeBlockSubBlockBandedMatrix{T}, X::AbstractVector{T}, β::T, Y::AbstractVector{T}) where T <: BlasFloat =
-        gemv!(trans, α, A, X, β, Y)
-end
-
 # struct ShiftedLayout{T,ML<:MemoryLayout} <: MemoryLayout
 #     shift::Tuple{Int,Int}  # gives the shift to the start of the memory.
 #                            # So shift == (0,0) is equivalent to layout
@@ -305,11 +293,6 @@ end
 *(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}, b::AbstractVector{T}) where T<:BlasFloat =
     mul!(Array{T}(undef, size(V,1)), V, b, one(T), zero(T))
 
-if VERSION < v"0.7-"
-    BLAS.gemv!(trans::Char, α::T, A::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}, X::AbstractVector{T}, β::T, Y::AbstractVector{T}) where T <: BlasFloat =
-        gemv!(trans, α, A, X, β, Y)
-end
-
 function unsafe_convert(::Type{Ptr{T}}, V::BlockBandedSubBlock{T}) where T
     A = parent(V)
     JR = parentindices(V)[2]
@@ -327,11 +310,6 @@ strides(V::BlockBandedSubBlock) =
 MemoryLayout(V::BlockBandedSubBlock) = ColumnMajor()
 *(V::BlockBandedSubBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
     mul!(Array{T}(undef, size(V,1)), V, b, one(T), zero(T))
-
-if VERSION < v"0.7-"
-    BLAS.gemv!(trans::Char, α::T, A::BlockBandedSubBlock{T}, X::AbstractVector{T}, β::T, Y::AbstractVector{T}) where T <: BlasFloat =
-        gemv!(trans, α, A, X, β, Y)
-end
 
 ######
 # back substitution

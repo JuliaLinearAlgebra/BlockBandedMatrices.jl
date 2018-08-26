@@ -1,4 +1,4 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Compat, Compat.Test
+using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Compat, Test
     import BlockBandedMatrices: _BlockBandedMatrix
 
 @testset "BlockBandedMatrix constructors" begin
