@@ -1,8 +1,8 @@
 __precompile__()
 
 module BlockBandedMatrices
-using BlockArrays, BandedMatrices, FillArrays, Compat
-using Compat.LinearAlgebra
+using BlockArrays, BandedMatrices, FillArrays
+using LinearAlgebra
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,
@@ -23,24 +23,17 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         eltype, getindex, to_indices, to_index,
                         reindex, _maybetail, tail, @_propagate_inbounds_meta
 
-import Compat.LinearAlgebra: UniformScaling, isdiag
-import Compat.LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas
-import Compat.LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
+import LinearAlgebra: UniformScaling, isdiag
+import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas
+import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
 
 
 import Compat: axes, copyto!
 
-if VERSION < v"0.7-"
-    import Compat.LinearAlgebra: A_ldiv_B!, A_mul_B!
-    const rmul! = scale!
-    const lmul! = scale!
-    const ldiv! = A_ldiv_B!
-    const parentindices = parentindexes
-else
-    import LinearAlgebra: rmul!, lmul!, ldiv!, rdiv!
-    findfirst(A, v) = something(Base.findfirst(isequal(v), A))
-end
+import LinearAlgebra: rmul!, lmul!, ldiv!, rdiv!
+findfirst(A, v) = something(Base.findfirst(isequal(v), A))
+
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block
