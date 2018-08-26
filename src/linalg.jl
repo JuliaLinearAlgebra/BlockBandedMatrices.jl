@@ -9,12 +9,11 @@ function blasmul!(y::AbstractVector, A::AbstractMatrix, x::AbstractVector, α, �
     end
 
     lmul!(β, y)
-    o = one(eltype(y))
 
     for J = Block.(1:nblocks(A,2))
         for K = blockcolrange(A,J)
             kr,jr = globalrange(A.block_sizes, (Int(K),Int(J)))
-            mul!(view(y,kr), view(A,K,J), view(x,jr), α, o)
+            view(y,kr) .= α .* Mul(view(A,K,J), view(x,jr)) .+ view(y,kr)
         end
     end
     y
@@ -24,10 +23,9 @@ end
 function blasmul!(Y::AbstractMatrix, A::AbstractMatrix, X::AbstractMatrix, α, β,
                     ::AbstractBlockBandedLayout, ::AbstractBlockBandedLayout, ::AbstractBlockBandedLayout)
     lmul!(β, Y)
-    o=one(eltype(Y))
     for J=Block(1):Block(nblocks(X,2)),
             N=blockcolrange(X,J), K=blockcolrange(A,N)
-        mul!(view(Y,K,J), view(A,K,N), view(X,N,J), α, o)
+        view(Y,K,J) .= α .* Mul( view(A,K,N), view(X,N,J)) .+ view(Y,K,J)
     end
     Y
 end
@@ -57,7 +55,7 @@ end
 const BBBOrStridedVecOrMat{T} = Union{BlockBandedBlock{T}, StridedVecOrMat{T}}
 
 *(V::BlockBandedBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
-    mul!(Array{T}(undef, size(V,1)), V, b, one(T), zero(T))
+    (Array{T}(undef, size(V,1)) .= Mul(V, b))
 
 
 function checkblocks(A, B)
@@ -251,7 +249,7 @@ function unsafe_convert(::Type{Ptr{T}}, V::BlockRangeBlockSubBlockBandedMatrix{T
 end
 
 *(V::BlockRangeBlockSubBlockBandedMatrix{T}, b::AbstractVector{T}) where T<:BlasFloat =
-    mul!(Array{T}(undef, size(V,1)), V, b, one(T), zero(T))
+    (Array{T}(undef, size(V,1)) .= Mul(V, b))
 
 
 # struct ShiftedLayout{T,ML<:MemoryLayout} <: MemoryLayout
@@ -284,7 +282,7 @@ function unsafe_convert(::Type{Ptr{T}}, V::BlockRangeBlockIndexRangeSubBlockBand
 end
 
 *(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}, b::AbstractVector{T}) where T<:BlasFloat =
-    mul!(Array{T}(undef, size(V,1)), V, b, one(T), zero(T))
+    (Array{T}(undef, size(V,1)) .= Mul(V, b))
 
 function unsafe_convert(::Type{Ptr{T}}, V::BlockBandedSubBlock{T}) where T
     A = parent(V)
@@ -302,17 +300,17 @@ strides(V::BlockBandedSubBlock) =
 
 MemoryLayout(V::BlockBandedSubBlock) = ColumnMajor()
 *(V::BlockBandedSubBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
-    mul!(Array{T}(undef, size(V,1)), V, b, one(T), zero(T))
+    (Array{T}(undef, size(V,1)) .= Mul(V, b))
 
 ######
 # back substitution
 ######
 
 @inline ldiv!(U::UpperTriangular{T, BLOCK}, b::StridedVecOrMat{T}) where BLOCK <: Union{BlockBandedBlock{T}, BlockBandedSubBlock{T}} where T<:BlasFloat =
-    trtrs!('U', 'N', 'N', parent(U), b)
+    LAPACK.trtrs!('U', 'N', 'N', parent(U), b)
 
 @inline ldiv!(U::UpperTriangular{T, BlockBandedBlock{T}}, b::StridedVecOrMat{T}) where {T<:BlasFloat} =
-    trtrs!('U', 'N', 'N', parent(U), b)
+    LAPACK.trtrs!('U', 'N', 'N', parent(U), b)
 
 
 @inline hasmatchingblocks(A) =
@@ -346,7 +344,7 @@ function blockbanded_squareblocks_trtrs!(A::AbstractMatrix{T}, b::AbstractVector
 
         V_12 = view(A, blockcolstart(A, K):Block(K-1), Block(K))
         b̃_1 = view(b, parentindices(V_12)[1].indices)
-        mul!(b̃_1, V_12, b_2, -one(T), one(T))
+        b̃_1 .=  (-one(T)).*Mul(V_12, b_2) .+ b̃_1
     end
 
     b
@@ -384,7 +382,7 @@ function blockbanded_squareblocks_intrange_trtrs!(V::AbstractMatrix{T}, b::Abstr
 
     V_12 = view(A, blockcolstart(A, N):Block(N-1),  Block(N)[1:N_n])
     b̃_1 = view(b, parentindices(V_12)[1].indices)
-    mul!(b̃_1, V_12, b_2, -one(T), one(T))
+    b̃_1 .= (-one(T)).*Mul( V_12, b_2) .+ b̃_1
 
     V_11 = view(A, Block.(1:N-1), Block.(1:N-1))
     b_1 = view(b, parentindices(V_11)[1].indices)
@@ -472,7 +470,7 @@ function blockbanded_rectblocks_trtrs!(A::AbstractMatrix{T}, b::AbstractVector{T
                 V_12 = view(A, KR_map[K], JR_map[J])
                 kr_sub = parentindices(V_12)[1].indices
                 b̃_1 = view(b, kr_sub)
-                mul!(b̃_1, V_12, b_2, -one(T), one(T))
+                b̃_1 .= (-one(T)) .* Mul(V_12, b_2) .+ b̃_1
             end
         end
     end
@@ -537,7 +535,7 @@ function blockbanded_rectblocks_intrange_trtrs!(V::AbstractMatrix{T}, b::Abstrac
                 V_12 = view(A, KR_map[K], JR_map[J])
                 kr_sub = parentindices(V_12)[1].indices
                 b̃_1 = view(b, kr_sub)
-                mul!(b̃_1, V_12, b_2, -one(T), one(T))
+                b̃_1 .= (-one(T)) .* Mul(V_12, b_2) .+ b̃_1
             end
         end
     end

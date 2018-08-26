@@ -392,8 +392,7 @@ subblockbandwidth(A::BandedBlockBandedMatrix, k::Integer) = ifelse(k==1 , A.λ ,
 const BandedBlockBandedBlock{T} = SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{BlockSlice1,BlockSlice1},false}
 
 
-MemoryLayout(::BandedBlockBandedBlock) = BandedColumnMajor()
-
+@banded BandedBlockBandedBlock
 
 function inblockbands(V::BandedBlockBandedBlock)
     A = parent(V)

@@ -1,8 +1,8 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, Test
-    import BandedMatrices: BandError
+using BlockArrays, BandedMatrices, BlockBandedMatrices, LazyArrays, LinearAlgebra, Test
+    import BandedMatrices: BandError, bandeddata
     import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!,
                                 blockcolstop, blockrowstop, BlockSizes, block_sizes
-
+    import LazyArrays: ColumnMajor
 
 @testset "BlockBandedMatrix linear algebra" begin
     l , u = 1,1
@@ -47,7 +47,7 @@ end
     A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
 
     V = view(A, Block(2), Block(2))
-    @test unsafe_load(Base.unsafe_convert(Ptr{Float64}, V)) == 13.0
+    @test unsafe_load(Base.unsafe_convert(Ptr{Float64}, bandeddata(V))) == 13.0
 
     C =  A*A
     @test C isa BandedBlockBandedMatrix
@@ -134,11 +134,11 @@ end
     V = view(A, Block.(2:3), Block(3))
     @test unsafe_load(pointer(V)) == A[2,4]
     @test unsafe_load(pointer(V)+sizeof(Float64)*stride(V,2)) == A[2,5]
-    @test MemoryLayout(V) == BandedMatrices.ColumnMajor()
+    @test MemoryLayout(V) == ColumnMajor()
 
     @test size(V) == (5,3)
     b = randn(size(V,2))
-    @test all(V*b .=== Matrix(V)*b .=== BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
+    @test all(V*b .=== Matrix(V)*b .=== BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
     V = view(A, Block.(1:3), Block(3)[2:3])
     @test_throws ArgumentError pointer(V)
@@ -150,11 +150,11 @@ end
     V = view(A, Block.(2:3), Block(3)[2:3])
     @test unsafe_load(pointer(V)) == A[2,5]
     @test unsafe_load(pointer(V)+sizeof(Float64)*stride(V,2)) == A[2,6]
-    @test MemoryLayout(V) == BandedMatrices.ColumnMajor()
+    @test MemoryLayout(V) == ColumnMajor()
 
     @test size(V) == (5,2)
     b = randn(size(V,2))
-    @test all(V*b .=== Matrix(V)*b .=== BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
+    @test all(V*b .=== Matrix(V)*b .=== BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
     V = view(A, Block.(1:3), Block(3)[2:3])
     @test_throws ArgumentError pointer(V)
@@ -164,7 +164,7 @@ end
     @test UpperTriangular(A) \ b ≈ UpperTriangular(Matrix(A)) \ b
 
     V_22 = view(A, Block(N)[1:N],  Block(N)[1:N])
-    @test MemoryLayout(V_22) == BandedMatrices.ColumnMajor()
+    @test MemoryLayout(V_22) == ColumnMajor()
 
     V = view(A, Block(N),  Block(N))
     V_22 = view(A, Block(N)[1:N],  Block(N)[1:N])
@@ -172,7 +172,7 @@ end
     @test strides(V_22) == strides(V) == (1,9)
     b = randn(N)
     @test all(V*b .=== V_22*b .=== Matrix(V)*b .===
-        BlockBandedMatrices.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
+        BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
     @test all(UpperTriangular(V_22) \ b .=== ldiv!(UpperTriangular(V_22) , copy(b)) .=== ldiv!(UpperTriangular(V) , copy(b)) .===
         ldiv!(UpperTriangular(Matrix(V_22)) , copy(b)))
