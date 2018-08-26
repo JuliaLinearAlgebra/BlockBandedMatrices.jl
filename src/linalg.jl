@@ -82,7 +82,7 @@ function fill!(B::BandedBlockBandedBlock{T}, x) where T
     x == zero(T) || throw(BandError(B))
     inblockbands(B) || return B
 
-    fill!(dataview(B), x)
+    fill!(bandeddata(B), x)
     B
 end
 

@@ -394,6 +394,8 @@ subblockbandwidth(A::BandedBlockBandedMatrix, k::Integer) = ifelse(k==1 , A.λ ,
 const BandedBlockBandedBlock{T} = SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{BlockSlice1,BlockSlice1},false}
 
 
+MemoryLayout(::BandedBlockBandedBlock) = BandedColumnMajor()
+
 
 function inblockbands(V::BandedBlockBandedBlock)
     A = parent(V)
@@ -415,7 +417,7 @@ blocks(V::BandedBlockBandedBlock)::Tuple{Int,Int} = Int(first(parentindices(V)).
                                                     Int(last(parentindices(V)).block)
 
 
-function dataview(V::BandedBlockBandedBlock)
+function bandeddata(V::BandedBlockBandedBlock)
     A = parent(V)
     u = A.u
     K_sl, J_sl = parentindices(V)
@@ -426,12 +428,12 @@ end
 
 @inline function inbands_getindex(V::BandedBlockBandedBlock, k::Int, j::Int)
     A = parent(V)
-    banded_getindex(dataview(V), A.λ, A.μ, k, j)
+    banded_getindex(bandeddata(V), A.λ, A.μ, k, j)
 end
 
 @inline function inbands_setindex!(V::BandedBlockBandedBlock, v, k::Int, j::Int)
     A = parent(V)
-    banded_setindex!(dataview(V), A.λ, A.μ, v, k, j)
+    banded_setindex!(bandeddata(V), A.λ, A.μ, v, k, j)
 end
 
 @propagate_inbounds function getindex(V::BandedBlockBandedBlock, k::Int, j::Int)
@@ -463,27 +465,10 @@ end
 
 function convert(::Type{BandedMatrix{T}}, V::BandedBlockBandedBlock) where {T}
     A = parent(V)
-    _BandedMatrix(Matrix{T}(dataview(V)), size(V,1), A.λ, A.μ)
+    _BandedMatrix(Matrix{T}(bandeddata(V)), size(V,1), A.λ, A.μ)
 end
 
 convert(::Type{BandedMatrix}, V::BandedBlockBandedBlock) = convert(BandedMatrix{eltype(V)}, V)
 
 BandedMatrix{T}(V::BandedBlockBandedBlock) where T = convert(BandedMatrix{T}, V)
 BandedMatrix(V::BandedBlockBandedBlock) = convert(BandedMatrix, V)
-
-
-
-
-#############
-# Linear algebra
-#############
-
-
-# BLAS structure
-unsafe_convert(::Type{Ptr{T}}, V::BandedBlockBandedBlock{T}) where {T<:BlasFloat} =
-    unsafe_convert(Ptr{T}, dataview(V))
-
-@inline leadingdimension(V::BandedBlockBandedBlock) = stride(dataview(V), 2)
-
-@banded BandedBlockBandedBlock
-@banded_banded_linalg BandedBlockBandedBlock BandedSubBandedMatrix

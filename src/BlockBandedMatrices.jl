@@ -12,14 +12,14 @@ import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
                         banded_generic_axpy!, banded_A_mul_B!,
                         BlasFloat, banded_dense_axpy!, MemoryLayout,
-                        BandedLayout, StridedLayout, ColumnMajor,
+                        BandedLayout, StridedLayout, ColumnMajor, BandedColumnMajor,
                         BandedSubBandedMatrix, mul!, _mul!,
-                        @banded_banded_linalg, @banded_linalg, @banded,
-                        _BandedMatrix, colstart, colstop, rowstart, rowstop
+                        @banded, _BandedMatrix, colstart, colstop, rowstart, rowstop,
+                        bandeddata
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         +, *, -, /, \, strides, zeros, size,
-                        unsafe_convert, fill!, length, first, last, 
+                        unsafe_convert, fill!, length, first, last,
                         eltype, getindex, to_indices, to_index,
                         reindex, _maybetail, tail, @_propagate_inbounds_meta
 
