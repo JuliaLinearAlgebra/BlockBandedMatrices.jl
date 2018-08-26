@@ -1,7 +1,7 @@
 __precompile__()
 
 module BlockBandedMatrices
-using BlockArrays, BandedMatrices, FillArrays
+using BlockArrays, BandedMatrices, LazyArrays, FillArrays
 using LinearAlgebra
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
@@ -10,12 +10,11 @@ import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blo
 
 import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
-                        banded_generic_axpy!, banded_A_mul_B!,
+                        banded_generic_axpy!, 
                         BlasFloat, banded_dense_axpy!, MemoryLayout,
-                        BandedLayout, StridedLayout, ColumnMajor, BandedColumnMajor,
-                        BandedSubBandedMatrix, mul!, _mul!,
-                        @banded, _BandedMatrix, colstart, colstop, rowstart, rowstop,
-                        bandeddata
+                        BandedColumnMajor,
+                        BandedSubBandedMatrix, bandeddata,
+                        @banded, _BandedMatrix, colstart, colstop, rowstart, rowstop
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         +, *, -, /, \, strides, zeros, size,
@@ -24,7 +23,7 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         reindex, _maybetail, tail, @_propagate_inbounds_meta
 
 import LinearAlgebra: UniformScaling, isdiag
-import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas
+import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex
 import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
 
@@ -32,13 +31,12 @@ import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, check
 import Compat: axes, copyto!
 
 import LinearAlgebra: rmul!, lmul!, ldiv!, rdiv!
-findfirst(A, v) = something(Base.findfirst(isequal(v), A))
 
+import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block
 
-include("lapack.jl")
 
 include("AbstractBlockBandedMatrix.jl")
 include("BlockBandedMatrix.jl")

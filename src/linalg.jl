@@ -1,7 +1,9 @@
 
+@blasmatvec AbstractBlockBandedLayout
 
-function _mul!(y::AbstractVector, A::AbstractMatrix, x::AbstractVector, α, β,
-                    ylayout, ::AbstractBlockBandedLayout, xlayout)
+
+function blasmul!(y::AbstractVector, A::AbstractMatrix, x::AbstractVector, α, β,
+                    ::AbstractStridedLayout, ::AbstractBlockBandedLayout, ::AbstractStridedLayout)
     if length(x) != size(A,2) || length(y) != size(A,1)
         throw(BoundsError())
     end
@@ -19,7 +21,7 @@ function _mul!(y::AbstractVector, A::AbstractMatrix, x::AbstractVector, α, β,
 end
 
 
-function _mul!(Y::AbstractMatrix, A::AbstractMatrix, X::AbstractMatrix, α, β,
+function blasmul!(Y::AbstractMatrix, A::AbstractMatrix, X::AbstractMatrix, α, β,
                     ::AbstractBlockBandedLayout, ::AbstractBlockBandedLayout, ::AbstractBlockBandedLayout)
     lmul!(β, Y)
     o=one(eltype(Y))
@@ -30,11 +32,6 @@ function _mul!(Y::AbstractMatrix, A::AbstractMatrix, X::AbstractMatrix, α, β,
     Y
 end
 
-mul!(y::AbstractVector, A::AbstractBlockBandedMatrix, b::AbstractVector) =
-    mul!(fill!(y, zero(eltype(y))), A, b, one(eltype(A)), zero(eltype(y)))
-
-mul!(y::AbstractMatrix, A::AbstractBlockBandedMatrix, b::AbstractMatrix) =
-    mul!(fill!(y, zero(eltype(y))), A, b, one(eltype(A)), zero(eltype(y)))
 
 
 function *(A::AbstractBlockBandedMatrix{T}, b::AbstractVector{V}) where {T,V}
@@ -227,10 +224,6 @@ end
 ####
 # BlockIndexRange subblocks
 ####
-
-mul!(c::AbstractVector{T}, V::BlockBandedBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
-    BandedMatrices.mul!(c, V, b, one(T), zero(T))
-
 const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int64}}}
 const BlockRangeBlockSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{BlockRange1},BlockSlice{Block{1,Int}}}}
 const BlockRangeBlockIndexRangeSubBlockBandedMatrix{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{BlockRange1},BlockSlice{BlockIndexRange1}}}
@@ -417,7 +410,7 @@ function _squaredblocks_newbandwidth(l, kr, jr, cs)
         if k_old ≥ last(cs)
             l_ret = max(l_ret,last(cs)-j)
         else
-            l_ret = max(l_ret,findfirst(cs, k_old)-j)
+            l_ret = max(l_ret,findfirst(isequal(k_old), cs)-j)
         end
     end
     l_ret
