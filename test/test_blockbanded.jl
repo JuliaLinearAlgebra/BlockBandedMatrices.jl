@@ -1,5 +1,5 @@
 using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Compat, Test
-    import BlockBandedMatrices: _BlockBandedMatrix
+    import BlockBandedMatrices: _BlockBandedMatrix, MemoryLayout, ColumnMajor
 
 @testset "BlockBandedMatrix constructors" begin
     l , u = 1,1
@@ -124,7 +124,7 @@ end
         A.data .= 1:length(A.data)
 
     V = view(A, Block(N,N))
-
+    @test MemoryLayout(V) == ColumnMajor()
 
     Y = zeros(cols[N], cols[N])
     @time BLAS.axpy!(2.0, V, Y)

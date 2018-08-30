@@ -8,7 +8,7 @@ import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blo
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,
                         _unblock, _find_block, BlockIndexRange
 
-import BandedMatrices: isbanded, leadingdimension, bandwidths, bandwidth, banded_getindex,
+import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
                         banded_generic_axpy!,
                         BlasFloat, banded_dense_axpy!, MemoryLayout,
@@ -32,7 +32,7 @@ import Compat: axes, copyto!
 
 import LinearAlgebra: rmul!, lmul!, ldiv!, rdiv!
 
-import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec
+import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec, @blasmatmat, @lazymul, blasmul!
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block
@@ -43,5 +43,7 @@ include("BlockBandedMatrix.jl")
 include("BandedBlockBandedMatrix.jl")
 
 include("linalg.jl")
+
+include("interfaceimpl.jl")
 
 end # module

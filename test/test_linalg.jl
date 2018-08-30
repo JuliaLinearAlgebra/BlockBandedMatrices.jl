@@ -4,6 +4,19 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, LazyArrays, LinearAlgebr
                                 blockcolstop, blockrowstop, BlockSizes, block_sizes
     import LazyArrays: ColumnMajor
 
+
+
+@testset "lmul!/rmul!" begin
+    C = BandedBlockBandedMatrix{Float64}(undef, (1:2,1:2), (1,1), (1,1))
+    C.data .= NaN
+    lmul!(0.0, C)
+    norm(C) == 0.0
+
+    C.data .= NaN
+    rmul!(C, 0.0)
+    norm(C) == 0.0
+end
+
 @testset "BlockBandedMatrix linear algebra" begin
     l , u = 1,1
     N = M = 4
@@ -49,12 +62,14 @@ end
     V = view(A, Block(2), Block(2))
     @test unsafe_load(Base.unsafe_convert(Ptr{Float64}, bandeddata(V))) == 13.0
 
+    C = BandedBlockBandedMatrix{Float64}(undef, (rows,cols), (2l,2u), (2λ,2μ))
+    C .= Mul(A,A)
+    @test Matrix(C) ≈ Matrix(A)*Matrix(A)
+
     C =  A*A
     @test C isa BandedBlockBandedMatrix
-    @test Matrix(A*A) ≈ Matrix(A)*Matrix(A)
+    @test Matrix(C) ≈ Matrix(A)*Matrix(A)
     @test C.l == C.u == C.λ == C.μ == 2
-
-
 
     A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
         A.data .= 1:length(A.data)
@@ -71,7 +86,6 @@ end
 
     BLAS.gemm!('N', 'N', 2.0, V, fill!(similar(V),1.0), 0.0, C)
     @test 2.0*V*fill!(similar(V),1.0) == C
-
 
 
     l , u = 1,1
@@ -171,7 +185,8 @@ end
     @test unsafe_load(pointer(V_22)) == V_22[1,1] == V[1,1]
     @test strides(V_22) == strides(V) == (1,9)
     b = randn(N)
-    @test all(V*b .=== V_22*b .=== Matrix(V)*b .===
+    @test all(copyto!(similar(b) , Mul(V,b)) .=== copyto!(similar(b) , Mul(V_22,b)) .=== 
+        Matrix(V)*b .===
         BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
     @test all(UpperTriangular(V_22) \ b .=== ldiv!(UpperTriangular(V_22) , copy(b)) .=== ldiv!(UpperTriangular(V) , copy(b)) .===

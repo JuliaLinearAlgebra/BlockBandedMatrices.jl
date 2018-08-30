@@ -1,5 +1,8 @@
 
+@lazymul AbstractBlockBandedMatrix
 @blasmatvec AbstractBlockBandedLayout
+@blasmatmat AbstractBlockBandedLayout AbstractBlockBandedLayout AbstractBlockBandedLayout
+
 
 
 function blasmul!(y::AbstractVector, A::AbstractMatrix, x::AbstractVector, α, β,
@@ -31,11 +34,6 @@ function blasmul!(Y::AbstractMatrix, A::AbstractMatrix, X::AbstractMatrix, α, �
 end
 
 
-
-function *(A::AbstractBlockBandedMatrix{T}, b::AbstractVector{V}) where {T,V}
-    mul!(Vector{promote_type(T,V)}(undef, size(A,1)), A, b)
-end
-
 #############
 # BLAS overrides
 #############
@@ -50,12 +48,6 @@ function BLAS.axpy!(a, X::AbstractBlockBandedMatrix, Y::AbstractBlockBandedMatri
     Y
 end
 
-
-
-const BBBOrStridedVecOrMat{T} = Union{BlockBandedBlock{T}, StridedVecOrMat{T}}
-
-*(V::BlockBandedBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
-    (Array{T}(undef, size(V,1)) .= Mul(V, b))
 
 
 function checkblocks(A, B)
@@ -236,8 +228,6 @@ function unsafe_convert(::Type{Ptr{T}}, V::BlockRangeBlockSubBlockBandedMatrix{T
     p = unsafe_convert(Ptr{T}, view(A, first(KR), J))
 end
 
-*(V::BlockRangeBlockSubBlockBandedMatrix{T}, b::AbstractVector{T}) where T<:BlasFloat =
-    (Array{T}(undef, size(V,1)) .= Mul(V, b))
 
 
 # struct ShiftedLayout{T,ML<:MemoryLayout} <: MemoryLayout
@@ -269,9 +259,6 @@ function unsafe_convert(::Type{Ptr{T}}, V::BlockRangeBlockIndexRangeSubBlockBand
     p + sizeof(T)*(JR.block.indices[1][1]-1)*stride(V,2)
 end
 
-*(V::BlockRangeBlockIndexRangeSubBlockBandedMatrix{T}, b::AbstractVector{T}) where T<:BlasFloat =
-    (Array{T}(undef, size(V,1)) .= Mul(V, b))
-
 function unsafe_convert(::Type{Ptr{T}}, V::BlockBandedSubBlock{T}) where T
     A = parent(V)
     JR = parentindices(V)[2]
@@ -287,8 +274,7 @@ strides(V::BlockBandedSubBlock) =
     (1,parent(V).block_sizes.block_strides[Int(parentindices(V)[2].block.block)])
 
 MemoryLayout(V::BlockBandedSubBlock) = ColumnMajor()
-*(V::BlockBandedSubBlock{T}, b::AbstractVector{T}) where T<:BlasFloat =
-    (Array{T}(undef, size(V,1)) .= Mul(V, b))
+
 
 ######
 # back substitution

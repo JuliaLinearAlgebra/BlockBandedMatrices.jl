@@ -5,7 +5,6 @@ abstract type AbstractBlockBandedMatrix{T} <: AbstractBlockMatrix{T} end
 abstract type AbstractBlockBandedLayout <: MemoryLayout end
 
 
-
 """
     blockbandwidths(A)
 
