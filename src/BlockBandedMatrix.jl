@@ -172,7 +172,7 @@ BlockBandedMatrix(A::AbstractMatrix) = convert(BlockBandedMatrix, A)
 ################################
 
 MemoryLayout(::BlockBandedMatrix) = BlockBandedLayout()
-blockbandwidth(A::BlockBandedMatrix, i::Int) = ifelse(i==1, A.l, A.u)
+blockbandwidths(A::BlockBandedMatrix) = (A.l, A.u)
 
 
 ################################

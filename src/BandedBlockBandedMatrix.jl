@@ -205,8 +205,25 @@ MemoryLayout(::BandedBlockBandedMatrix) = BandedBlockBandedLayout()
 isbandedblockbanded(_) = false
 isbandedblockbanded(::BandedBlockBandedMatrix) = true
 
-blockbandwidth(A::BandedBlockBandedMatrix, i::Int) = ifelse(i==1, A.l, A.u)
-subblockbandwidth(A::BandedBlockBandedMatrix, i::Int) = ifelse(i==1, A.λ, A.μ)
+blockbandwidths(A::BandedBlockBandedMatrix) = (A.l, A.u)
+
+"""
+    subblockbandwidths(A)
+
+returns the sub-block bandwidths of `A`, where `A` is a banded-block-banded
+matrix. In other words, `A[Block(K,J)]` will return a `BandedMatrix` with
+bandwidths given by `subblockbandwidths(A)`.
+"""
+subblockbandwidths(A::BandedBlockBandedMatrix) = (A.λ, A.μ)
+
+"""
+    subblockbandwidth(A, i)
+
+returns the sub-block lower (`i == 1`) or upper (`i == 2`) bandwidth of `A`,
+where `A` is a banded-block-banded matrix. In other words, `A[Block(K,J)]` will
+return a `BandedMatrix` with the returned lower/upper bandwidth.
+"""
+subblockbandwidth(A::AbstractArray, k::Integer) = subblockbandwidths(A)[k]
 
 isdiag(A::BandedBlockBandedMatrix) = A.λ == A.μ == A.l == A.u
 
@@ -363,23 +380,6 @@ end
 #     end
 # end
 
-"""
-    subblockbandwidths(A)
-
-returns the sub-block bandwidths of `A`, where `A` is a banded-block-banded
-matrix. In other words, `A[Block(K,J)]` will return a `BandedMatrix` with
-bandwidths given by `subblockbandwidths(A)`.
-"""
-subblockbandwidths(A::BandedBlockBandedMatrix) = A.λ, A.μ
-"""
-    subblockbandwidth(A, i)
-
-returns the sub-block lower (`i == 1`) or upper (`i == 2`) bandwidth of `A`,
-where `A` is a banded-block-banded matrix. In other words, `A[Block(K,J)]` will
-return a `BandedMatrix` with the returned lower/upper bandwidth.
-"""
-subblockbandwidth(A::BandedBlockBandedMatrix, k::Integer) = ifelse(k==1 , A.λ , A.μ)
-
 
 
 ##################
@@ -392,7 +392,8 @@ subblockbandwidth(A::BandedBlockBandedMatrix, k::Integer) = ifelse(k==1 , A.λ ,
 const BandedBlockBandedBlock{T} = SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{BlockSlice1,BlockSlice1},false}
 
 
-@banded BandedBlockBandedBlock
+isbanded(::BandedBlockBandedBlock) = true
+MemoryLayout(::BandedBlockBandedBlock) = BandedColumnMajor()
 
 function inblockbands(V::BandedBlockBandedBlock)
     A = parent(V)
@@ -405,7 +406,7 @@ end
 ######################################
 # BandedMatrix interface  for Blocks #
 ######################################
-@inline bandwidth(V::BandedBlockBandedBlock, k::Int) = ifelse(k == 1, parent(V).λ, parent(V).μ)
+@inline bandwidths(V::BandedBlockBandedBlock) = subblockbandwidths(parent(V))
 
 
 

@@ -8,13 +8,13 @@ import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blo
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,
                         _unblock, _find_block, BlockIndexRange
 
-import BandedMatrices: isbanded, leadingdimension, bandwidth, banded_getindex,
+import BandedMatrices: isbanded, leadingdimension, bandwidths, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
-                        banded_generic_axpy!, 
+                        banded_generic_axpy!,
                         BlasFloat, banded_dense_axpy!, MemoryLayout,
                         BandedColumnMajor,
                         BandedSubBandedMatrix, bandeddata,
-                        @banded, _BandedMatrix, colstart, colstop, rowstart, rowstop
+                        _BandedMatrix, colstart, colstop, rowstart, rowstop
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         +, *, -, /, \, strides, zeros, size,

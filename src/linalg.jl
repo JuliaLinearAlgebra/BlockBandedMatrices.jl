@@ -206,18 +206,6 @@ function blockbandwidths(V::BlockBandedSubBlockBandedMatrix)
     blockbandwidths(A)
 end
 
-function blockbandwidth(V::BlockBandedSubBlockBandedMatrix, k::Integer)
-    A = parent(V)
-    Bs = A.block_sizes.block_sizes
-
-    KR = parentindices(V)[1].block.indices[1]
-    JR = parentindices(V)[2].block.indices[1]
-
-    @assert KR[1] == JR[1] == 1
-    blockbandwidth(A,k)
-end
-
-
 
 ####
 # BlockIndexRange subblocks
