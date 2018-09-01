@@ -1,7 +1,8 @@
 using BlockArrays, BandedMatrices, BlockBandedMatrices, LazyArrays, LinearAlgebra, Test
     import BandedMatrices: BandError, bandeddata
     import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!,
-                                blockcolstop, blockrowstop, BlockSizes, block_sizes
+                                blockcolstop, blockrowstop, BlockSizes, blocksizes,
+                                BlockBandedSizes
     import LazyArrays: ColumnMajor
 
 
@@ -137,7 +138,7 @@ end
     @test blockrowstop(V,1) == Block(2)
     @test blockcolstop(V,1) == Block(2)
 
-    @test BlockBandedMatrices.block_sizes(V) == BlockSizes(1:3, 1:3)
+    @test blocksizes(V) == BlockBandedSizes(BlockSizes(1:3, 1:3), l,u)
 
     b = randn(size(V,1))
     r = UpperTriangular(Matrix(V)) \ b
@@ -185,7 +186,7 @@ end
     @test unsafe_load(pointer(V_22)) == V_22[1,1] == V[1,1]
     @test strides(V_22) == strides(V) == (1,9)
     b = randn(N)
-    @test all(copyto!(similar(b) , Mul(V,b)) .=== copyto!(similar(b) , Mul(V_22,b)) .=== 
+    @test all(copyto!(similar(b) , Mul(V,b)) .=== copyto!(similar(b) , Mul(V_22,b)) .===
         Matrix(V)*b .===
         BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
@@ -212,7 +213,10 @@ end
     b = randn(size(A,1))
 
     V = view(A, Block.(1:3), Block.(1:4))
-    @test block_sizes(V) == block_sizes(A)
+    @test blocksizes(V) isa BlockBandedSizes
+    @test blocksizes(V) == blocksizes(A)
+
+
     @test all(Matrix(V) .=== Matrix(A))
 
     @test view(V, Block(2)[1:2], Block(3)) ≡ view(A, Block(2)[1:2], Block(3))

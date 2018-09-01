@@ -6,7 +6,8 @@ using LinearAlgebra
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,
-                        _unblock, _find_block, BlockIndexRange
+                        _unblock, _find_block, BlockIndexRange, blocksizes, cumulsizes,
+                        AbstractBlockSizes
 
 import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
@@ -20,7 +21,8 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         +, *, -, /, \, strides, zeros, size,
                         unsafe_convert, fill!, length, first, last,
                         eltype, getindex, to_indices, to_index,
-                        reindex, _maybetail, tail, @_propagate_inbounds_meta
+                        reindex, _maybetail, tail, @_propagate_inbounds_meta,
+                        ==
 
 import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
                         AbstractTriangular
@@ -45,5 +47,6 @@ include("BandedBlockBandedMatrix.jl")
 include("linalg.jl")
 
 include("interfaceimpl.jl")
+include("triblockbanded.jl")
 
 end # module

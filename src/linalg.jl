@@ -1,12 +1,12 @@
 
 @lazymul AbstractBlockBandedMatrix
-@blasmatvec AbstractBlockBandedLayout
-@blasmatmat AbstractBlockBandedLayout AbstractBlockBandedLayout AbstractBlockBandedLayout
+@blasmatvec AbstractBlockBandedColumnMajor
+@blasmatmat AbstractBlockBandedColumnMajor AbstractBlockBandedColumnMajor AbstractBlockBandedColumnMajor
 
 
 
 function blasmul!(y::AbstractVector, A::AbstractMatrix, x::AbstractVector, α, β,
-                    ::AbstractStridedLayout, ::AbstractBlockBandedLayout, ::AbstractStridedLayout)
+                    ::AbstractStridedLayout, ::AbstractBlockBandedColumnMajor, ::AbstractStridedLayout)
     if length(x) != size(A,2) || length(y) != size(A,1)
         throw(BoundsError())
     end
@@ -24,7 +24,7 @@ end
 
 
 function blasmul!(Y::AbstractMatrix, A::AbstractMatrix, X::AbstractMatrix, α, β,
-                    ::AbstractBlockBandedLayout, ::AbstractBlockBandedLayout, ::AbstractBlockBandedLayout)
+                    ::AbstractBlockBandedColumnMajor, ::AbstractBlockBandedColumnMajor, ::AbstractBlockBandedColumnMajor)
     lmul!(β, Y)
     for J=Block(1):Block(nblocks(X,2)),
             N=blockcolrange(X,J), K=blockcolrange(A,N)
@@ -170,21 +170,18 @@ const BlockBandedSubBlockBandedMatrix{T} =
     SubArray{T,2,BlockBandedMatrix{T},NTuple{2,BlockSlice{BlockRange1}}}
 
 
-block_sizes(A::AbstractBlockArray) = A.block_sizes
-block_sizes(A::AbstractBlockBandedMatrix) = A.block_sizes.block_sizes
-nblocks(A::AbstractArray) = nblocks(block_sizes(A)) #TODO: Type piracy
-nblocks(A::AbstractArray, i::Int) = nblocks(block_sizes(A),i)
-
-function block_sizes(V::BlockBandedSubBlockBandedMatrix)
+function blocksizes(V::BlockBandedSubBlockBandedMatrix)
     A = parent(V)
     Bs = A.block_sizes.block_sizes
 
     KR = parentindices(V)[1].block.indices[1]
     JR = parentindices(V)[2].block.indices[1]
+    shift = Int(KR[1])-Int(JR[1])
 
     Bs.cumul_sizes[1]
     @assert KR[1] == JR[1] == 1
-    BlockSizes((Bs.cumul_sizes[1][KR[1]:KR[end]+1],Bs.cumul_sizes[2][JR[1]:JR[end]+1]))
+    BlockBandedSizes(BlockSizes((Bs.cumul_sizes[1][KR[1]:KR[end]+1],Bs.cumul_sizes[2][JR[1]:JR[end]+1])),
+                        blockbandwidth(A,1) - shift, blockbandwidth(A,2) + shift)
 end
 
 function blockbandwidths(V::BlockBandedSubBlockBandedMatrix)
@@ -288,7 +285,7 @@ MemoryLayout(V::BlockBandedSubBlock) = ColumnMajor()
 
 
 @inline hasmatchingblocks(A) =
-    block_sizes(A).cumul_sizes[1] == block_sizes(A).cumul_sizes[2]
+    cumulsizes(blocksizes(A),1) == cumulsizes(blocksizes(A),2)
 
 function ldiv!(U::UpperTriangular{T, BM}, b::StridedVector) where BM <: Union{BlockBandedMatrix{T}, BlockBandedSubBlockBandedMatrix{T}} where T
     A = parent(U)
@@ -308,7 +305,7 @@ function blockbanded_squareblocks_trtrs!(A::AbstractMatrix{T}, b::AbstractVector
 
     n = size(b,1)
 
-    Bs = block_sizes(A)
+    Bs = blocksizes(A)
     N = nblocks(Bs,1)
 
     for K = N:-1:1
@@ -328,8 +325,8 @@ end
 function hasmatchingblocks(V::SubArray{T,2,BlockBandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}}) where T
     A = parent(V)
     kr, jr = parentindices(V)
-    N,  N_n = _find_block(block_sizes(A), 1, kr[end])
-    M,  M_n = _find_block(block_sizes(A), 2, jr[end])
+    N,  N_n = _find_block(blocksizes(A), 1, kr[end])
+    M,  M_n = _find_block(blocksizes(A), 2, jr[end])
     N == M && hasmatchingblocks(view(A, Block.(1:N), Block.(1:N)))
 end
 
@@ -348,7 +345,7 @@ function blockbanded_squareblocks_intrange_trtrs!(V::AbstractMatrix{T}, b::Abstr
     A = parent(V)
     kr, jr = parentindices(V)
 
-    N,  N_n = _find_block(block_sizes(A), 1, kr[end])
+    N,  N_n = _find_block(blocksizes(A), 1, kr[end])
 
     V_22 = view(A, Block(N)[1:N_n],  Block(N)[1:N_n])
     b_2 = view(b, parentindices(V_22)[1].indices)
@@ -414,14 +411,9 @@ function _squaredblocks_mapback(kr, cs)
     ret
 end
 
-
-block_banded_sizes(A::BlockBandedMatrix) = A.block_sizes
-block_banded_sizes(A::AbstractMatrix) = BlockBandedSizes(block_sizes(A), blockbandwidths(A)...)
-
-
 function blockbanded_rectblocks_trtrs!(A::AbstractMatrix{T}, b::AbstractVector{T}) where T
     @boundscheck size(A,1) == size(b,1) || throw(BoundsError())
-    bbs = block_banded_sizes(A)
+    bbs = blocksizes(A)
     bs_square = squaredblocks(bbs)
     l, u = blockbandwidths(A)
     l_new, u_new = blockbandwidths(bs_square)
@@ -480,11 +472,11 @@ function blockbanded_rectblocks_intrange_trtrs!(V::AbstractMatrix{T}, b::Abstrac
     @assert 1 == first(parentindices(V)[1]) == first(parentindices(V)[2])
     P = parent(V)
     n, m = size(V)
-    N, N_n = _find_block(block_sizes(P), 1, n)
-    M, M_n = _find_block(block_sizes(P), 2, m)
+    N, N_n = _find_block(blocksizes(P), 1, n)
+    M, M_n = _find_block(blocksizes(P), 2, m)
 
     A = view(P, Block.(1:N), Block.(1:M))
-    bbs = block_banded_sizes(A)
+    bbs = blocksizes(A)
     KR, JR = bbs.block_sizes.cumul_sizes
     bs_square = squaredblocks(bbs, n)
     l_new, u_new = blockbandwidths(bs_square)

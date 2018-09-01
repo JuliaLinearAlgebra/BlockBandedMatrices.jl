@@ -1,9 +1,9 @@
 
 
-struct BandedBlockBandedColumnMajor <: AbstractBlockBandedLayout end
+struct BandedBlockBandedColumnMajor <: AbstractBlockBandedColumnMajor end
 
 
-struct BandedBlockBandedSizes
+struct BandedBlockBandedSizes <: AbstractBlockSizes{2}
     block_sizes::BlockSizes{2}
     data_block_sizes::BlockSizes{2}
     l::Int
@@ -24,13 +24,8 @@ BandedBlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l, 
     BandedBlockBandedSizes(BlockSizes(rows,cols), l, u, λ, μ)
 
 
-for Func in (:nblocks, :getindex, :blocksize, :global2blockindex, :unblock, :size, :globalrange)
-    @eval begin
-        $Func(B::BandedBlockBandedSizes) = $Func(B.block_sizes)
-        $Func(B::BandedBlockBandedSizes, k) = $Func(B.block_sizes, k)
-        $Func(B::BandedBlockBandedSizes, k, j) = $Func(B.block_sizes, k, j)
-    end
-end
+cumulsizes(B::BandedBlockBandedSizes) = cumulsizes(B.block_sizes)
+
 
 convert(::Type{BlockBandedSizes}, B::BandedBlockBandedSizes) =
     BlockBandedSizes(B.block_sizes, B.l, B.u)
@@ -203,7 +198,7 @@ BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 
 
 BandedBlockBandedMatrix(A::AbstractMatrix) =
-    BandedBlockBandedMatrix(A, block_sizes(A), blockbandwidths(A), subblockbandwidths(A))
+    BandedBlockBandedMatrix(A, blocksizes(A), blockbandwidths(A), subblockbandwidths(A))
 
 
 ################################
@@ -242,12 +237,10 @@ isdiag(A::BandedBlockBandedMatrix) = A.λ == A.μ == A.l == A.u
 # AbstractBlockArray Interface #
 ################################
 
-@inline nblocks(block_array::BandedBlockBandedMatrix) = nblocks(block_array.block_sizes)
-@inline blocksize(block_array::BandedBlockBandedMatrix, i1::Int, i2::Int) = blocksize(block_array.block_sizes, (i1,i2))
-
+@inline blocksizes(block_array::BandedBlockBandedMatrix) = block_array.block_sizes
 
 zeroblock(A::BandedBlockBandedMatrix, K::Int, J::Int) =
-    BandedMatrix(Zeros{eltype(A)}(blocksize(A, K, J)), (A.λ, A.μ))
+    BandedMatrix(Zeros{eltype(A)}(blocksize(A, (K, J))), (A.λ, A.μ))
 
 @inline function getblock(A::BandedBlockBandedMatrix, K::Int, J::Int)
     @boundscheck blockcheckbounds(A, K, J)
@@ -331,8 +324,8 @@ end
 
 # function _check_setblock!(block_arr::BlockArray{T, N}, v, block::NTuple{N, Int}) where {T,N}
 #     for i in 1:N
-#         if size(v, i) != blocksize(block_arr.block_sizes, i, block[i])
-#             throw(DimensionMismatch(string("tried to assign $(size(v)) array to ", blocksize(block_arr, block...), " block")))
+#         if size(v, i) != blocksize(block_arr.block_sizes, (i, block[i]))
+#             throw(DimensionMismatch(string("tried to assign $(size(v)) array to ", blocksize(block_arr, block), " block")))
 #         end
 #     end
 # end

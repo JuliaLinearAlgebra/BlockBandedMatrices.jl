@@ -1,7 +1,7 @@
 ####
 # BlockBandedMatrix memory layout
 
-struct BlockBandedLayout <: AbstractBlockBandedLayout end
+struct BlockBandedColumnMajor <: AbstractBlockBandedColumnMajor end
 
 
 #### Routines for BandedSizes
@@ -14,9 +14,9 @@ function bb_blockstarts(b_size, l, u)
     for J = 1:M
         KR = max(1,J-u):min(J+l,N)
         if !isempty(KR)
-            b_start[KR,J] .= ind_shift .+ view(b_size.cumul_sizes[1],KR) .- b_size.cumul_sizes[1][KR[1]] .+ 1
+            b_start[KR,J] .= ind_shift .+ view(cumulsizes(b_size,1),KR) .- cumulsizes(b_size,1)[KR[1]] .+ 1
 
-            num_rows = b_size[1,KR[end]+1]-b_size[1,KR[1]]
+            num_rows = cumulsizes(b_size,1,KR[end]+1)-cumulsizes(b_size,1,KR[1])
             num_cols = blocksize(b_size, 2, J)
             ind_shift += num_rows*num_cols
         end
@@ -31,7 +31,7 @@ function bb_blockstrides(b_size, l, u)
     for J=1:M
         KR = max(1,J-u):min(J+l,N)
         if !isempty(KR)
-            b_strides[J] = b_size[1,KR[end]+1]-b_size[1,KR[1]]
+            b_strides[J] = cumulsizes(b_size,1,KR[end]+1)-cumulsizes(b_size,1,KR[1])
         else
             b_strides[J] = 0
         end
@@ -39,7 +39,7 @@ function bb_blockstrides(b_size, l, u)
     b_strides
 end
 
-struct BlockBandedSizes
+struct BlockBandedSizes <: AbstractBlockSizes{2}
     block_sizes::BlockSizes{2}
     block_starts::BandedMatrix{Int,Matrix{Int}} # gives index where the blocks start
     block_strides::Vector{Int} # gives stride to next block for J-th column
@@ -55,13 +55,10 @@ BlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l, u) =
 blockbandwidths(bs::BlockBandedSizes) = bandwidths(bs.block_starts)
 blockbandwidth(bs::BlockBandedSizes, i::Int) = bandwidth(bs.block_starts, i)
 
-for Func in (:nblocks, :getindex, :blocksize, :global2blockindex, :unblock, :size, :globalrange)
-    @eval begin
-        $Func(B::BlockBandedSizes) = $Func(B.block_sizes)
-        $Func(B::BlockBandedSizes, k) = $Func(B.block_sizes, k)
-        $Func(B::BlockBandedSizes, k, j) = $Func(B.block_sizes, k, j)
-    end
-end
+==(A::BlockBandedSizes, B::BlockBandedSizes) = A.block_sizes == B.block_sizes && A.block_starts == B.block_starts
+
+cumulsizes(B::BlockBandedSizes) = cumulsizes(B.block_sizes)
+
 
 function bb_numentries(B::BlockBandedSizes)
     b_size, l, u = B.block_sizes, B.block_starts.l, B.block_starts.u
@@ -69,7 +66,7 @@ function bb_numentries(B::BlockBandedSizes)
     N = nblocks(b_size,1)
     for J = 1:nblocks(b_size,2),
         KR = colrange(B.block_starts, J)
-        num_rows = b_size[1,KR[end]+1] - b_size[1,KR[1]]
+        num_rows = cumulsizes(b_size,1,KR[end]+1) - cumulsizes(b_size,1,KR[1])
         num_cols = blocksize(b_size, 2, J)
         numentries += num_rows*num_cols
     end
@@ -171,7 +168,7 @@ BlockBandedMatrix(A::AbstractMatrix) = convert(BlockBandedMatrix, A)
 # BlockBandedMatrix Interface #
 ################################
 
-MemoryLayout(::BlockBandedMatrix) = BlockBandedLayout()
+MemoryLayout(::BlockBandedMatrix) = BlockBandedColumnMajor()
 blockbandwidths(A::BlockBandedMatrix) = (A.l, A.u)
 
 
@@ -179,11 +176,11 @@ blockbandwidths(A::BlockBandedMatrix) = (A.l, A.u)
 # AbstractBlockArray Interface #
 ################################
 
-@inline nblocks(block_array::BlockBandedMatrix) = nblocks(block_array.block_sizes)
-@inline blocksize(block_array::BlockBandedMatrix, i1::Int, i2::Int) = blocksize(block_array.block_sizes, (i1,i2))
+@inline blocksizes(block_array::BlockBandedMatrix) = block_array.block_sizes
+
 
 zeroblock(A::BlockBandedMatrix, K::Int, J::Int) =
-    Matrix(Zeros{eltype(A)}(blocksize(A, K, J)))
+    Matrix(Zeros{eltype(A)}(blocksize(A, (K, J))))
 
 @inline function getblock(A::BlockBandedMatrix, K::Int, J::Int)
     @boundscheck blockcheckbounds(A, K, J)
@@ -243,8 +240,8 @@ end
 
 # function _check_setblock!(block_arr::BlockArray{T, N}, v, block::NTuple{N, Int}) where {T,N}
 #     for i in 1:N
-#         if size(v, i) != blocksize(block_arr.block_sizes, i, block[i])
-#             throw(DimensionMismatch(string("tried to assign $(size(v)) array to ", blocksize(block_arr, block...), " block")))
+#         if size(v, i) != blocksize(block_arr.block_sizes, (i, block[i]))
+#             throw(DimensionMismatch(string("tried to assign $(size(v)) array to ", blocksize(block_arr, block), " block")))
 #         end
 #     end
 # end
