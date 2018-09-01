@@ -22,7 +22,8 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         eltype, getindex, to_indices, to_index,
                         reindex, _maybetail, tail, @_propagate_inbounds_meta
 
-import LinearAlgebra: UniformScaling, isdiag
+import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
+                        AbstractTriangular
 import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex
 import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
@@ -30,9 +31,8 @@ import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, check
 
 import Compat: axes, copyto!
 
-import LinearAlgebra: rmul!, lmul!, ldiv!, rdiv!
-
-import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec, @blasmatmat, @lazymul, blasmul!
+import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec, @blasmatmat, @lazymul, blasmul!,
+                    triangularlayout
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block

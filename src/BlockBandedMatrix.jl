@@ -212,7 +212,7 @@ end
 # end
 
 Base.size(arr::BlockBandedMatrix) =
-    @inbounds return (arr.block_sizes.block_sizes[1][end] - 1, arr.block_sizes.block_sizes[2][end] - 1)
+    @inbounds return (cumulsizes(arr.block_sizes.block_sizes,1)[end] - 1, cumulsizes(arr.block_sizes.block_sizes,2)[end] - 1)
 
 
 @inline function getindex(A::BlockBandedMatrix, i::Int, j::Int)

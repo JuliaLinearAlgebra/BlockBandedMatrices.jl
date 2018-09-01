@@ -1,6 +1,6 @@
 
 
-struct BandedBlockBandedLayout <: AbstractBlockBandedLayout end
+struct BandedBlockBandedColumnMajor <: AbstractBlockBandedLayout end
 
 
 struct BandedBlockBandedSizes
@@ -210,7 +210,7 @@ BandedBlockBandedMatrix(A::AbstractMatrix) =
 # BandedBlockBandedMatrix Interface #
 ################################
 
-MemoryLayout(::BandedBlockBandedMatrix) = BandedBlockBandedLayout()
+MemoryLayout(::BandedBlockBandedMatrix) = BandedBlockBandedColumnMajor()
 
 isbandedblockbanded(_) = false
 isbandedblockbanded(::BandedBlockBandedMatrix) = true
