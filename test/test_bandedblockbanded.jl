@@ -118,7 +118,6 @@ end
     @test colrange(A,3) == 1:10
     @test colrange(A,4) == 2:10
 
-
     l , u = -1,1
     λ , μ = 0,1
     rows = 1:5
@@ -131,7 +130,7 @@ end
     @test A[1,2] == 4
     @test A[Block(2,2)] == [0 0; 0 0]
     @test A[Block(2,3)]  == [8.0 9.0 0.0; 0.0 10.0 11.0]
-    @test bandwidths(A[Block(2,3)]) == (0,1)
+    @test bandwidths(view(A,Block(2,3))) == bandwidths(A[Block(2,3)]) == (0,1)
 
     @test blockrowrange(A, 1) == Block.(2:2)
     @test blockrowrange(A, 2) == Block.(3:3)
@@ -253,7 +252,8 @@ end
 
     @test BandedMatrix(V) isa BandedMatrix{Int,Matrix{Int}}
     @test BandedMatrix{Float64}(V) isa BandedMatrix{Float64,Matrix{Float64}}
-    @test BandedMatrix{Float64}(BandedMatrix(V)) == BandedMatrix{Float64}(V)
+    @test BandedMatrix{Float64}(BandedMatrix(V)) == BandedMatrix{Float64}(V) ==
+            convert(BandedMatrix{Float64}, V)
     @test A[4:6,7:10] ≈ BandedMatrix(V)
 
     @test A[Block(3,4)].l == A.λ

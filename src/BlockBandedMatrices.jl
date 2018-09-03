@@ -14,7 +14,7 @@ import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex,
                         banded_generic_axpy!,
                         BlasFloat, banded_dense_axpy!, MemoryLayout,
                         BandedColumnMajor,
-                        BandedSubBandedMatrix, bandeddata,
+                        BandedSubBandedMatrix, bandeddata, tribandeddata,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
@@ -34,7 +34,8 @@ import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, check
 import Compat: axes, copyto!
 
 import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec, @blasmatmat, @lazymul, blasmul!,
-                    triangularlayout, UpperTriangularLayout
+                    triangularlayout, UpperTriangularLayout, TriangularLayout, MatMulVec, MatLdivVec,
+                    triangulardata, subarraylayout, _copyto!
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block

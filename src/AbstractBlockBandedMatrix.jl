@@ -10,7 +10,7 @@ abstract type AbstractBlockBandedColumnMajor <: MemoryLayout end
 
 Returns a tuple containing the upper and lower blockbandwidth of `A`.
 """
-blockbandwidths(A::AbstractMatrix) = (nblocks(A,1)-1 : nblocks(A,2)-1)
+blockbandwidths(A::AbstractMatrix) = (nblocks(A,1)-1 , nblocks(A,2)-1)
 
 """
     blockbandwidth(A,i)
