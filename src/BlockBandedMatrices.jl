@@ -34,7 +34,7 @@ import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, check
 import Compat: axes, copyto!
 
 import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec, @blasmatmat, @lazymul, blasmul!,
-                    triangularlayout
+                    triangularlayout, UpperTriangularLayout
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block

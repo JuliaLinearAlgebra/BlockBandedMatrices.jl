@@ -460,16 +460,3 @@ end
         throw(BandError(parent(V), J-K))
     end
 end
-
-
-
-
-function convert(::Type{BandedMatrix{T}}, V::BandedBlockBandedBlock) where {T}
-    A = parent(V)
-    _BandedMatrix(Matrix{T}(bandeddata(V)), size(V,1), A.λ, A.μ)
-end
-
-convert(::Type{BandedMatrix}, V::BandedBlockBandedBlock) = convert(BandedMatrix{eltype(V)}, V)
-
-BandedMatrix{T}(V::BandedBlockBandedBlock) where T = convert(BandedMatrix{T}, V)
-BandedMatrix(V::BandedBlockBandedBlock) = convert(BandedMatrix, V)
