@@ -1,4 +1,3 @@
-__precompile__()
 
 module BlockBandedMatrices
 using BlockArrays, BandedMatrices, LazyArrays, FillArrays
@@ -22,7 +21,9 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         unsafe_convert, fill!, length, first, last,
                         eltype, getindex, to_indices, to_index,
                         reindex, _maybetail, tail, @_propagate_inbounds_meta,
-                        ==
+                        ==, axes, copyto!
+
+import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted                        
 
 import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
                         AbstractTriangular
@@ -31,17 +32,17 @@ import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, check
                     chkuplo
 
 
-import Compat: axes, copyto!
 
 import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec, @blasmatmat, @lazymul, blasmul!,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatMulVec, MatLdivVec,
-                    triangulardata, subarraylayout, _copyto!
+                    triangulardata, subarraylayout, _copyto!, @lazyldiv
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block
 
 
 include("AbstractBlockBandedMatrix.jl")
+include("broadcast.jl")
 include("BlockBandedMatrix.jl")
 include("BandedBlockBandedMatrix.jl")
 

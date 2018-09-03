@@ -1,4 +1,4 @@
-using BlockBandedMatrices, Compat, Test, LinearAlgebra
+using BlockBandedMatrices, Test, LinearAlgebra
 
 include("test_blockbanded.jl")
 include("test_bandedblockbanded.jl")

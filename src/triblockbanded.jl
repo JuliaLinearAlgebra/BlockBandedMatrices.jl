@@ -24,7 +24,7 @@ subblockbandwidths(A::AbstractTriangular) = subblockbandwidths(parent(A))
 triangularlayout(::Type{Tri}, ML::BandedBlockBandedColumnMajor) where {Tri} = Tri(ML)
 
 
-function blockbanded_squareblocks_trtrs!(A::AbstractMatrix{T}, b_in::AbstractVector{T}) where T
+function upper_blockbanded_squareblocks_trtrs!(A::AbstractMatrix{T}, b_in::AbstractVector{T}) where T
     @boundscheck size(A,1) == size(b_in,1) || throw(BoundsError())
 
     # impose block structure
@@ -55,7 +55,7 @@ end
     A,x = inv(M.A), M.B
     @assert hasmatchingblocks(A)
     x ≡ dest || copyto!(dest, x)
-    blockbanded_squareblocks_trtrs!(triangulardata(A), dest)
+    upper_blockbanded_squareblocks_trtrs!(triangulardata(A), dest)
 end
 
 

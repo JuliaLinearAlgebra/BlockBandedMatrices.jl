@@ -1,8 +1,5 @@
 
 
-struct BandedBlockBandedColumnMajor <: AbstractBlockBandedColumnMajor end
-
-
 struct BandedBlockBandedSizes <: AbstractBlockSizes{2}
     block_sizes::BlockSizes{2}
     data_block_sizes::BlockSizes{2}
@@ -206,6 +203,7 @@ BandedBlockBandedMatrix(A::AbstractMatrix) =
 ################################
 
 MemoryLayout(::BandedBlockBandedMatrix) = BandedBlockBandedColumnMajor()
+BroadcastStyle(::Type{<:BandedBlockBandedMatrix}) = BandedBlockBandedStyle()
 
 isbandedblockbanded(_) = false
 isbandedblockbanded(::BandedBlockBandedMatrix) = true
@@ -293,28 +291,6 @@ function Base.replace_in_print_matrix(A::BandedBlockBandedMatrix, i::Integer, j:
     I,J = bi.I
     i,j = bi.α
     -A.l ≤ J-I ≤ A.u && -A.λ ≤ j-i ≤ A.μ ? s : Base.replace_with_centered_mark(s)
-end
-
-
-######
-# extra marrix routines
-#####
-
-function Base.fill!(A::BandedBlockBandedMatrix, x)
-    !iszero(x) && throw(BandError(A))
-    fill!(A.data, x)
-    A
-end
-
-function rmul!(A::BandedBlockBandedMatrix, x::Number)
-    rmul!(A.data, x)
-    A
-end
-
-
-function lmul!(x::Number, A::BandedBlockBandedMatrix)
-    lmul!(x, A.data)
-    A
 end
 
 

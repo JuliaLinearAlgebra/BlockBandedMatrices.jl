@@ -10,15 +10,15 @@ const SubBandedBlockBandedMatrix{T,R1,R2} =
 
 
 @lazymul AbstractBlockBandedMatrix
-@blasmatvec AbstractBlockBandedColumnMajor
-@blasmatmat AbstractBlockBandedColumnMajor AbstractBlockBandedColumnMajor AbstractBlockBandedColumnMajor
+@blasmatvec AbstractBlockBandedLayout
+@blasmatmat AbstractBlockBandedLayout AbstractBlockBandedLayout AbstractBlockBandedLayout
 
 
 
 MemoryLayout(A::PseudoBlockArray) = MemoryLayout(A.blocks)
 
 function blasmul!(y_in::AbstractVector, A::AbstractMatrix, x_in::AbstractVector, α, β,
-                    ::AbstractStridedLayout, ::AbstractBlockBandedColumnMajor, ::AbstractStridedLayout)
+                    ::AbstractStridedLayout, ::AbstractBlockBandedLayout, ::AbstractStridedLayout)
     if length(x_in) != size(A,2) || length(y_in) != size(A,1)
         throw(DimensionMismatch())
     end
@@ -39,7 +39,7 @@ end
 
 
 function blasmul!(Y::AbstractMatrix, A::AbstractMatrix, X::AbstractMatrix, α, β,
-                    ::AbstractBlockBandedColumnMajor, ::AbstractBlockBandedColumnMajor, ::AbstractBlockBandedColumnMajor)
+                    ::AbstractBlockBandedLayout, ::AbstractBlockBandedLayout, ::AbstractBlockBandedLayout)
     lmul!(β, Y)
     for J=Block(1):Block(nblocks(X,2)),
             N=blockcolrange(X,J), K=blockcolrange(A,N)
@@ -54,24 +54,8 @@ end
 #############
 
 
-function BLAS.axpy!(a, X::AbstractBlockBandedMatrix, Y::AbstractBlockBandedMatrix)
-    size(X) == size(Y) || throw(DimensionMismatch())
-
-    for J=Block(1):Block(nblocks(X,2)), K=blockcolrange(X,J)
-        BLAS.axpy!(a, view(X,K,J), view(Y,K,J))
-    end
-    Y
-end
 
 
-
-function checkblocks(A, B)
-    Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
-    Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
-    if Acols ≠ Bcols || Arows ≠ Brows
-        throw(DimensionMismatch("*"))
-    end
-end
 ## algebra
 function fill!(B::BandedBlockBandedBlock{T}, x) where T
     x == zero(T) || throw(BandError(B))
@@ -81,40 +65,7 @@ function fill!(B::BandedBlockBandedBlock{T}, x) where T
     B
 end
 
-function fill!(B::AbstractBlockBandedMatrix{T}, x) where T
-    x == zero(T) || throw(BandError(B))
 
-    M,N = nblocks(B)
-    for J = 1:N, K = blockcolrange(B,J)
-        fill!(view(B,K,Block(J)), x)
-    end
-    B
-end
-
-function blockbanded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
-    @boundscheck checkblocks(dest, src)
-
-    dl, du = blockbandwidths(dest)
-    sl, su = blockbandwidths(src)
-    (dl ≥ sl && du ≥ su) || throw(BandError(dest))
-
-    M,N = nblocks(src)
-    for J = 1:N
-        for K = max(1,J-du):min(J-su-1,M)
-            fill!(view(dest,Block(K),Block(J)), zero(T))
-        end
-        for K = max(1,J-su):min(J+sl,M)
-            copyto!(view(dest,Block(K),Block(J)), view(src,Block(K),Block(J)))
-        end
-        for K = max(1,J+sl+1):min(J+dl,M)
-            fill!(view(dest,Block(K),Block(J)), zero(T))
-        end
-    end
-    dest
-end
-
-copyto!(dest::AbstractBlockBandedMatrix, src::AbstractBlockBandedMatrix) =
-    blockbanded_copyto!(dest, src)
 
 function +(A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{V}) where {T<:Number,V<:Number}
     checkblocks(A, B)

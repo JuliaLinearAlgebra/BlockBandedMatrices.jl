@@ -1,7 +1,3 @@
-####
-# BlockBandedMatrix memory layout
-
-struct BlockBandedColumnMajor <: AbstractBlockBandedColumnMajor end
 
 
 #### Routines for BandedSizes
@@ -170,6 +166,7 @@ BlockBandedMatrix(A::AbstractMatrix) = convert(BlockBandedMatrix, A)
 
 MemoryLayout(::BlockBandedMatrix) = BlockBandedColumnMajor()
 blockbandwidths(A::BlockBandedMatrix) = (A.l, A.u)
+BroadcastStyle(::Type{<:BlockBandedMatrix}) = BlockBandedStyle()
 
 
 ################################
