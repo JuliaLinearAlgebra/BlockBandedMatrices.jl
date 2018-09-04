@@ -2,7 +2,7 @@ using BlockBandedMatrices, BandedMatrices, BlockArrays, LazyArrays, Test
 import BlockBandedMatrices: MemoryLayout, UpperTriangularLayout, BandedBlockBandedColumnMajor,
                         BandedColumnMajor, tribandeddata, blocksizes, cumulsizes, nblocks
 
-@testset "Upper trianguler BandedBlockBandedMatrix" begin
+@testset "Upper triangular BandedBlockBandedMatrix mul" begin
     A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
         A.data .= randn.()
         A
@@ -22,6 +22,33 @@ import BlockBandedMatrices: MemoryLayout, UpperTriangularLayout, BandedBlockBand
 
     b = randn(size(V,1))
 
+    @test all((similar(b) .= Mul(V,b)) .===
+                (similar(b) .= Mul(UpperTriangular(BandedMatrix(V)) , b)) .===
+                BandedMatrices.tbmv!('U', 'N', 'N', 4, 1, tribandeddata(V), copy(b)))
+
+
+
+    V = view(A, Block(3), Block.(3:5))
+    @test MemoryLayout(V) == BandedBlockBandedColumnMajor()
+    b = randn(size(V,2))
+    c = similar(b, size(V,1))
+
+    @test blockbandwidths(V) == (1,1)
+    @test (c .= Mul(V,b)) ≈ (Matrix(V)*b)
+
+
+    b = randn(size(U,1))
+    @test U*b isa Vector{Float64}
+    @test (similar(b) .= Mul(U,b)) ≈ U*b  ≈ Matrix(U)*b
+end
+
+@testset "Upper triangular BandedBlockBandedMatrix ldiv" begin
+    A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
+        A.data .= randn.()
+        A
+    U = UpperTriangular(A)
+    V = view(U,Block(4,4))
+    b = randn(size(V,2))
     @test all((similar(b) .= Ldiv(V, b)) .===
                 (similar(b) .= Ldiv(UpperTriangular(BandedMatrix(V)) , b)) .===
                 BandedMatrices.tbsv!('U', 'N', 'N', 4, 1, tribandeddata(V), copy(b)))

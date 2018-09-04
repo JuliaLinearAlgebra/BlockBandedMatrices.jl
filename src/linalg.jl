@@ -167,10 +167,21 @@ subarraylayout(::BlockBandedColumnMajor, ::Tuple{BlockSlice{BlockRange1}, BlockS
 subarraylayout(::BlockBandedColumnMajor, ::Tuple{BlockSlice{BlockIndexRange1}, BlockSlice{BlockIndexRange1}}) = ColumnMajor()
 
 subarraylayout(::BandedBlockBandedColumnMajor, ::Tuple{BlockSlice{BlockRange1}, BlockSlice{BlockRange1}}) = BandedBlockBandedColumnMajor()
+subarraylayout(::BandedBlockBandedColumnMajor, ::Tuple{BlockSlice{Block1}, BlockSlice{BlockRange1}}) = BandedBlockBandedColumnMajor()
 subarraylayout(::BandedBlockBandedColumnMajor, ::Tuple{BlockSlice{BlockRange1}, BlockSlice{Block1}}) = BandedBlockBandedColumnMajor()
 subarraylayout(::BandedBlockBandedColumnMajor, ::Tuple{BlockSlice{BlockRange1}, BlockSlice{BlockIndexRange1}}) = BandedBlockBandedColumnMajor()
 subarraylayout(::BandedBlockBandedColumnMajor, ::Tuple{BlockSlice{BlockIndexRange1}, BlockSlice{BlockIndexRange1}}) = BandedBlockBandedColumnMajor()
 
+
+function blockbandwidths(V::SubBandedBlockBandedMatrix{<:Any,BlockRange1,Block1})
+    A = parent(V)
+    Bs = A.block_sizes.block_sizes
+
+    KR = parentindices(V)[1].block.indices[1]
+    J = parentindices(V)[2].block
+    shift = Int(KR[1])-Int(J)
+    blockbandwidth(A,1) - shift, blockbandwidth(A,2) + shift
+end
 
 function blocksizes(V::SubBandedBlockBandedMatrix{<:Any,BlockRange1,Block1})
     A = parent(V)
@@ -178,12 +189,33 @@ function blocksizes(V::SubBandedBlockBandedMatrix{<:Any,BlockRange1,Block1})
 
     KR = parentindices(V)[1].block.indices[1]
     J = parentindices(V)[2].block
-    shift = Int(KR[1])-Int(J)
 
-    Bs.cumul_sizes[1]
     BlockBandedSizes(BlockSizes((Bs.cumul_sizes[1][KR[1]:KR[end]+1] .- Bs.cumul_sizes[1][KR[1]] .+ 1,
                                     [1; 1+blocksize(A, 2, Int(J))])),
-                        blockbandwidth(A,1) - shift, blockbandwidth(A,2) + shift)
+                        blockbandwidths(V)...)
+end
+
+function blockbandwidths(V::SubBandedBlockBandedMatrix{<:Any,Block1,BlockRange1})
+    A = parent(V)
+    Bs = A.block_sizes.block_sizes
+
+    K = parentindices(V)[1].block
+    JR = parentindices(V)[2].block.indices[1]
+    shift = Int(K)-Int(JR[1])
+
+    blockbandwidth(A,1) - shift, blockbandwidth(A,2) + shift
+end
+
+function blocksizes(V::SubBandedBlockBandedMatrix{<:Any,Block1,BlockRange1})
+    A = parent(V)
+    Bs = A.block_sizes.block_sizes
+
+    K = parentindices(V)[1].block
+    JR = parentindices(V)[2].block.indices[1]
+
+    BlockBandedSizes(BlockSizes(([1; 1+blocksize(A, 1, Int(K))],
+                                    Bs.cumul_sizes[2][JR[1]:JR[end]+1] .- Bs.cumul_sizes[2][JR[1]] .+ 1)),
+                        blockbandwidths(V)...)
 end
 
 

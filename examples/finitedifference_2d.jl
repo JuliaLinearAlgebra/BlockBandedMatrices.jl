@@ -3,7 +3,7 @@
 #
 ###########
 
-using BlockBandedMatrices, BandedMatrices
+using BlockBandedMatrices, BandedMatrices, LazyArrays
 
 
 function finitedifference_2d(n)
@@ -28,10 +28,12 @@ n = 10
 Δt = (1/n^2)/4; Δ = finitedifference_2d(n); A = I - Δt*Δ  # 16k x 16k discretization
 
 L = LowerTriangular(A)
-U = UpperTriangular(@view A[1:end-1,2:end])
-
+U = UpperTriangular(BandedBlockBandedMatrix(@view(A[1:end-1,2:end]), ([fill(10,9); 9], [9; fill(10,9)]), (1,1), (1,1)))
 b = randn(size(A,1));
-@time u = A\b; # 6s
+
+using BlockArrays
+PseudoBlockArray(randn(3,3), [1,2], [1,2])[1:2,1:2]
+
 x = copy(b)
-@time gaussseidel(L,U, b, x, 20) # 1.6s
+@time gaussseidel(L,U, b, x, 2) # 1.6s
 norm(x - u) # 6*10^(-10)
