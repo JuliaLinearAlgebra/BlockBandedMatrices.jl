@@ -88,11 +88,14 @@ struct BlockBandedMatrix{T} <: AbstractBlockBandedMatrix{T}
 end
 
 # Auxiliary outer constructors
-@inline _BlockBandedMatrix(data::AbstractVector, dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) =
-    _BlockBandedMatrix(data, BlockBandedSizes(dims..., lu...))
+@inline _BlockBandedMatrix(data::AbstractVector, (kr,jr)::NTuple{2, AbstractVector{Int}}, (l,u)::NTuple{2, Int}) =
+    _BlockBandedMatrix(data, BlockBandedSizes(kr,jr, l,u))
 
 @inline BlockBandedMatrix{T}(::UndefInitializer, block_sizes::BlockBandedSizes) where T =
     _BlockBandedMatrix(Vector{T}(undef, bb_numentries(block_sizes)), block_sizes)
+
+@inline BlockBandedMatrix{T}(::UndefInitializer, block_sizes::BlockSizes, (l,u)::NTuple{2, Int}) where T =
+    BlockBandedMatrix{T}(undef, BlockBandedSizes(block_sizes,l,u))
 
 """
     BlockBandedMatrix{T}(undef, (rows, cols), (l, u))
@@ -159,6 +162,9 @@ end
 
 
 BlockBandedMatrix(A::AbstractMatrix) = convert(BlockBandedMatrix, A)
+
+similar(A::BlockBandedMatrix, T::Type=eltype(A), bs::BlockBandedSizes=blocksizes(A)) =
+      BlockBandedMatrix{T}(undef, bs)
 
 ################################
 # BlockBandedMatrix Interface #

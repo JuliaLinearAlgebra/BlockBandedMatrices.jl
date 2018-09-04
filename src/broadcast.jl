@@ -65,7 +65,7 @@ function checkblocks(A, B)
     end
 end
 
-function blockbanded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
+function _blockbanded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
     @boundscheck checkblocks(dest, src)
 
     dl, du = blockbandwidths(dest)
@@ -87,8 +87,16 @@ function blockbanded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) where
     dest
 end
 
+function blockbanded_copyto!(dest::AbstractMatrix, src::AbstractMatrix)
+    if isblockbanded(dest)
+        _blockbanded_copyto!(dest, src)
+    else
+        _blockbanded_copyto!(PseudoBlockArray(dest, blocksizes(src).block_sizes), src)
+    end
+end
 
-copyto!(dest::AbstractMatrix, src::AbstractBlockBandedMatrix) =  blockbanded_copyto!(dest, src)
+
+copyto!(dest::AbstractMatrix, src::AbstractBlockBandedMatrix) = blockbanded_copyto!(dest, src)
 
 
 function copyto!(dest::AbstractArray, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(identity)})
@@ -197,7 +205,7 @@ similar(bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(/), <:Tuple{<:
 function copyto!(dest::AbstractArray, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(\), <:Tuple{<:Number,<:AbstractMatrix}})
     α,A = bc.args
     dest ≡ A || copyto!(dest, A)
-    banded_lmul!(inv(α), dest)
+    blockbanded_lmul!(inv(α), dest)
 end
 
 similar(bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(\), <:Tuple{<:Number,<:AbstractMatrix}}, ::Type{T}) where T =
@@ -221,6 +229,7 @@ end
 function copyto!(dest::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(+),
                                                             <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
     A,B = bc.args
+
     if dest ≡ B
         blockbanded_axpy!(one(T), A, dest)
     elseif dest ≡ A
@@ -233,8 +242,8 @@ end
 
 function similar(bc::Broadcasted{<:BlockBandedStyle, <:Any, typeof(+), <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}, ::Type{T}) where T
     A,B = bc.args
-    A_size = blocksizes(A)
-    A_size == blocksizes(B) || throw(DimensionMismatch())
+    A_size = blocksizes(A).block_sizes
+    A_size == blocksizes(B).block_sizes || throw(DimensionMismatch())
     Al,Au = blockbandwidths(A)
     Bl,Bu = blockbandwidths(B)
     BlockBandedMatrix{T}(undef, A_size, (max(Al,Bl), max(Au,Bu)))
@@ -242,8 +251,8 @@ end
 
 function similar(bc::Broadcasted{<:BandedBlockBandedStyle, <:Any, typeof(+), <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}, ::Type{T}) where T
     A,B = bc.args
-    A_size = blocksizes(A)
-    A_size == blocksizes(B) || throw(DimensionMismatch())
+    A_size = blocksizes(A).block_sizes
+    A_size == blocksizes(B).block_sizes || throw(DimensionMismatch())
     Al,Au = blockbandwidths(A)
     Bl,Bu = blockbandwidths(B)
     Aλ,Aμ = subblockbandwidths(A)
@@ -259,7 +268,7 @@ function copyto!(dest::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedSt
                                                         <:AbstractMatrix}}) where T
     αA,B = bc.args
     α,A = αA.args
-    dest ≡ B || banded_copyto!(dest, B)
+    dest ≡ B || blockbanded_copyto!(dest, B)
     blockbanded_axpy!(α, A, dest)
 end
 
@@ -268,8 +277,8 @@ function similar(bc::Broadcasted{BlockBandedStyle, <:Any, typeof(+),
                         <:AbstractMatrix}}, ::Type{T}) where T
     αA,B = bc.args
     α,A = αA.args
-    A_size = blocksizes(A)
-    A_size == blocksizes(B) || throw(DimensionMismatch())
+    A_size = blocksizes(A).block_sizes
+    A_size == blocksizes(B).block_sizes || throw(DimensionMismatch())
     Al,Au = blockbandwidths(A)
     Bl,Bu = blockbandwidths(B)
     BlockBandedMatrix{T}(undef, A_size, (max(Al,Bl), max(Au,Bu)))
@@ -280,8 +289,8 @@ function similar(bc::Broadcasted{BandedBlockBandedStyle, <:Any, typeof(+),
                         <:AbstractMatrix}}, ::Type{T}) where T
     αA,B = bc.args
     α,A = αA.args
-    A_size = blocksizes(A)
-    A_size == blocksizes(B) || throw(DimensionMismatch())
+    A_size = blocksizes(A).block_sizes
+    A_size == blocksizes(B).block_sizes || throw(DimensionMismatch())
     Al,Au = blockbandwidths(A)
     Bl,Bu = blockbandwidths(B)
     Aλ,Aμ = subblockbandwidths(A)

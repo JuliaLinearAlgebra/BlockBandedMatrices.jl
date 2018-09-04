@@ -91,6 +91,11 @@ BandedBlockBandedMatrix{T}(::UndefInitializer, dims::NTuple{2, AbstractVector{In
     BandedBlockBandedMatrix{T}(undef, BandedBlockBandedSizes(dims..., lu..., λμ...))
 
 
+BandedBlockBandedMatrix{T}(::UndefInitializer, bs::BlockSizes,
+                        lu::NTuple{2, Int}, λμ::NTuple{2, Int}) where T =
+    BandedBlockBandedMatrix{T}(undef, BandedBlockBandedSizes(bs, lu..., λμ...))
+
+
 # Auxiliary outer constructors
 @inline _BandedBlockBandedMatrix(data::AbstractMatrix, dims::NTuple{2, AbstractVector{Int}},
                                          lu::NTuple{2, Int}, λμ::NTuple{2, Int}) =
@@ -196,6 +201,9 @@ BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 
 BandedBlockBandedMatrix(A::AbstractMatrix) =
     BandedBlockBandedMatrix(A, blocksizes(A), blockbandwidths(A), subblockbandwidths(A))
+
+similar(A::BandedBlockBandedMatrix, T::Type=eltype(A), bs::BandedBlockBandedSizes=blocksizes(A)) =
+      BandedBlockBandedMatrix{T}(undef, bs)
 
 
 ################################
