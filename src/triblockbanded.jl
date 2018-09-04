@@ -1,7 +1,7 @@
-@lazyldiv UpperTriangular{T, <:AbstractBlockBandedMatrix{T}} where T
-@lazyldiv UnitUpperTriangular{T, <:AbstractBlockBandedMatrix{T}} where T
-@lazyldiv LowerTriangular{T, <:AbstractBlockBandedMatrix{T}} where T
-@lazyldiv UnitLowerTriangular{T, <:AbstractBlockBandedMatrix{T}} where T
+@lazyldiv UpperTriangular{T, BandedBlockBandedMatrix{T}} where T
+@lazyldiv UnitUpperTriangular{T, BandedBlockBandedMatrix{T}} where T
+@lazyldiv LowerTriangular{T, BandedBlockBandedMatrix{T}} where T
+@lazyldiv UnitLowerTriangular{T, BandedBlockBandedMatrix{T}} where T
 
 
 @inline hasmatchingblocks(A) =

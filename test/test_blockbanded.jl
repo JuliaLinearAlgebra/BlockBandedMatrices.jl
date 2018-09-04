@@ -115,7 +115,6 @@ end
     @test A[1,2] == -5
 end
 
-#### Test Blas arithmetic
 @testset "BlockBandedMatrix BLAS arithmetic" begin
     l , u = 1,1
     N = M = 10
@@ -143,6 +142,7 @@ end
     @test sum(B) == 20
     AB = A*B
     @test AB isa BlockBandedMatrix
+    Matrix(AB)
     @test Matrix(AB) == Matrix(A)*Matrix(B)
 end
 

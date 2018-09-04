@@ -70,9 +70,9 @@ function _blockbanded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) wher
 
     dl, du = blockbandwidths(dest)
     sl, su = blockbandwidths(src)
-    (dl ≥ sl && du ≥ su) || throw(BandError(dest))
-
     M,N = nblocks(src)
+    (dl ≥ min(sl,M-1) && du ≥ min(su,N-1)) || throw(BandError(dest))
+
     for J = 1:N
         for K = max(1,J-du):min(J-su-1,M)
             fill!(view(dest,Block(K),Block(J)), zero(T))
@@ -93,6 +93,7 @@ function blockbanded_copyto!(dest::AbstractMatrix, src::AbstractMatrix)
     else
         _blockbanded_copyto!(PseudoBlockArray(dest, blocksizes(src).block_sizes), src)
     end
+    dest
 end
 
 
@@ -162,6 +163,9 @@ function blockbanded_lmul!(x::Number, A::AbstractBlockBandedMatrix)
     lmul!(x, A.data)
     A
 end
+
+lmul!(x::Number, A::AbstractBlockBandedMatrix) = blockbanded_lmul!(x, A)
+rmul!(A::AbstractBlockBandedMatrix, x::Number) = blockbanded_rmul!(A, x)
 
 
 

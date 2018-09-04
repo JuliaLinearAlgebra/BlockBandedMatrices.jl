@@ -65,8 +65,9 @@ end
 
     C = BandedBlockBandedMatrix{Float64}(undef, (rows,cols), (2l,2u), (2λ,2μ))
     C .= Mul(A,A)
-    @test Matrix(C) ≈ Matrix(A)*Matrix(A)
 
+    @test Matrix(A) == [A[k,j] for k=1:size(A,1), j=1:size(A,2)]
+    @test Matrix(C) ≈ Matrix(A)*Matrix(A)
     C =  A*A
     @test C isa BandedBlockBandedMatrix
     @test Matrix(C) ≈ Matrix(A)*Matrix(A)
