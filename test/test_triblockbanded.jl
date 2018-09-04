@@ -1,33 +1,41 @@
 using BlockBandedMatrices, BandedMatrices, BlockArrays, LazyArrays, Test
-import BlockBandedMatrices: MemoryLayout, UpperTriangularLayout, BandedBlockBandedColumnMajor,
+import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedColumnMajor,
                         BandedColumnMajor, tribandeddata, blocksizes, cumulsizes, nblocks
 
-@testset "Upper triangular BandedBlockBandedMatrix mul" begin
+@testset "triangular BandedBlockBandedMatrix mul" begin
     A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
         A.data .= randn.()
-        A
+
     U = UpperTriangular(A)
+    @test MemoryLayout(U) == TriangularLayout{'U','N'}(BandedBlockBandedColumnMajor())
+    b = randn(size(U,1))
+    @test U*b isa Vector{Float64}
+    @test (similar(b) .= Mul(U,b)) ≈ U*b  ≈ Matrix(U)*b
 
 
-    @test MemoryLayout(U) == UpperTriangularLayout(BandedBlockBandedColumnMajor())
+    U = UnitUpperTriangular(A)
+    @test MemoryLayout(U) == TriangularLayout{'U','U'}(BandedBlockBandedColumnMajor())
+    b = randn(size(U,1))
+    @test U*b isa Vector{Float64}
+    @test (similar(b) .= Mul(U,b)) ≈ U*b  ≈ Matrix(U)*b
 
-    @test MemoryLayout(view(U, Block(1,1))) == UpperTriangularLayout(BandedColumnMajor())
-    @test MemoryLayout(view(U, Block(1,2))) == BandedColumnMajor()
-
-    @test Base.return_types(MemoryLayout, (typeof(view(U, Block(1,2))),))[1] ==
-                Union{BandedColumnMajor, UpperTriangularLayout{BandedColumnMajor}}
-
-    V = view(U,Block(4,4))
-    @test tribandeddata(V) == A.data[Block(2),Block(4)][1:2,:]
-
-    b = randn(size(V,1))
-
-    @test all((similar(b) .= Mul(V,b)) .===
-                (similar(b) .= Mul(UpperTriangular(BandedMatrix(V)) , b)) .===
-                BandedMatrices.tbmv!('U', 'N', 'N', 4, 1, tribandeddata(V), copy(b)))
+    L = LowerTriangular(A)
+    @test MemoryLayout(L) == TriangularLayout{'L','N'}(BandedBlockBandedColumnMajor())
+    b = randn(size(U,1))
+    @test L*b isa Vector{Float64}
+    @test (similar(b) .= Mul(L,b)) ≈ L*b  ≈ Matrix(L)*b
 
 
+    L = UnitLowerTriangular(A)
+    @test MemoryLayout(L) == TriangularLayout{'L','U'}(BandedBlockBandedColumnMajor())
+    b = randn(size(L,1))
+    @test L*b isa Vector{Float64}
+    @test (similar(b) .= Mul(L,b)) ≈ L*b  ≈ Matrix(L)*b
+end
 
+@testset "Block by BlockIndex" begin
+    A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
+        A.data .= randn.()
     V = view(A, Block(3), Block.(3:5))
     @test MemoryLayout(V) == BandedBlockBandedColumnMajor()
     b = randn(size(V,2))
@@ -36,27 +44,7 @@ import BlockBandedMatrices: MemoryLayout, UpperTriangularLayout, BandedBlockBand
     @test blockbandwidths(V) == (1,1)
     @test (c .= Mul(V,b)) ≈ (Matrix(V)*b)
 
-
-    b = randn(size(U,1))
-    @test U*b isa Vector{Float64}
-    @test (similar(b) .= Mul(U,b)) ≈ U*b  ≈ Matrix(U)*b
-end
-
-@testset "Upper triangular BandedBlockBandedMatrix ldiv" begin
-    A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
-        A.data .= randn.()
-        A
-    U = UpperTriangular(A)
-    V = view(U,Block(4,4))
-    b = randn(size(V,2))
-    @test all((similar(b) .= Ldiv(V, b)) .===
-                (similar(b) .= Ldiv(UpperTriangular(BandedMatrix(V)) , b)) .===
-                BandedMatrices.tbsv!('U', 'N', 'N', 4, 1, tribandeddata(V), copy(b)))
-
-
-
     V = view(A, Block.(2:4), Block(3))
-
 
     @test MemoryLayout(V) == BandedBlockBandedColumnMajor()
     @test blockbandwidths(V) == (2,0)
@@ -69,11 +57,19 @@ end
 
     b = rand(size(V,2))
     @test (similar(b, size(V,1)) .= Mul(V, b)) ≈ V*b
+end
 
+
+@testset "Upper triangular BandedBlockBandedMatrix ldiv" begin
+    A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
+        A.data .= randn.()
+        A
+
+    U = UpperTriangular(A)
     b = randn(size(U,1))
-
     @test BlockBandedMatrices._copyto!(LazyArrays.DenseColumnMajor(), similar(b), Ldiv(U,b)) ≈ (Matrix(U) \ b)
-    @test all((similar(b) .= Ldiv(U, b)) .=== BlockBandedMatrices._copyto!(LazyArrays.DenseColumnMajor(), similar(b), Ldiv(U,b)))
+    @test all((similar(b) .= Ldiv(U, b)) .===
+                BlockBandedMatrices._copyto!(LazyArrays.DenseColumnMajor(), similar(b), Ldiv(U,b)))
 end
 
 
