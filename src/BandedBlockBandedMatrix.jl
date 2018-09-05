@@ -381,6 +381,7 @@ const BandedBlockBandedBlock{T} = SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{
 
 isbanded(::BandedBlockBandedBlock) = true
 MemoryLayout(::BandedBlockBandedBlock) = BandedColumnMajor()
+BroadcastStyle(::Type{BandedBlockBandedBlock{T}}) where T = BandedStyle()
 
 function inblockbands(V::BandedBlockBandedBlock)
     A = parent(V)

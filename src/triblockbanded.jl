@@ -16,14 +16,22 @@
 
 #TODO: non-matchin g blocks
 isblockbanded(A::AbstractTriangular) =
-    isblockbanded(parent(A)) && hasmatchingblocks(A)
+    isblockbanded(parent(A))
 isbandedblockbanded(A::AbstractTriangular) =
-    isbandedblockbanded(parent(A)) && hasmatchingblocks(A)
+    isbandedblockbanded(parent(A))
 blockbandwidths(A::Union{UpperTriangular,UnitUpperTriangular}) = let P = parent(A)
-        (min(0,blockbandwidths(P,1)), blockbandwidth(P,2))
+        if hasmatchingblocks(P)
+            (min(0,blockbandwidths(P,1)), blockbandwidth(P,2))
+        else
+            blockbandwidths(P)
+        end
     end
 blockbandwidths(A::Union{LowerTriangular,UnitLowerTriangular}) = let P = parent(A)
-        (blockbandwidth(P,1), min(0,blockbandwidths(P,2)))
+        if hasmatchingblocks(P)
+            (blockbandwidth(P,1), min(0,blockbandwidths(P,2)))
+        else
+            blockbandwidths(P)
+        end
     end
 subblockbandwidths(A::AbstractTriangular) = subblockbandwidths(parent(A))
 
@@ -35,16 +43,7 @@ _triangular_matrix(::Val{'U'}, ::Val{'U'}, A) = UnitUpperTriangular(A)
 _triangular_matrix(::Val{'L'}, ::Val{'U'}, A) = UnitLowerTriangular(A)
 
 
-@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatMulVec{T, <:TriangularLayout{'U',UNIT,BandedBlockBandedColumnMajor},
-                                   <:AbstractStridedLayout}) where {UNIT,T}
-    U,x = M.A, M.B
-    x ≡ dest || copyto!(dest, x)
-    A = triangulardata(U)
-    @assert hasmatchingblocks(A)
-
-    @boundscheck size(A,1) == size(dest,1) || throw(BoundsError())
-
+function _matchingblocks_triangular_mul!(::Val{'U'}, UNIT, A, dest)
     # impose block structure
     b = PseudoBlockArray(dest, BlockSizes((cumulsizes(blocksizes(A),1),)))
 
@@ -53,27 +52,17 @@ _triangular_matrix(::Val{'L'}, ::Val{'U'}, A) = UnitLowerTriangular(A)
 
     for K = 1:N
         b_2 = view(b, Block(K))
-        Ũ = _triangular_matrix(Val('U'), Val(UNIT), view(A, Block(K,K)))
+        Ũ = _triangular_matrix(Val('U'), UNIT, view(A, Block(K,K)))
         b_2 .= Mul(Ũ, b_2)
         JR = Block(K+1):blockrowstop(A,K)
         if !isempty(JR)
             b_2 .= Mul(view(A, Block(K), JR), view(b,JR)) .+ b_2
         end
     end
-
     dest
 end
 
-@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatMulVec{T, <:TriangularLayout{'L',UNIT,BandedBlockBandedColumnMajor},
-                                   <:AbstractStridedLayout}) where {UNIT,T}
-    L,x = M.A, M.B
-    x ≡ dest || copyto!(dest, x)
-    A = triangulardata(L)
-    @assert hasmatchingblocks(A)
-
-    @boundscheck size(A,1) == size(dest,1) || throw(BoundsError())
-
+function _matchingblocks_triangular_mul!(::Val{'L'}, UNIT, A, dest)
     # impose block structure
     b = PseudoBlockArray(dest, BlockSizes((cumulsizes(blocksizes(A),1),)))
 
@@ -91,6 +80,23 @@ end
     end
 
     dest
+end
+
+@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
+         M::MatMulVec{T, <:TriangularLayout{UPLO,UNIT,LAY},
+                                   <:AbstractStridedLayout}) where {UPLO,UNIT,T,LAY<:BandedBlockBandedColumnMajor}
+    U,x = M.A, M.B
+    @boundscheck size(U,1) == size(dest,1) || throw(BoundsError())
+    if hasmatchingblocks(U)
+        x ≡ dest || copyto!(dest, x)
+        _matchingblocks_triangular_mul!(Val(UPLO), Val(UNIT), triangulardata(U), dest)
+    else # use default
+        if x ≡ dest
+            blasmul!(dest, U, copy(x), one(T), zero(T), MemoryLayout(dest), BandedBlockBandedColumnMajor(), MemoryLayout(x))
+        else
+            blasmul!(dest, U, x, one(T), zero(T), MemoryLayout(dest), BandedBlockBandedColumnMajor(), MemoryLayout(x))
+        end
+    end
 end
 
 
@@ -113,12 +119,13 @@ end
 
     for K = N:-1:1
         b_2 = view(b, Block(K))
-        Ũ = _triangular_matrix(Val('U'), Val(UNIT), view(A, Block(K),  Block(K)))
+        Ũ = _triangular_matrix(Val('U'), Val(UNIT), view(A, Block(K,K)))
         b_2 .= Ldiv(Ũ, b_2)
 
         if K ≥ 2
-            V_12 = view(A, blockcolstart(A, K):Block(K-1), Block(K))
-            b̃_1 = view(b, blockcolstart(A, K):Block(K-1))
+            KR = blockcolstart(A, K):Block(K-1)
+            V_12 = view(A, KR, Block(K))
+            b̃_1 = view(b, KR)
             b̃_1 .=  (-one(T)).*Mul(V_12, b_2) .+ b̃_1
         end
     end
@@ -129,10 +136,33 @@ end
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
          M::MatLdivVec{T, <:TriangularLayout{'L',UNIT,BandedBlockBandedColumnMajor},
                                    <:AbstractStridedLayout}) where {UNIT,T}
-    A,x = inv(M.A), M.B
-    @assert hasmatchingblocks(A)
+    L,x = inv(M.A), M.B
     x ≡ dest || copyto!(dest, x)
-    lower_blockbanded_squareblocks_trtrs!(triangulardata(A), dest)
+    A = triangulardata(L)
+    @assert hasmatchingblocks(A)
+
+    @boundscheck size(A,1) == size(dest,1) || throw(BoundsError())
+
+    # impose block structure
+    b = PseudoBlockArray(dest, BlockSizes((cumulsizes(blocksizes(A),1),)))
+
+    Bs = blocksizes(A)
+    N = nblocks(Bs,1)
+
+    for K = 1:N
+       b_2 = view(b, Block(K))
+       L̃ = _triangular_matrix(Val('L'), Val(UNIT), view(A, Block(K,K)))
+       b_2 .= Ldiv(L̃, b_2)
+
+       if K < N
+           KR = Block(K+1):blockcolstop(A, K)
+           V_12 = view(A, KR, Block(K))
+           b̃_1 = view(b, KR)
+           b̃_1 .=  (-one(T)).*Mul(V_12, b_2) .+ b̃_1
+       end
+    end
+
+    dest
 end
 
 

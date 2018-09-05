@@ -67,20 +67,6 @@ end
 
 
 
-function +(A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{V}) where {T<:Number,V<:Number}
-    checkblocks(A, B)
-    n,m = size(A)
-    Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
-
-
-    bs = BandedBlockBandedSizes(BlockSizes((Arows,Acols)), max(A.l,B.l), max(A.u,B.u), max(A.λ,B.λ), max(A.μ,B.μ))
-    TV = promote_type(T,V)
-    ret = BandedBlockBandedMatrix{TV}(undef, bs)
-    copyto!(ret, A)
-    BLAS.axpy!(one(TV), B, ret)
-end
-
-
 
 function *(A::BlockBandedMatrix{T}, B::BlockBandedMatrix{V}) where {T<:Number,V<:Number}
     Arows, Acols = A.block_sizes.block_sizes.cumul_sizes

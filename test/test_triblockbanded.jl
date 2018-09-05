@@ -60,7 +60,7 @@ end
 end
 
 
-@testset "Upper triangular BandedBlockBandedMatrix ldiv" begin
+@testset "triangular BandedBlockBandedMatrix ldiv" begin
     A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
         A.data .= randn.()
         A
@@ -70,6 +70,18 @@ end
     @test BlockBandedMatrices._copyto!(LazyArrays.DenseColumnMajor(), similar(b), Ldiv(U,b)) ≈ (Matrix(U) \ b)
     @test all((similar(b) .= Ldiv(U, b)) .===
                 BlockBandedMatrices._copyto!(LazyArrays.DenseColumnMajor(), similar(b), Ldiv(U,b)))
+
+    U = UnitUpperTriangular(A)
+    b = randn(size(U,1))
+    @test BlockBandedMatrices._copyto!(LazyArrays.DenseColumnMajor(), similar(b), Ldiv(U,b)) ≈ (Matrix(U) \ b)
+    @test all((similar(b) .= Ldiv(U, b)) .===
+                BlockBandedMatrices._copyto!(LazyArrays.DenseColumnMajor(), similar(b), Ldiv(U,b)))
+
+    L = LowerTriangular(A)
+    b = randn(size(L,1))
+    @test BlockBandedMatrices._copyto!(LazyArrays.DenseColumnMajor(), similar(b), Ldiv(L,b)) ≈ (Matrix(L) \ b)
+    @test all((similar(b) .= Ldiv(L, b)) .===
+                BlockBandedMatrices._copyto!(LazyArrays.DenseColumnMajor(), similar(b), Ldiv(L,b)))
 end
 
 

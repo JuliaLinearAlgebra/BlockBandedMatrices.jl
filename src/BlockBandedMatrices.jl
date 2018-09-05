@@ -14,7 +14,8 @@ import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex,
                         BlasFloat, banded_dense_axpy!, MemoryLayout,
                         BandedColumnMajor,
                         BandedSubBandedMatrix, bandeddata, tribandeddata,
-                        _BandedMatrix, colstart, colstop, rowstart, rowstop
+                        _BandedMatrix, colstart, colstop, rowstart, rowstop,
+                        BandedStyle
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         +, *, -, /, \, strides, zeros, size,

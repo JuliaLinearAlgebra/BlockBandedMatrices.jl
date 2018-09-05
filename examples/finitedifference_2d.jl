@@ -3,7 +3,7 @@
 #
 ###########
 
-using BlockBandedMatrices, BandedMatrices, LazyArrays
+using BlockBandedMatrices, BandedMatrices, LazyArrays, FillArrays
 
 
 function finitedifference_2d(n)
@@ -14,26 +14,96 @@ function finitedifference_2d(n)
     D_xx + D_yy
 end
 
-function gaussseidel(L, U, b, x=copy(b), M=5)
+function _gaussseidel(L, U, b, x=copy(b), y=copy(b), M=5)
     for _=1:M
-        @view(x[1:end-1]) .= Mul(U , @view(x[2:end]))
-        x[end] = 0
-        x .= b .- x
+        @view(y[1:end-1]) .= Mul(U , @view(x[2:end]))
+        y[end] = 0
+        x .= b .- y
         x .= Ldiv(L, x)
     end
     x
 end
 
-n = 10
-Δt = (1/n^2)/4; Δ = finitedifference_2d(n); A = I - Δt*Δ  # 16k x 16k discretization
+function gaussseidel(A, b, M)
+    n = Int(sqrt(length(b)))
+    L = LowerTriangular(A)
+    U = BandedBlockBandedMatrix(UpperTriangular(@view(A[1:end-1,2:end])), ([fill(n,n-1); n-1], [n-1; fill(n,n-1)]),
+                                            (0,1), (0,1))
+    x = copy(b)
+    _gaussseidel(L,U, b, x, copy(x), M) # 1.6s
+    x
+end
 
-L = LowerTriangular(A)
-U = UpperTriangular(BandedBlockBandedMatrix(@view(A[1:end-1,2:end]), ([fill(10,9); 9], [9; fill(10,9)]), (1,1), (1,1)))
-b = randn(size(A,1));
+n = 200;
+Δt = (1/n^2)/4; @time Δ = finitedifference_2d(n);
 
-using BlockArrays
-PseudoBlockArray(randn(3,3), [1,2], [1,2])[1:2,1:2]
+@time A = I - Δt*Δ  # 16k x 16k discretization
+    b = randn(n^2)
+    L = LowerTriangular(A)
+    @time U = BandedBlockBandedMatrix(UpperTriangular(@view(A[1:end-1,2:end])), ([fill(n,n-1); n-1], [n-1; fill(n,n-1)]),
+                                            (0,1), (0,1))
+    x = copy(b)
+    @time _gaussseidel(L,U, b, x, copy(x), 20) # 0.23s
+    norm(A*x - b)
 
-x = copy(b)
-@time gaussseidel(L,U, b, x, 2) # 1.6s
-norm(x - u) # 6*10^(-10)
+
+function _gaussseidel2(L, U, b, x=copy(b), y=copy(b), M=5)
+    for _=1:M
+        @view(y[1:end-1]) .=  U * @view(x[2:end])
+        y[end] = 0
+        x .= b .- y
+        x = L\ x
+    end
+    x
+end
+
+
+L̃ = sparse(L)
+Ũ = sparse(U)
+
+@time _gaussseidel(L,U, b, x, copy(x), 20);
+@time _gaussseidel2(L̃,Ũ, b, x, copy(x), 20);
+
+
+y = x[1:end-1]
+z = similar(y)
+@time z .= Mul(U,y)
+y = similar(x)
+@time (@view(y[1:end-1]) .= Mul(U , @view(x[2:end])))
+y[end] = 0
+@time x .= b .- y
+@time x .= Ldiv(L, x)
+A = randn(9,40_000);
+    @time A*x;
+
+A
+S = sparse(A);
+
+400^2
+
+@time L\x
+
+
+h = 1/n
+    @time D² = BandedMatrix(0 => Fill(-2,n), 1 => Fill(1,n-1), -1 => Fill(1,n-1))/h^2
+    @time D_xx = BandedBlockBandedMatrix(Kron(D², Eye(n)))
+    @time D_yy = BandedBlockBandedMatrix(Kron(Eye(n), D²))
+    @time D_xx .+ D_yy
+    4
+
+
+
+using Profile
+dest = Δ;
+    @time BlockBandedMatrices.blockbanded_copyto!(dest, D_yy)
+    view(dest, Block(1,1)) .= view(dest, Block(1,1)) .+ view(D_yy, Block(1,1))
+D_yy
+@time copyto!(dest, Broadcast.broadcasted(+, D_xx , D_yy))
+
+
+
+
+using FFTW
+A = randn(400, 400);
+    @time fft(A);
+dest[Block(1,1)]

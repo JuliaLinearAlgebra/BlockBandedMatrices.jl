@@ -75,13 +75,13 @@ function _blockbanded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) wher
 
     for J = 1:N
         for K = max(1,J-du):min(J-su-1,M)
-            fill!(view(dest,Block(K),Block(J)), zero(T))
+            view(dest,Block(K),Block(J)) .= zero(T)
         end
         for K = max(1,J-su):min(J+sl,M)
-            copyto!(view(dest,Block(K),Block(J)), view(src,Block(K),Block(J)))
+            view(dest,Block(K),Block(J)) .= view(src,Block(K),Block(J))
         end
         for K = max(1,J+sl+1):min(J+dl,M)
-            fill!(view(dest,Block(K),Block(J)), zero(T))
+            view(dest,Block(K),Block(J)) .= zero(T)
         end
     end
     dest
@@ -224,7 +224,7 @@ function blockbanded_axpy!(a, X::AbstractMatrix, Y::AbstractMatrix)
     size(X) == size(Y) || throw(DimensionMismatch())
 
     for J=Block(1):Block(nblocks(X,2)), K=blockcolrange(X,J)
-        BLAS.axpy!(a, view(X,K,J), view(Y,K,J))
+        view(Y,K,J) .= a .* view(X,K,J) .+ view(Y,K,J)
     end
     Y
 end
