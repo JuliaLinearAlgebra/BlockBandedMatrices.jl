@@ -37,7 +37,8 @@ import SparseArrays: sparse
 
 import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec, @blasmatmat, @lazymul, blasmul!,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatMulVec, MatLdivVec,
-                    triangulardata, subarraylayout, _copyto!, @lazyldiv, @lazylmul
+                    triangulardata, subarraylayout, _copyto!, @lazyldiv, @lazylmul,
+                    ArrayMulArrayStyle
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block

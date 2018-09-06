@@ -1,4 +1,4 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Test
+using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays, Test
     import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowrange, colrange, rowrange
 
 
