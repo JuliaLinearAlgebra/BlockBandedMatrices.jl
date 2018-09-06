@@ -25,7 +25,7 @@ end
     A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
         A.data .= 1:length(A.data)
 
-    V = view(A, Block(N), Block(N))
+    V = view(A, Block(N,N))
 
     @test strides(V) == (1,7)
     @test stride(V,2) == 7
@@ -33,12 +33,13 @@ end
     @test unsafe_load(pointer(V) + stride(V,2)*sizeof(Float64)) == 53
 
     v = fill(1.0,4)
-    U = UpperTriangular(view(A, Block(N), Block(N)))
+    U = UpperTriangular(view(A, Block(N,N)))
+    @test Matrix(U) == U
     w = Matrix(U) \ v
-    U \ v == w
+    @test U \ v ≈ w
     @test v == fill(1.0,4)
     @test ldiv!(U , v) === v
-    @test v == w
+    @test v ≈ w
 
     v = fill(1.0,size(A,1))
 
@@ -62,6 +63,11 @@ end
 
     V = view(A, Block(2), Block(2))
     @test unsafe_load(Base.unsafe_convert(Ptr{Float64}, bandeddata(V))) == 13.0
+
+    C = BandedMatrix{Float64}(undef, size(V), 2 .*bandwidths(V))
+    C .= Mul(V,V)
+    @test all(C .=== BandedMatrix(V)*BandedMatrix(V))
+    @test all((similar(C) .= 2.0 .* Mul(V,V) .+ C) .=== BandedMatrices.gbmm!('N', 'N', 2.0, V, V, 1.0, deepcopy(C)))
 
     C = BandedBlockBandedMatrix{Float64}(undef, (rows,cols), (2l,2u), (2λ,2μ))
     C .= Mul(A,A)

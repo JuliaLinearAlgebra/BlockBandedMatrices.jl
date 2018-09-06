@@ -206,6 +206,24 @@ similar(A::BandedBlockBandedMatrix, T::Type=eltype(A), bs::BandedBlockBandedSize
       BandedBlockBandedMatrix{T}(undef, bs)
 
 
+function sparse(A::BandedBlockBandedMatrix{T}) where T
+    i = Vector{Int}()
+    j = Vector{Int}()
+    z = Vector{T}()
+    for J = Block.(1:nblocks(A,2)), K = blockcolrange(A, J)
+        B = view(A, K, J)
+        ĩ = _banded_rowval(B)
+        j̃ = _banded_colval(B)
+        z̃ = _banded_nzval(B)
+        ĩ .+= cumulsizes(A, 1, Int(K))-1
+        j̃ .+= cumulsizes(A, 2, Int(J))-1
+        append!(i, ĩ)
+        append!(j, j̃)
+        append!(z, z̃)
+    end
+    sparse(i, j, z)
+end
+
 ################################
 # BandedBlockBandedMatrix Interface #
 ################################

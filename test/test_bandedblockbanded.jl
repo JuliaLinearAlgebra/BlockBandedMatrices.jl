@@ -1,4 +1,4 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Test
+using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays, Test
     import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowrange, colrange, rowrange
 
 
@@ -45,6 +45,7 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Test
          0.0 0.0 1.0 1.0]
     @test Matrix(A) == B
 
+    @test Matrix(sparse(A)) == B
 end
 
 
