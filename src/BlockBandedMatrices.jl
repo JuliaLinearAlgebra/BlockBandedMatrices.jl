@@ -1,6 +1,6 @@
 
 module BlockBandedMatrices
-using BlockArrays, BandedMatrices, LazyArrays, FillArrays
+using BlockArrays, BandedMatrices, LazyArrays, FillArrays, SparseArrays
 using LinearAlgebra
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
@@ -15,7 +15,8 @@ import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex,
                         BandedColumnMajor,
                         BandedSubBandedMatrix, bandeddata, tribandeddata,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop,
-                        BandedStyle
+                        BandedStyle,
+                        _banded_colval, _banded_rowval, _banded_nzval # for sparse
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         +, *, -, /, \, strides, zeros, size,
@@ -32,7 +33,7 @@ import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex
 import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
 
-
+import SparseArrays: sparse
 
 import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec, @blasmatmat, @lazymul, blasmul!,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatMulVec, MatLdivVec,

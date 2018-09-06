@@ -28,7 +28,7 @@ blockbandwidths(A::Union{UpperTriangular,UnitUpperTriangular}) = let P = parent(
     end
 blockbandwidths(A::Union{LowerTriangular,UnitLowerTriangular}) = let P = parent(A)
         if hasmatchingblocks(P)
-            (blockbandwidth(P,1), min(0,blockbandwidths(P,2)))
+            (blockbandwidth(P,1), min(0,blockbandwidth(P,2)))
         else
             blockbandwidths(P)
         end

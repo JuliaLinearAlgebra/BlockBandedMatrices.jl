@@ -45,6 +45,7 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Test
          0.0 0.0 1.0 1.0]
     @test Matrix(A) == B
 
+    @test Matrix(sparse(A)) == B
 end
 
 
