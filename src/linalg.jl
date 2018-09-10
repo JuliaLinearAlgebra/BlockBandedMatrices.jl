@@ -15,8 +15,10 @@ BroadcastStyle(M::ArrayMulArrayStyle, ::BandedBlockBandedStyle) = M
 BroadcastStyle(::BandedBlockBandedStyle, M::ArrayMulArrayStyle) = M
 
 @lazymul AbstractBlockBandedMatrix
-@blasmatvec AbstractBlockBandedLayout
-@blasmatmat AbstractBlockBandedLayout AbstractBlockBandedLayout AbstractBlockBandedLayout
+@blasmatvec BlockBandedColumnMajor
+@blasmatvec BandedBlockBandedColumnMajor
+@blasmatmat BlockBandedColumnMajor BlockBandedColumnMajor BlockBandedColumnMajor
+@blasmatmat BandedBlockBandedColumnMajor BandedBlockBandedColumnMajor BandedBlockBandedColumnMajor
 
 
 
