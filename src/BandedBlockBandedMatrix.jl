@@ -460,6 +460,10 @@ end
     elseif iszero(v) # allow setindex for 0 datya
         v
     else
-        throw(BandError(parent(V), J-K))
+        throw(BandError(V, J-K))
     end
 end
+
+
+BLAS.axpy!(a::T, A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{T}) where T =
+    B .= a .* A .+ B
