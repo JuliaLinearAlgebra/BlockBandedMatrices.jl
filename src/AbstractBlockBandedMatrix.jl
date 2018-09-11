@@ -2,8 +2,6 @@
 
 # A BlockBandedMatrix is a BlockMatrix, but is not a BandedMatrix
 abstract type AbstractBlockBandedMatrix{T} <: AbstractBlockMatrix{T} end
-abstract type AbstractBlockBandedLayout <: MemoryLayout end
-
 
 
 """
@@ -11,14 +9,14 @@ abstract type AbstractBlockBandedLayout <: MemoryLayout end
 
 Returns a tuple containing the upper and lower blockbandwidth of `A`.
 """
-blockbandwidths(A::AbstractMatrix) = blockbandwidth(A,1),blockbandwidth(A,2)
+blockbandwidths(A::AbstractMatrix) = (nblocks(A,1)-1 , nblocks(A,2)-1)
 
 """
     blockbandwidth(A,i)
 
 Returns the lower blockbandwidth (`i==1`) or the upper blockbandwidth (`i==2`).
 """
-blockbandwidth(A::AbstractMatrix, k::Integer) = k==1 ? nblocks(A,1)-1 : nblocks(A,2)-1
+blockbandwidth(A::AbstractMatrix, k::Integer) = blockbandwidths(A)[k]
 
 """
     bandrange(A)

@@ -1,9 +1,6 @@
 
 
-struct BandedBlockBandedLayout <: AbstractBlockBandedLayout end
-
-
-struct BandedBlockBandedSizes
+struct BandedBlockBandedSizes <: AbstractBlockSizes{2}
     block_sizes::BlockSizes{2}
     data_block_sizes::BlockSizes{2}
     l::Int
@@ -24,13 +21,8 @@ BandedBlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l, 
     BandedBlockBandedSizes(BlockSizes(rows,cols), l, u, λ, μ)
 
 
-for Func in (:nblocks, :getindex, :blocksize, :global2blockindex, :unblock, :size, :globalrange)
-    @eval begin
-        $Func(B::BandedBlockBandedSizes) = $Func(B.block_sizes)
-        $Func(B::BandedBlockBandedSizes, k) = $Func(B.block_sizes, k)
-        $Func(B::BandedBlockBandedSizes, k, j) = $Func(B.block_sizes, k, j)
-    end
-end
+cumulsizes(B::BandedBlockBandedSizes) = cumulsizes(B.block_sizes)
+
 
 convert(::Type{BlockBandedSizes}, B::BandedBlockBandedSizes) =
     BlockBandedSizes(B.block_sizes, B.l, B.u)
@@ -97,6 +89,11 @@ BandedBlockBandedMatrix
 BandedBlockBandedMatrix{T}(::UndefInitializer, dims::NTuple{2, AbstractVector{Int}},
                         lu::NTuple{2, Int}, λμ::NTuple{2, Int}) where T =
     BandedBlockBandedMatrix{T}(undef, BandedBlockBandedSizes(dims..., lu..., λμ...))
+
+
+BandedBlockBandedMatrix{T}(::UndefInitializer, bs::BlockSizes,
+                        lu::NTuple{2, Int}, λμ::NTuple{2, Int}) where T =
+    BandedBlockBandedMatrix{T}(undef, BandedBlockBandedSizes(bs, lu..., λμ...))
 
 
 # Auxiliary outer constructors
@@ -184,6 +181,12 @@ BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
                         λμ::NTuple{2,Int}) =
     BandedBlockBandedMatrix{eltype(A)}(A, block_sizes, lu, λμ)
 
+BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
+                        block_sizes::BlockSizes, lu::NTuple{2,Int},
+                        λμ::NTuple{2,Int}) =
+                        BandedBlockBandedMatrix(A, BandedBlockBandedSizes(block_sizes, lu..., λμ...),
+                        lu, λμ)
+
 BandedBlockBandedMatrix{T}(A::Union{AbstractMatrix,UniformScaling},
                            dims::NTuple{2,AbstractVector{Int}}, lu::NTuple{2,Int},
                            λμ::NTuple{2,Int}) where T =
@@ -196,17 +199,60 @@ BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 
 
 
+BandedBlockBandedMatrix(A::AbstractMatrix) =
+    BandedBlockBandedMatrix(A, blocksizes(A), blockbandwidths(A), subblockbandwidths(A))
+
+similar(A::BandedBlockBandedMatrix, T::Type=eltype(A), bs::BandedBlockBandedSizes=blocksizes(A)) =
+      BandedBlockBandedMatrix{T}(undef, bs)
+
+
+function sparse(A::BandedBlockBandedMatrix{T}) where T
+    i = Vector{Int}()
+    j = Vector{Int}()
+    z = Vector{T}()
+    for J = Block.(1:nblocks(A,2)), K = blockcolrange(A, J)
+        B = view(A, K, J)
+        ĩ = _banded_rowval(B)
+        j̃ = _banded_colval(B)
+        z̃ = _banded_nzval(B)
+        ĩ .+= cumulsizes(A, 1, Int(K))-1
+        j̃ .+= cumulsizes(A, 2, Int(J))-1
+        append!(i, ĩ)
+        append!(j, j̃)
+        append!(z, z̃)
+    end
+    sparse(i, j, z)
+end
+
 ################################
 # BandedBlockBandedMatrix Interface #
 ################################
 
-MemoryLayout(::BandedBlockBandedMatrix) = BandedBlockBandedLayout()
+MemoryLayout(::BandedBlockBandedMatrix) = BandedBlockBandedColumnMajor()
+BroadcastStyle(::Type{<:BandedBlockBandedMatrix}) = BandedBlockBandedStyle()
 
 isbandedblockbanded(_) = false
 isbandedblockbanded(::BandedBlockBandedMatrix) = true
 
-blockbandwidth(A::BandedBlockBandedMatrix, i::Int) = ifelse(i==1, A.l, A.u)
-subblockbandwidth(A::BandedBlockBandedMatrix, i::Int) = ifelse(i==1, A.λ, A.μ)
+blockbandwidths(A::BandedBlockBandedMatrix) = (A.l, A.u)
+
+"""
+    subblockbandwidths(A)
+
+returns the sub-block bandwidths of `A`, where `A` is a banded-block-banded
+matrix. In other words, `A[Block(K,J)]` will return a `BandedMatrix` with
+bandwidths given by `subblockbandwidths(A)`.
+"""
+subblockbandwidths(A::BandedBlockBandedMatrix) = (A.λ, A.μ)
+
+"""
+    subblockbandwidth(A, i)
+
+returns the sub-block lower (`i == 1`) or upper (`i == 2`) bandwidth of `A`,
+where `A` is a banded-block-banded matrix. In other words, `A[Block(K,J)]` will
+return a `BandedMatrix` with the returned lower/upper bandwidth.
+"""
+subblockbandwidth(A::AbstractArray, k::Integer) = subblockbandwidths(A)[k]
 
 isdiag(A::BandedBlockBandedMatrix) = A.λ == A.μ == A.l == A.u
 
@@ -215,12 +261,10 @@ isdiag(A::BandedBlockBandedMatrix) = A.λ == A.μ == A.l == A.u
 # AbstractBlockArray Interface #
 ################################
 
-@inline nblocks(block_array::BandedBlockBandedMatrix) = nblocks(block_array.block_sizes)
-@inline blocksize(block_array::BandedBlockBandedMatrix, i1::Int, i2::Int) = blocksize(block_array.block_sizes, (i1,i2))
-
+@inline blocksizes(block_array::BandedBlockBandedMatrix) = block_array.block_sizes
 
 zeroblock(A::BandedBlockBandedMatrix, K::Int, J::Int) =
-    BandedMatrix(Zeros{eltype(A)}(blocksize(A, K, J)), (A.λ, A.μ))
+    BandedMatrix(Zeros{eltype(A)}(blocksize(A, (K, J))), (A.λ, A.μ))
 
 @inline function getblock(A::BandedBlockBandedMatrix, K::Int, J::Int)
     @boundscheck blockcheckbounds(A, K, J)
@@ -276,36 +320,14 @@ function Base.replace_in_print_matrix(A::BandedBlockBandedMatrix, i::Integer, j:
 end
 
 
-######
-# extra marrix routines
-#####
-
-function Base.fill!(A::BandedBlockBandedMatrix, x)
-    !iszero(x) && throw(BandError(A))
-    fill!(A.data, x)
-    A
-end
-
-function rmul!(A::BandedBlockBandedMatrix, x::Number)
-    rmul!(A.data, x)
-    A
-end
-
-
-function lmul!(x::Number, A::BandedBlockBandedMatrix)
-    lmul!(x, A.data)
-    A
-end
-
-
 ############
 # Indexing #
 ############
 
 # function _check_setblock!(block_arr::BlockArray{T, N}, v, block::NTuple{N, Int}) where {T,N}
 #     for i in 1:N
-#         if size(v, i) != blocksize(block_arr.block_sizes, i, block[i])
-#             throw(DimensionMismatch(string("tried to assign $(size(v)) array to ", blocksize(block_arr, block...), " block")))
+#         if size(v, i) != blocksize(block_arr.block_sizes, (i, block[i]))
+#             throw(DimensionMismatch(string("tried to assign $(size(v)) array to ", blocksize(block_arr, block), " block")))
 #         end
 #     end
 # end
@@ -363,23 +385,6 @@ end
 #     end
 # end
 
-"""
-    subblockbandwidths(A)
-
-returns the sub-block bandwidths of `A`, where `A` is a banded-block-banded
-matrix. In other words, `A[Block(K,J)]` will return a `BandedMatrix` with
-bandwidths given by `subblockbandwidths(A)`.
-"""
-subblockbandwidths(A::BandedBlockBandedMatrix) = A.λ, A.μ
-"""
-    subblockbandwidth(A, i)
-
-returns the sub-block lower (`i == 1`) or upper (`i == 2`) bandwidth of `A`,
-where `A` is a banded-block-banded matrix. In other words, `A[Block(K,J)]` will
-return a `BandedMatrix` with the returned lower/upper bandwidth.
-"""
-subblockbandwidth(A::BandedBlockBandedMatrix, k::Integer) = ifelse(k==1 , A.λ , A.μ)
-
 
 
 ##################
@@ -392,6 +397,9 @@ subblockbandwidth(A::BandedBlockBandedMatrix, k::Integer) = ifelse(k==1 , A.λ ,
 const BandedBlockBandedBlock{T} = SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{BlockSlice1,BlockSlice1},false}
 
 
+isbanded(::BandedBlockBandedBlock) = true
+MemoryLayout(::BandedBlockBandedBlock) = BandedColumnMajor()
+BroadcastStyle(::Type{BandedBlockBandedBlock{T}}) where T = BandedStyle()
 
 function inblockbands(V::BandedBlockBandedBlock)
     A = parent(V)
@@ -404,7 +412,7 @@ end
 ######################################
 # BandedMatrix interface  for Blocks #
 ######################################
-@inline bandwidth(V::BandedBlockBandedBlock, k::Int) = ifelse(k == 1, parent(V).λ, parent(V).μ)
+@inline bandwidths(V::BandedBlockBandedBlock) = subblockbandwidths(parent(V))
 
 
 
@@ -413,7 +421,7 @@ blocks(V::BandedBlockBandedBlock)::Tuple{Int,Int} = Int(first(parentindices(V)).
                                                     Int(last(parentindices(V)).block)
 
 
-function dataview(V::BandedBlockBandedBlock)
+function bandeddata(V::BandedBlockBandedBlock)
     A = parent(V)
     u = A.u
     K_sl, J_sl = parentindices(V)
@@ -424,12 +432,12 @@ end
 
 @inline function inbands_getindex(V::BandedBlockBandedBlock, k::Int, j::Int)
     A = parent(V)
-    banded_getindex(dataview(V), A.λ, A.μ, k, j)
+    banded_getindex(bandeddata(V), A.λ, A.μ, k, j)
 end
 
 @inline function inbands_setindex!(V::BandedBlockBandedBlock, v, k::Int, j::Int)
     A = parent(V)
-    banded_setindex!(dataview(V), A.λ, A.μ, v, k, j)
+    banded_setindex!(bandeddata(V), A.λ, A.μ, v, k, j)
 end
 
 @propagate_inbounds function getindex(V::BandedBlockBandedBlock, k::Int, j::Int)
@@ -452,36 +460,10 @@ end
     elseif iszero(v) # allow setindex for 0 datya
         v
     else
-        throw(BandError(parent(V), J-K))
+        throw(BandError(V, J-K))
     end
 end
 
 
-
-
-function convert(::Type{BandedMatrix{T}}, V::BandedBlockBandedBlock) where {T}
-    A = parent(V)
-    _BandedMatrix(Matrix{T}(dataview(V)), size(V,1), A.λ, A.μ)
-end
-
-convert(::Type{BandedMatrix}, V::BandedBlockBandedBlock) = convert(BandedMatrix{eltype(V)}, V)
-
-BandedMatrix{T}(V::BandedBlockBandedBlock) where T = convert(BandedMatrix{T}, V)
-BandedMatrix(V::BandedBlockBandedBlock) = convert(BandedMatrix, V)
-
-
-
-
-#############
-# Linear algebra
-#############
-
-
-# BLAS structure
-unsafe_convert(::Type{Ptr{T}}, V::BandedBlockBandedBlock{T}) where {T<:BlasFloat} =
-    unsafe_convert(Ptr{T}, dataview(V))
-
-@inline leadingdimension(V::BandedBlockBandedBlock) = stride(dataview(V), 2)
-
-@banded BandedBlockBandedBlock
-@banded_banded_linalg BandedBlockBandedBlock BandedSubBandedMatrix
+BLAS.axpy!(a::T, A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{T}) where T =
+    B .= a .* A .+ B

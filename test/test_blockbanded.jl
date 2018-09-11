@@ -1,5 +1,5 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Compat, Test
-    import BlockBandedMatrices: _BlockBandedMatrix
+using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Test
+    import BlockBandedMatrices: _BlockBandedMatrix, MemoryLayout, ColumnMajor
 
 @testset "BlockBandedMatrix constructors" begin
     l , u = 1,1
@@ -115,7 +115,6 @@ end
     @test A[1,2] == -5
 end
 
-#### Test Blas arithmetic
 @testset "BlockBandedMatrix BLAS arithmetic" begin
     l , u = 1,1
     N = M = 10
@@ -124,7 +123,7 @@ end
         A.data .= 1:length(A.data)
 
     V = view(A, Block(N,N))
-
+    @test MemoryLayout(V) == ColumnMajor()
 
     Y = zeros(cols[N], cols[N])
     @time BLAS.axpy!(2.0, V, Y)
@@ -143,6 +142,7 @@ end
     @test sum(B) == 20
     AB = A*B
     @test AB isa BlockBandedMatrix
+    Matrix(AB)
     @test Matrix(AB) == Matrix(A)*Matrix(B)
 end
 
