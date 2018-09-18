@@ -404,3 +404,15 @@ end
     @test  B ≈ A
     @test Matrix(B) ≈ Matrix(A)
 end
+
+
+@testset "Zero bands" begin
+    B = BandedBlockBandedMatrix{Float64}(undef, (1:5,1:5), (-1,-1), (-1,-1))
+    @test Matrix(B) == zeros(size(B))
+
+    B = BandedBlockBandedMatrix{Float64}(undef, (1:5,1:5), (-1,-1), (1,-1))
+    @test Matrix(B) == zeros(size(B))
+
+    B = BandedBlockBandedMatrix{Float64}(undef, (1:5,1:5), (1,-1), (-1,-1))
+    @test Matrix(B) == zeros(size(B))
+end

@@ -13,7 +13,7 @@ end
 function BandedBlockBandedSizes(bs::BlockSizes{2}, l, u, λ, μ)
     # data matrix has row blocks all the same size but same column blocks
     # we access the cumul vec directly to reuse bs.cumul_sizes[2]
-    d_bs = BlockSizes((BlockArrays._cumul_vec(fill(λ+μ+1, l+u+1)),bs.cumul_sizes[2]))
+    d_bs = BlockSizes((BlockArrays._cumul_vec(fill(max(λ+μ+1,0), max(l+u+1,0))),bs.cumul_sizes[2]))
     BandedBlockBandedSizes(bs, d_bs, l, u, λ, μ)
 end
 
@@ -32,11 +32,11 @@ BlockBandedSizes(B::BandedBlockBandedSizes) = convert(BlockBandedSizes, B)
 function check_data_sizes(data::AbstractBlockMatrix, B::BandedBlockBandedSizes)
     bs = data.block_sizes
     c_rows, c_cols = bs.cumul_sizes
-    if length(c_rows) ≠ B.l + B.u + 2
+    if length(c_rows) ≠ B.l + B.u + 2 && !(length(c_rows) == 1 && -B.l > B.u)
         throw(ArgumentError("Data matrix must have number of row blocks equal to number of block bands"))
     end
     for k = 1:length(c_rows)-1
-        if c_rows[k+1]-c_rows[k] ≠ B.λ + B.μ + 1
+        if c_rows[k+1]-c_rows[k] ≠ B.λ + B.μ + 1 && !(c_rows[k+1] == c_rows[k]  && -B.λ > B.μ)
             throw(ArgumentError("Data matrix must have row block sizes equal to number of subblock bands"))
         end
     end
@@ -74,8 +74,7 @@ end
     _BandedBlockBandedMatrix(PseudoBlockArray(data, block_sizes.data_block_sizes), block_sizes)
 
 BandedBlockBandedMatrix{T}(::UndefInitializer, block_sizes::BandedBlockBandedSizes) where T =
-    _BandedBlockBandedMatrix(
-        PseudoBlockArray{T}(undef, block_sizes.data_block_sizes), block_sizes)
+    _BandedBlockBandedMatrix(PseudoBlockArray{T}(undef, block_sizes.data_block_sizes), block_sizes)
 
 """
     BandedBlockBandedMatrix{T}(undef, (rows, cols), (l, u), (λ, μ))
