@@ -105,7 +105,8 @@ end
     A = _BandedBlockBandedMatrix(copy(dataA), (rows,cols), (l,u), (λ,μ))
 
     K,J = 2,1
-    @test_throws BandError fill!(view(A,Block(K),Block(J)), 2.0)
+    fill!(view(A,Block(K),Block(J)), 2.0)
+    @test view(A,Block(K),Block(J)) == fill(2.0, 2, 1)
     fill!(view(A,Block(K),Block(J)), 0.0)
     @test Matrix(view(A,Block(K),Block(J))) == zeros(2,1)
 

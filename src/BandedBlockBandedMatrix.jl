@@ -305,8 +305,12 @@ end
 @inline function setindex!(A::BandedBlockBandedMatrix{T}, v, i::Int, j::Int) where T
     @boundscheck checkbounds(A, i, j)
     bi = global2blockindex(A.block_sizes, (i, j))
-    V = view(A, Block(bi.I))
-    @inbounds V[bi.α...] = convert(T, v)::T
+    if -A.l ≤ bi.I[2] - bi.I[1] ≤ A.u
+        V = view(A, Block(bi.I))
+        @inbounds V[bi.α...] = convert(T, v)::T
+    elseif !iszero(v)
+        throw(BandError(A))
+    end
     return v
 end
 
@@ -396,8 +400,6 @@ end
 const BandedBlockBandedBlock{T} = SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{BlockSlice1,BlockSlice1},false}
 
 
-isbanded(::BandedBlockBandedBlock) = true
-MemoryLayout(::BandedBlockBandedBlock) = BandedColumnMajor()
 BroadcastStyle(::Type{BandedBlockBandedBlock{T}}) where T = BandedStyle()
 
 function inblockbands(V::BandedBlockBandedBlock)
@@ -439,11 +441,12 @@ end
     banded_setindex!(bandeddata(V), A.λ, A.μ, v, k, j)
 end
 
+# we need getindex as we use block-wise get index above
 @propagate_inbounds function getindex(V::BandedBlockBandedBlock, k::Int, j::Int)
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
     K,J = blocks(V)
-    if -A.l ≤ J-K ≤ A.u
+    if -A.l ≤ J-K ≤ A.u && -A.λ ≤ j-k ≤ A.μ
         inbands_getindex(V, k, j)
     else
         zero(eltype(V))
@@ -454,7 +457,7 @@ end
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
     K,J = blocks(V)
-    if -A.l ≤ J-K ≤ A.u
+    if -A.l ≤ J-K ≤ A.u && -A.λ ≤ j-k ≤ A.μ
         inbands_setindex!(V, v, k, j)
     elseif iszero(v) # allow setindex for 0 datya
         v
