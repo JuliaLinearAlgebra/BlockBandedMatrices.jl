@@ -76,9 +76,8 @@ end
 @inline _BandedBlockBandedMatrix(data::AbstractMatrix, block_sizes::BandedBlockBandedSizes) =
     _BandedBlockBandedMatrix(PseudoBlockArray(data, block_sizes.data_block_sizes), block_sizes)
 
-BandedBlockBandedMatrix{T}(::UndefInitializer, block_sizes::BandedBlockBandedSizes) where T =
-    _BandedBlockBandedMatrix(
-        PseudoBlockArray{T}(undef, block_sizes.data_block_sizes), block_sizes)
+BandedBlockBandedMatrix{T, B}(::UndefInitializer, block_sizes::BandedBlockBandedSizes) where {T, B} =
+    _BandedBlockBandedMatrix(B(undef, block_sizes.data_block_sizes), block_sizes)
 
 """
     BandedBlockBandedMatrix{T}(undef, (rows, cols), (l, u), (λ, μ))
@@ -89,14 +88,17 @@ is a `BandedMatrix{T}` of size `rows[K]`×`cols[J]` with bandwidths `(λ,μ)`.
 """
 BandedBlockBandedMatrix
 
-BandedBlockBandedMatrix{T}(::UndefInitializer, dims::NTuple{2, AbstractVector{Int}},
-                        lu::NTuple{2, Int}, λμ::NTuple{2, Int}) where T =
-    BandedBlockBandedMatrix{T}(undef, BandedBlockBandedSizes(dims..., lu..., λμ...))
+BandedBlockBandedMatrix{T, B}(::UndefInitializer, dims::NTuple{2, AbstractVector{Int}},
+                              lu::NTuple{2, Int}, λμ::NTuple{2, Int}) where {T, B} =
+    BandedBlockBandedMatrix{T, B}(undef, BandedBlockBandedSizes(dims..., lu..., λμ...))
 
 
-BandedBlockBandedMatrix{T}(::UndefInitializer, bs::BlockSizes,
-                        lu::NTuple{2, Int}, λμ::NTuple{2, Int}) where T =
-    BandedBlockBandedMatrix{T}(undef, BandedBlockBandedSizes(bs, lu..., λμ...))
+BandedBlockBandedMatrix{T, B}(::UndefInitializer, bs::BlockSizes,
+                              lu::NTuple{2, Int}, λμ::NTuple{2, Int}) where {T, B} =
+    BandedBlockBandedMatrix{T, B}(undef, BandedBlockBandedSizes(bs, lu..., λμ...))
+
+BandedBlockBandedMatrix{T}(::UndefInitializer, args...) where T =
+    BandedBlockBandedMatrix{T, PseudoBlockMatrix{T, Matrix{T}}}(undef, args...)
 
 
 # Auxiliary outer constructors
@@ -113,35 +115,39 @@ function convert(::Type{<:BandedBlockBandedMatrix}, B::BandedMatrix)
     end
 end
 
-function BandedBlockBandedMatrix{T}(Z::Zeros, dims::NTuple{2,AbstractVector{Int}},
-                                    lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T
+function BandedBlockBandedMatrix{T, B}(Z::Zeros, dims::NTuple{2,AbstractVector{Int}},
+                                       lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T, B}
    if size(Z) ≠ sum.(dims)
        throw(DimensionMismatch())
    end
 
    bs = BandedBlockBandedSizes(dims..., lu..., λμ...)
    d_bs = bs.data_block_sizes
-   blocks = PseudoBlockArray(zeros(T, size(d_bs)), d_bs)
+   blocks = fill!(B(undef, d_bs), zero(T))
    _BandedBlockBandedMatrix(blocks, bs)
 end
 
-
-function BandedBlockBandedMatrix{T}(E::Eye, dims::NTuple{2,AbstractVector{Int}},
-                                    lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T
+function BandedBlockBandedMatrix{T, B}(E::Eye, dims::NTuple{2,AbstractVector{Int}},
+                                       lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T, B}
     if size(E) ≠ sum.(dims)
         throw(DimensionMismatch())
     end
-    ret = BandedBlockBandedMatrix(Zeros{T}(E), dims, lu, λμ)
+    ret = BandedBlockBandedMatrix{T, B}(Zeros{T}(E), dims, lu, λμ)
     ret[diagind(ret)] .= one(T)
     ret
 end
 
-function BandedBlockBandedMatrix{T}(A::UniformScaling, dims::NTuple{2, AbstractVector{Int}},
-                                    lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T
-    ret = BandedBlockBandedMatrix(Zeros{T}(sum.(dims)), dims, lu, λμ)
+function BandedBlockBandedMatrix{T, B}(A::UniformScaling, dims::NTuple{2, AbstractVector{Int}},
+                                       lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T, B}
+    ret = BandedBlockBandedMatrix{T, B}(Zeros{T}(sum.(dims)), dims, lu, λμ)
     ret[diagind(ret)] .= convert(T, A.λ)
     ret
 end
+
+BandedBlockBandedMatrix{T}(m::Union{Zeros, Eye, UniformScaling},
+                           dims::NTuple{2,AbstractVector{Int}},
+                           lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
+  BandedBlockBandedMatrix{T, PseudoBlockMatrix{T, Matrix{T}}}(m, dims, lu, λμ)
 
 
 function BandedBlockBandedMatrix{T}(Z::Zeros, block_sizes::BandedBlockBandedSizes,
@@ -154,9 +160,10 @@ function BandedBlockBandedMatrix{T}(Z::Zeros, block_sizes::BandedBlockBandedSize
     _BandedBlockBandedMatrix(PseudoBlockArray(zeros(T, size(d_bs)), d_bs), block_sizes)
 end
 
-function BandedBlockBandedMatrix{T}(A::AbstractMatrix, block_sizes::BandedBlockBandedSizes,
-                                    lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T
-    ret = BandedBlockBandedMatrix(Zeros{T}(size(A)), block_sizes, lu::NTuple{2,Int}, λμ::NTuple{2,Int})
+function BandedBlockBandedMatrix{T, Blocks}(A::AbstractMatrix, block_sizes::BandedBlockBandedSizes,
+                                       lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T, Blocks}
+    ret = BandedBlockBandedMatrix{T, Blocks}(Zeros{T}(size(A)), block_sizes,
+                                             lu::NTuple{2,Int}, λμ::NTuple{2,Int})
     for J = Block.(1:nblocks(ret, 2)), K = blockcolrange(ret, Int(J))
         kr, jr = globalrange(block_sizes, (Int(K), Int(J)))
 
@@ -177,6 +184,10 @@ function BandedBlockBandedMatrix{T}(A::AbstractMatrix, block_sizes::BandedBlockB
     end
     ret
 end
+
+BandedBlockBandedMatrix{T}(A::AbstractMatrix, block_sizes::BandedBlockBandedSizes,
+                           lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
+  BandedBlockBandedMatrix{T, PseudoBlockMatrix{T, Matrix{T}}}(A, block_sizes, lu, λμ)
 
 BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
                         block_sizes::BandedBlockBandedSizes, lu::NTuple{2,Int},
