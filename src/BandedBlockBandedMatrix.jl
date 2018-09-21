@@ -150,15 +150,20 @@ BandedBlockBandedMatrix{T}(m::Union{Zeros, Eye, UniformScaling},
   BandedBlockBandedMatrix{T, PseudoBlockMatrix{T, Matrix{T}}}(m, dims, lu, λμ)
 
 
-function BandedBlockBandedMatrix{T}(Z::Zeros, block_sizes::BandedBlockBandedSizes,
-                                    lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T
+function BandedBlockBandedMatrix{T, B}(Z::Zeros, block_sizes::BandedBlockBandedSizes,
+                                       lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T, B}
    if size(Z) ≠ size(block_sizes)
        throw(DimensionMismatch())
    end
 
    d_bs = block_sizes.data_block_sizes
-    _BandedBlockBandedMatrix(PseudoBlockArray(zeros(T, size(d_bs)), d_bs), block_sizes)
+   data = fill!(B(undef, d_bs), zero(T))
+   _BandedBlockBandedMatrix(data, block_sizes)
 end
+
+BandedBlockBandedMatrix{T}(Z::Zeros, block_sizes::BandedBlockBandedSizes,
+                           lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
+  BandedBlockBandedMatrix{T, PseudoBlockMatrix{T, Matrix{T}}}(Z, block_sizes)
 
 function BandedBlockBandedMatrix{T, Blocks}(A::AbstractMatrix, block_sizes::BandedBlockBandedSizes,
                                        lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T, Blocks}
