@@ -356,6 +356,36 @@ end
 end
 
 
+@testset "BandedBlockBanded with BlockMatrix" begin
+  const WithBlockMatrix{T} = BandedBlockBandedMatrix{T, BlockMatrix{T, Matrix{T}}}
+  args = ([1, 2, 3], [2, 2, 1]), (1, 1), (1, 1)
+  A = WithBlockMatrix{Int64}(undef, args...)
+  B = BandedBlockBandedMatrix{Int64}(undef, A.block_sizes)
+
+  @test eltype(A) === eltype(B) === Int64
+  @test typeof(A.data) <: BlockArray
+  @test typeof(B.data) <: PseudoBlockArray
+  @test size(A) == size(B)
+  @test bandrange(A) == bandrange(B)
+  @test blockbandwidths(A) == blockbandwidths(B)
+  @test nblocks(A) == nblocks(B)
+
+  A = WithBlockMatrix{Int64}(Zeros{Int64}(sum.(args[1])...), args...)
+  B = BandedBlockBandedMatrix{Int64}(Zeros{Int64}(sum.(args[1])...), args...)
+  @test typeof(A.data) <: BlockArray
+  @test typeof(B.data) <: PseudoBlockArray
+  @test A == B
+
+
+  A = WithBlockMatrix{Int64}(Eye{Int64}(sum.(args[1])...), args...)
+  B = BandedBlockBandedMatrix{Int64}(Eye{Int64}(sum.(args[1])...), args...)
+  @test typeof(A.data) <: BlockArray
+  @test typeof(B.data) <: PseudoBlockArray
+  @test A == B
+  @test (A .+ 1) .* 2 == B .* 2 .+ 2
+end
+
+
 @testset "fill and copy" begin
     l , u = 1,1
     λ , μ = 1,1
