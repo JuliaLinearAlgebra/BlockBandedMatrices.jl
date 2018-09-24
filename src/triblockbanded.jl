@@ -71,7 +71,7 @@ function _matchingblocks_triangular_mul!(::Val{'L'}, UNIT, A, dest)
 
     for K = N:-1:1
         b_2 = view(b, Block(K))
-        L̃ = _triangular_matrix(Val('L'), Val(UNIT), view(A, Block(K,K)))
+        L̃ = _triangular_matrix(Val('L'), UNIT, view(A, Block(K,K)))
         b_2 .= Mul(L̃, b_2)
         JR = blockrowstart(A,K):Block(K-1)
         if !isempty(JR)

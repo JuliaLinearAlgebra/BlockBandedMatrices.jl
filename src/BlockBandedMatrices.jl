@@ -28,7 +28,7 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted
 
 import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
-                        AbstractTriangular
+                        AbstractTriangular, AdjOrTrans, HermOrSym
 import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex
 import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
@@ -53,5 +53,6 @@ include("linalg.jl")
 
 include("interfaceimpl.jl")
 include("triblockbanded.jl")
+include("adjtransblockbanded.jl")
 
 end # module
