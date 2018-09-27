@@ -6,7 +6,7 @@ const SubBlockBandedMatrix{T,R1,R2} =
     SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice{R1},BlockSlice{R2}}}
 
 const SubBandedBlockBandedMatrix{T,R1,R2} =
-    SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{BlockSlice{R1},BlockSlice{R2}}}
+    SubArray{T,2,<:BandedBlockBandedMatrix{T},Tuple{BlockSlice{R1},BlockSlice{R2}}}
 
 
 BroadcastStyle(M::ArrayMulArrayStyle, ::BlockBandedStyle) = M
