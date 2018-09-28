@@ -134,7 +134,7 @@ function blocksizes(V::SubBlockBandedMatrix{<:Any,BlockRange1,BlockRange1})
 
     @assert KR[1] == JR[1] == 1
     BlockBandedSizes(BlockSizes((Bs.cumul_sizes[1][KR[1]:KR[end]+1] .- Bs.cumul_sizes[1][KR[1]] .+ 1,
-                                 Bs.cumul_sizes[2][JR[1]:JR[end]+1] .- Bs.cumul_sizes[1][JR[1]] .+ 1)),
+                                 Bs.cumul_sizes[2][JR[1]:JR[end]+1] .- Bs.cumul_sizes[2][JR[1]] .+ 1)),
                         blockbandwidth(A,1) - shift, blockbandwidth(A,2) + shift)
 end
 
