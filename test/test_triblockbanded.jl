@@ -6,7 +6,7 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
 
 @testset "triangular BandedBlockBandedMatrix mul" begin
     A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
-        A.data .= randn.()
+    A.data .= randn.()
 
     U = UpperTriangular(A)
     @test MemoryLayout(U) == TriangularLayout{'U','N'}(BandedBlockBandedColumnMajor())
@@ -158,7 +158,7 @@ end
 
     @test size(V) == (5,3)
     b = randn(size(V,2))
-    @test_broken all(V*b .=== Matrix(V)*b .=== BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
+    @test all(V*b .=== Matrix(V)*b .=== BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
     V = view(A, Block.(1:3), Block(3)[2:3])
     @test_throws ArgumentError pointer(V)
@@ -174,7 +174,7 @@ end
 
     @test size(V) == (5,2)
     b = randn(size(V,2))
-    @test_broken all(V*b .=== Matrix(V)*b .=== BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
+    @test all(V*b .=== Matrix(V)*b .=== BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
     V = view(A, Block.(1:3), Block(3)[2:3])
     @test_throws ArgumentError pointer(V)
