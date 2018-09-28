@@ -101,6 +101,29 @@ function *(A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{V}) where {
     BandedBlockBandedMatrix{promote_type(T,V)}(undef, bs) .= Mul(A, B)
 end
 
+_start(b::BlockSlice{<: BlockRange1}) = b.block[1].n[1]
+_stop(b::BlockSlice{<: BlockRange1}) = b.block[end].n[1]
+_start(b::BlockSlice{<: Block1}) = b.block.n[1]
+_stop(b::BlockSlice{<: Block1}) = b.block.n[1]
+
+function blocksizes(V::SubBandedBlockBandedMatrix)
+    A = parent(V)
+    Bs = A.block_sizes.block_sizes
+
+    KR = _start(V.indices[1]), _stop(V.indices[1])
+    JR = _start(V.indices[2]), _stop(V.indices[2])
+    shift = Int(KR[1])-Int(JR[1])
+
+    BandedBlockBandedSizes(
+        BlockSizes((
+            Bs.cumul_sizes[1][KR[1]:KR[end]+1] .- Bs.cumul_sizes[1][KR[1]] .+ 1,
+            Bs.cumul_sizes[2][JR[1]:JR[end]+1] .- Bs.cumul_sizes[2][JR[1]] .+ 1
+        )),
+        max(blockbandwidth(A,1) - shift, 0), max(blockbandwidth(A,2) + shift, 0),
+        subblockbandwidth(A, 1), subblockbandwidth(A, 2)
+    )
+end
+
 function blocksizes(V::SubBlockBandedMatrix{<:Any,BlockRange1,BlockRange1})
     A = parent(V)
     Bs = A.block_sizes.block_sizes
@@ -109,7 +132,6 @@ function blocksizes(V::SubBlockBandedMatrix{<:Any,BlockRange1,BlockRange1})
     JR = parentindices(V)[2].block.indices[1]
     shift = Int(KR[1])-Int(JR[1])
 
-    Bs.cumul_sizes[1]
     @assert KR[1] == JR[1] == 1
     BlockBandedSizes(BlockSizes((Bs.cumul_sizes[1][KR[1]:KR[end]+1] .- Bs.cumul_sizes[1][KR[1]] .+ 1,
                                  Bs.cumul_sizes[2][JR[1]:JR[end]+1] .- Bs.cumul_sizes[1][JR[1]] .+ 1)),
