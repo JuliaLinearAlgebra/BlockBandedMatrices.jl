@@ -257,15 +257,32 @@ end
 function copyto!(dest::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(+),
                                                             <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
     A,B = bc.args
+    A_l,A_u = blockbandwidths(A)
+    B_l,B_u = blockbandwidths(B)
 
-    if dest ≡ B
-        blockbanded_axpy!(one(T), A, dest)
-    elseif dest ≡ A
-        blockbanded_axpy!(one(T), B, dest)
-    else
-        blockbanded_copyto!(dest, B)
-        blockbanded_axpy!(one(T), A, dest)
+    size(A) == size(B) == size(dest) || throw(DimensionMismatch())
+    N,M = nblocks(dest)
+
+    for J̃ = 1:M
+        J = Block(J̃)
+        for K = Block.(max(1,J̃-min(A_u,B_u)):min(N,J̃+min(A_l,B_l)))
+            view(dest,K,J) .= view(A,K,J) .+ view(B,K,J)
+        end
+        for K = Block.(max(1,J̃-A_u):min(N,J̃-B_u-1))
+            view(dest,K,J) .= view(A,K,J)
+        end
+        for K = Block.(max(1,J̃-B_u):min(N,J̃-A_u-1))
+            view(dest,K,J) .= view(B,K,J)
+        end
+        for K = Block.(max(1,J̃+B_l+1):min(N,J̃+A_u))
+            view(dest,K,J) .= view(A,K,J)
+        end
+        for K = Block.(max(1,J̃+A_l+1):min(N,J̃+B_u))
+            view(dest,K,J) .= view(B,K,J)
+        end
     end
+
+    dest
 end
 
 function copyto!(dest::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(-),

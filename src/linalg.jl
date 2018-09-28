@@ -9,6 +9,11 @@ const SubBandedBlockBandedMatrix{T,R1,R2} =
     SubArray{T,2,BandedBlockBandedMatrix{T},Tuple{BlockSlice{R1},BlockSlice{R2}}}
 
 
+getindex(A::BandedBlockBandedMatrix, KR::BlockRange1, JR::BlockRange1) = BandedBlockBandedMatrix(view(A, KR, JR))
+getindex(A::BandedBlockBandedMatrix, KR::BlockRange1, J::Block1) = BandedBlockBandedMatrix(view(A, KR, J))
+getindex(A::BandedBlockBandedMatrix, K::Block1, JR::BlockRange1) = BandedBlockBandedMatrix(view(A, K, JR))
+
+
 BroadcastStyle(M::ArrayMulArrayStyle, ::BlockBandedStyle) = M
 BroadcastStyle(::BlockBandedStyle, M::ArrayMulArrayStyle) = M
 BroadcastStyle(M::ArrayMulArrayStyle, ::BandedBlockBandedStyle) = M

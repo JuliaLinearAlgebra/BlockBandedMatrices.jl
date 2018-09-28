@@ -18,7 +18,7 @@ function BandedBlockBandedSizes(bs::BlockSizes{2}, l, u, λ, μ)
 end
 
 BandedBlockBandedSizes(bs::AbstractBlockSizes{2}, l, u, λ, μ) =
-    BandedBlockBandedSizes(BlockSizes{2}(bs), l, u, λ, μ)
+    BandedBlockBandedSizes(convert(BlockSizes{2},bs), l, u, λ, μ)
 
 BandedBlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l, u, λ, μ) =
     BandedBlockBandedSizes(BlockSizes(rows,cols), l, u, λ, μ)
@@ -30,8 +30,8 @@ cumulsizes(B::BandedBlockBandedSizes) = cumulsizes(B.block_sizes)
 convert(::Type{BlockBandedSizes}, B::BandedBlockBandedSizes) =
     BlockBandedSizes(B.block_sizes, B.l, B.u)
 
-convert(::Type{BandedSizes}, B::BandedBlockBandedSizes) = B.block_sizes
-convert(::Type{BandedSizes{2}}, B::BandedBlockBandedSizes) = B.block_sizes
+convert(::Type{BlockSizes}, B::BandedBlockBandedSizes) = B.block_sizes
+convert(::Type{BlockSizes{2}}, B::BandedBlockBandedSizes) = B.block_sizes
 
 BlockBandedSizes(B::BandedBlockBandedSizes) = convert(BlockBandedSizes, B)
 
