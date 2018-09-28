@@ -11,11 +11,11 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, LazyArrays, LinearAlgebr
     C = BandedBlockBandedMatrix{Float64}(undef, (1:2,1:2), (1,1), (1,1))
     C.data .= NaN
     lmul!(0.0, C)
-    norm(C) == 0.0
+    @test norm(C) == 0.0
 
     C.data .= NaN
     rmul!(C, 0.0)
-    norm(C) == 0.0
+    @test norm(C) == 0.0
 end
 
 @testset "BlockBandedMatrix linear algebra" begin
