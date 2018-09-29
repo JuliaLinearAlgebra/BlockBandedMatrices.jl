@@ -2,11 +2,11 @@ using Distributed
 
 pids = addprocs(4)
 @everywhere using Pkg
-@everywhere Pkg.activate(homedir() * "/Documents/Coding/gpublockbanded")
+# @everywhere Pkg.activate(homedir() * "/Documents/Coding/gpublockbanded")
 @everywhere using BandedMatrices, BlockBandedMatrices, SharedArrays, LazyArrays, BlockArrays, FillArrays
 @everywhere import BlockBandedMatrices: _BandedBlockBandedMatrix, BandedBlockBandedSizes, BlockSizes, blockcolrange
-
-
+@everywhere import BandedMatrices: AbstractBandedMatrix, bandwidths
+@everywhere import Base: getindex, size
 
 function shared_BandedBlockBandedMatrix(::UndefInitializer, bs::BlockSizes, (l, u), (λ, μ); pids=Int[])
     bs = BandedBlockBandedSizes(bs, l, u, λ, μ)
@@ -29,10 +29,40 @@ function shared_BandedBlockBandedMatrix(A::AbstractMatrix; pids=Int[])
     ret
 end
 
+@everywhere struct FiniteDifference{T} <: AbstractBandedMatrix{T}
+    n::Int
+end
 
-N = 600
+@everywhere FiniteDifference(n) = FiniteDifference{Float64}(n)
+
+@everywhere getindex(F::FiniteDifference{T}, k::Int, j::Int) where T =
+    if k == j
+        -2*one(T)*F.n^2
+    elseif abs(k-j) == 1
+        one(T)*F.n^2
+    else
+        zero(T)
+    end
+
+@everywhere bandwidths(F::FiniteDifference) = (1,1)
+@everywhere size(F::FiniteDifference) = (F.n,F.n)
+
+
+
+N = 1000
     h = 1/N
-    D² = BandedMatrix(0 => Fill(-2,N), 1 => Fill(1,N-1), -1 => Fill(1,N-1))/h^2
+    D² = FiniteDifference(N)
     A = Kron(D², Eye(N))
-    @time ret = shared_BandedBlockBandedMatrix(A; pids=pids)
-    @time ret = BandedBlockBandedMatrix(A)
+    A
+@time ret = shared_BandedBlockBandedMatrix(A; pids=pids)
+@time ret = BandedBlockBandedMatrix(A)
+
+
+ret = shared_BandedBlockBandedMatrix(undef, blocksizes(A), (1,1), (0,0); pids=pids)
+N,M = nblocks(A)
+@sync @distributed for J = Block.(1:N)
+    for K = blockcolrange(A,J)
+        view(ret,K,J) .= view(A,K,J)
+    end
+end
+ret
