@@ -13,3 +13,6 @@ const SubKron{T,M1,M2,R1,R2} =
 
 BroadcastStyle(::Type{<:SubKron{<:Any,<:Any,B,Block1,Block1}}) where B =
     BroadcastStyle(B)
+
+@inline bandwidths(V::SubKron{<:Any,<:Any,<:Any,Block1,Block1}) =
+    subblockbandwidths(parent(V))
