@@ -436,7 +436,8 @@ end
 ######################################
 # BandedMatrix interface  for Blocks #
 ######################################
-@inline bandwidths(V::BandedBlockBandedBlock) = subblockbandwidths(parent(V))
+@inline bandwidths(V::SubArray{<:Any,2,<:Any,Tuple{BlockSlice1,BlockSlice1},false}) = 
+    subblockbandwidths(parent(V))
 
 
 
