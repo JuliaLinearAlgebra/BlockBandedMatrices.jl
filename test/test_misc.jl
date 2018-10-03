@@ -1,4 +1,4 @@
-using LazyArrays, BlockBandedMatrices, BandedMatrices, Test
+using LazyArrays, BlockBandedMatrices, BandedMatrices, LinearAlgebra, Test
 import Base: getindex, size
 import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle
 
@@ -39,13 +39,23 @@ Base.BroadcastStyle(::Type{<:Eye}) = BandedStyle()
 
     n = 10
     D² = FiniteDifference(n)
-    K = Kron(D², Eye(n))
-    @test blockbandwidths(K) == (1,1)
-    @test subblockbandwidths(K) == (0,0)
+    D̃_xx = Kron(D², Eye(n))
+    @test blockbandwidths(D̃_xx) == (1,1)
+    @test subblockbandwidths(D̃_xx) == (0,0)
 
-    V = view(K, Block(1,1))
+    V = view(D̃_xx, Block(1,1))
     @test Base.BroadcastStyle(typeof(V)) == BandedStyle()
     @test bandwidths(V) == (0,0)
 
-    @test BandedBlockBandedMatrix(K) == D_xx
+    @test BandedBlockBandedMatrix(D̃_xx) ≈ D_xx
+
+    D̃_yy = Kron(Eye(n), D²)
+    @test blockbandwidths(D̃_yy) == (0,0)
+    @test subblockbandwidths(D̃_yy) == (1,1)
+
+    V = view(D̃_yy, Block(1,1))
+    @test Base.BroadcastStyle(typeof(V)) == BandedStyle()
+    @test bandwidths(V) == (1,1)
+
+    @test BandedBlockBandedMatrix(D̃_yy) ≈ D_yy
 end

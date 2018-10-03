@@ -111,7 +111,7 @@ end
 
     V = view(A, 1:11, 1:11)
     b = randn(size(V,1))
-    @test_broken all(UpperTriangular(V) \ b .===
+    @test_skip all(UpperTriangular(V) \ b .===
                     BlockBandedMatrices.blockbanded_rectblocks_intrange_trtrs!(V, copy(b)))
     @test UpperTriangular(V) \ b ≈ UpperTriangular(Matrix(V)) \ b ≈ UpperTriangular(A[1:11,1:11]) \ b
 
