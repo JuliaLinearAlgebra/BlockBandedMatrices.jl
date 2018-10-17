@@ -33,27 +33,6 @@ end
 adapt(T::Type, b::BandedBlockBandedMatrix) =
     _BandedBlockBandedMatrix(adapt(T, b.data), b.block_sizes)
 
-const SharedBandedBlockBandedMatrix = 
-    BandedBlockBandedMatrix{T, PseudoBlockArray{T, 2, SharedArray{T, 2}}} where T
-
-function SharedBandedBlockBandedMatrix{T}(::UndefInitializer,
-                                          bs::BandedBlockBandedSizes;
-                                          kwargs...) where T
-  Block = fieldtype(SharedBandedBlockBandedMatrix{T}, :data) 
-  Shared = fieldtype(Block, :blocks)
-  shared = Shared(size(bs), kwargs...)
-  _BandedBlockBandedMatrix(Block(shared, bs.data_block_sizes), bs)
-end
-
-function SharedBandedBlockBandedMatrix{T}(init::Function,
-                                          bs::BandedBlockBandedSizes;
-                                          pids=Int64[]) where T
-  SharedBandedBlockBandedMatrix{T}(undef, bs; init=init, pids=pids)
-end
-
-Distributed.procs(A::SharedBandedBlockBandedMatrix) = procs(A.data.blocks)
-
-
 
 function LinearAlgebra.mul!(c::BlockVector{T},
                             A::BandedBlockBandedMatrix{T, <: BlockMatrix},
