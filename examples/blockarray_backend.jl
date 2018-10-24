@@ -1,6 +1,6 @@
-# using CUDAnative
-# device!(0)
-# using CuArrays
+ using CUDAnative
+device!(0)
+using CuArrays
 using GPUArrays
 using BlockArrays: _BlockArray, PseudoBlockArray, BlockArray, BlockMatrix, BlockVector,
                   nblocks, Block, cumulsizes, AbstractBlockVector
@@ -118,7 +118,7 @@ function testme()
       @test adapt(JLArray, bmat) isa BlockArray{T, 2, JLArray{T, 2}} where T
       @test eltype(adapt(JLArray, bmat)) === Float64
       if @isdefined CuArray
-        @test cu(bmat) isa BlockArray{T, 2, JLArray{T, 2}} where T
+        @test cu(bmat) isa BlockArray{T, 2, CuArray{T, 2}} where T
         @test eltype(cu(bmat)) === Float32
       end
     end
@@ -129,8 +129,8 @@ function testme()
       @test adapt(JLArray, bmat) isa PseudoBlockArray
       if @isdefined CuArray
         @test !(adapt(CuArray, bmat) isa PseudoBlockArray)
-        @test adapt(CuArray, bmat) isa BlockArray{T, 2, JLArray{T, 2}} where T
-        @test cu(bmat) isa BlockArray{T, 2, JLArray{T, 2}} where T
+        @test adapt(CuArray, bmat) isa BlockArray{T, 2, CuArray{T, 2}} where T
+        @test cu(bmat) isa BlockArray{T, 2, CuArray{T, 2}} where T
         @test eltype(cu(bmat)) === Float32
       end
     end
@@ -143,7 +143,7 @@ function testme()
       if @isdefined CuArray
         @test adapt(CuArray, bmat).data isa BlockArray{T, 2, CuArray{T, 2}} where T
         @test cu(bmat) isa BandedBlockBandedMatrix
-        @test cu(bmat).data isa BlockArray{T, 2, JLArray{T, 2}} where T
+        @test cu(bmat).data isa BlockArray{T, 2, CuArray{T, 2}} where T
         @test eltype(cu(bmat)) === Float32
       end
     end
@@ -173,16 +173,15 @@ using Statistics
 
 function benchmarks()
   suite = BenchmarkGroup()
-  suite["viabm"] = BenchmarkGroup()
+  # suite["viabm"] = BenchmarkGroup()
   suite["pseudo"] = BenchmarkGroup()
   suite["block"] = BenchmarkGroup()
-  possibles = [5, 10, 100, 500, 1000]
-  for N in possibles #, n in possibles
-    n = N
-    suite["pseudo"]["N=$N n=$n"] = BenchmarkGroup()
-    suite["block"]["N=$N n=$n"] = BenchmarkGroup()
-    suite["viabm"]["N=$N n=$n"] = BenchmarkGroup()
-
+  # suite["block_nofill"] = BenchmarkGroup()
+  if @isdefined CuArrays
+    suite["gpu"] = BenchmarkGroup()
+    # suite["gpu_nofill"] = BenchmarkGroup()
+  end
+  for N in [10, 100, 500, 1000], n = [N ÷ 5, N, 5N, 10N]
     l, u, λ, μ = rand(0:2, 4)
     M, m = N, n
   
@@ -201,13 +200,53 @@ function benchmarks()
       LinearAlgebra.mul!($(adapt(BlockArray, c)), $(adapt(BlockArray, A)),
                          $(adapt(BlockArray, x)))
     end
-    suite["viabm"]["N=$N n=$n"] = @benchmarkable begin
-      banded_mul!($(adapt(BlockArray, c)), $(adapt(BlockArray, A)),
-                  $(adapt(BlockArray, x)))
+    # suite["block_nofill"]["N=$N n=$n"] = @benchmarkable begin
+    #   nofill_mul!($(adapt(BlockArray, c)), $(adapt(BlockArray, A)),
+    #               $(adapt(BlockArray, x)))
+    # end
+    # suite["viabm"]["N=$N n=$n"] = @benchmarkable begin
+    #   banded_mul!($(adapt(BlockArray, c)), $(adapt(BlockArray, A)),
+    #               $(adapt(BlockArray, x)))
+    # end
+    if @isdefined CuArrays
+      suite["gpu"]["N=$N n=$n"] = @benchmarkable begin
+        gpuc = LinearAlgebra.mul!($(adapt(CuArray, c)),
+                                  $(adapt(CuArray, A)),
+                                  $(adapt(CuArray, x)))
+        synchronize(gpuc)
+      end
+      # suite["gpu_nofill"]["N=$N n=$n"] = @benchmarkable begin
+      #   gpuc = nofill_mul!($(adapt(CuArray, c)),
+      #                      $(adapt(CuArray, A)),
+      #                      $(adapt(CuArray, x)))
+      #   synchronize(gpuc)
+      # end
     end
   end
   suite
 end
+
+function nofill_mul!(c::BlockVector{T},
+                     A::BandedBlockBandedMatrix{T, <: BlockMatrix},
+                     x::BlockVector{T}) where T
+    @assert nblocks(A, 1) == nblocks(c, 1)
+    @assert cumulsizes(A, 1) == cumulsizes(c, 1)
+    @assert nblocks(A, 2) == nblocks(x, 1)
+    @assert cumulsizes(A, 2) == cumulsizes(x, 1)
+
+    l, u = blockbandwidths(A)
+    λ, μ = subblockbandwidths(A)
+    N,M = nblocks(A)
+
+    @inbounds for i = 1:N, j = max(1,i-l):min(M,i+u)
+        BLAS.gbmv!('N', size(view(A, Block(i, j)), 1), λ, μ, one(T),
+                   A.data.blocks[i - j + u + 1, j],
+                   x.blocks[j], one(T), c.blocks[i])
+    end
+
+    c
+end
+
 
 block_ratio(result, name; method=median) = 
     ratio(method(result["block"][name]), method(result["pseudo"][name]))
