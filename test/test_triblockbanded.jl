@@ -1,7 +1,7 @@
 using BlockBandedMatrices, BandedMatrices, BlockArrays, LazyArrays, Test
 import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedColumnMajor,
                         BandedColumnMajor, tribandeddata, blocksizes, cumulsizes, nblocks,
-                        BlockBandedSizes, blockrowstop, blockcolstop, BlockSizes,
+                        RaggedBlockBandedSizes, blockrowstop, blockcolstop, BlockSizes,
                         ColumnMajor
 
 @testset "triangular BandedBlockBandedMatrix mul" begin
@@ -96,7 +96,7 @@ end
     b = randn(size(A,1))
 
     V = view(A, Block.(1:3), Block.(1:4))
-    @test blocksizes(V) isa BlockBandedSizes
+    @test blocksizes(V) isa RaggedBlockBandedSizes
     @test blocksizes(V) == blocksizes(A)
 
 
@@ -131,7 +131,7 @@ end
 
 
 
-@testset "SubBlockBandedMatrix linear algebra" begin
+@testset "SubRaggedBlockBandedMatrix linear algebra" begin
     l , u = 1,1
     N = M = 5
     cols = rows = 1:N
@@ -143,7 +143,7 @@ end
     @test blockrowstop(V,1) == Block(2)
     @test blockcolstop(V,1) == Block(2)
 
-    @test blocksizes(V) == BlockBandedSizes(BlockSizes(1:3, 1:3), l,u)
+    @test blocksizes(V) == RaggedBlockBandedSizes(BlockSizes(1:3, 1:3), l,u)
 
     b = randn(size(V,1))
     r = UpperTriangular(Matrix(V)) \ b

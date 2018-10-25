@@ -40,7 +40,7 @@ import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec, @blasmatmat,
                     triangulardata, subarraylayout, _copyto!, @lazyldiv, @lazylmul,
                     ArrayMulArrayStyle
 
-export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
+export BandedBlockBandedMatrix, BlockBandedMatrix, BlockTridiagonalMatrix, RaggedBlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block
 
 
