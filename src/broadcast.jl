@@ -71,16 +71,17 @@ function _blockbanded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) wher
     dl, du = blockbandwidths(dest)
     sl, su = blockbandwidths(src)
     M,N = nblocks(src)
-    (dl ≥ min(sl,M-1) && du ≥ min(su,N-1)) || throw(BandError(dest))
+    # Source matrix must fit within bands of destination matrix
+    all(dl .≥ min.(sl,Ref(M-1))) && all(du .≥ min.(su,Ref(N-1))) || throw(BandError(dest))
 
     for J = 1:N
-        for K = max(1,J-du):min(J-su-1,M)
+        for K = max(1,J-du[J]):min(J-su[J]-1,M)
             view(dest,Block(K),Block(J)) .= zero(T)
         end
-        for K = max(1,J-su):min(J+sl,M)
+        for K = max(1,J-su[J]):min(J+sl[J],M)
             view(dest,Block(K),Block(J)) .= view(src,Block(K),Block(J))
         end
-        for K = max(1,J+sl+1):min(J+dl,M)
+        for K = max(1,J+sl[J]+1):min(J+dl[J],M)
             view(dest,Block(K),Block(J)) .= zero(T)
         end
     end
