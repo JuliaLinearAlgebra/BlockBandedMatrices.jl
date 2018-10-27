@@ -1,4 +1,4 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Test
+using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, LinearAlgebra, Test
     import BlockBandedMatrices: _BlockBandedMatrix, MemoryLayout, ColumnMajor
 
 @testset "BlockBandedMatrix constructors" begin
@@ -12,10 +12,10 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Test
     @test Matrix(BlockBandedMatrix{Int}(Zeros(sum(rows),sum(cols)), (rows,cols), (l,u))) ==
         zeros(Int, 10, 10)
 
-    @test Matrix(BlockBandedMatrix(Eye(sum(rows),sum(cols)), (rows,cols), (l,u))) ==
+    @test Matrix(BlockBandedMatrix(Eye(sum(rows)), (rows,cols), (l,u))) ==
         Matrix{Float64}(I, 10, 10)
 
-    @test Matrix(BlockBandedMatrix{Int}(Eye(sum(rows),sum(cols)), (rows,cols), (l,u))) ==
+    @test Matrix(BlockBandedMatrix{Int}(Eye(sum(rows)), (rows,cols), (l,u))) ==
         Matrix{Int}(I, 10, 10)
 
     @test Matrix(BlockBandedMatrix(I, (rows,cols), (l,u))) ==

@@ -1,4 +1,4 @@
-using BlockBandedMatrices, BandedMatrices, BlockArrays, LazyArrays, Test
+using BlockBandedMatrices, BandedMatrices, BlockArrays, LazyArrays, LinearAlgebra, Test
 import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedColumnMajor,
                         BandedColumnMajor, tribandeddata, blocksizes, cumulsizes, nblocks,
                         BlockBandedSizes, blockrowstop, blockcolstop, BlockSizes,

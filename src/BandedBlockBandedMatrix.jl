@@ -217,6 +217,11 @@ BandedBlockBandedMatrix{T}(A::Union{AbstractMatrix,UniformScaling},
                            λμ::NTuple{2,Int}) where T =
     BandedBlockBandedMatrix{T}(A, BandedBlockBandedSizes(dims..., lu..., λμ...))
 
+BandedBlockBandedMatrix{T,B}(A::Union{AbstractMatrix,UniformScaling},
+                           dims::NTuple{2,AbstractVector{Int}}, lu::NTuple{2,Int},
+                           λμ::NTuple{2,Int}) where {T,B} =
+    BandedBlockBandedMatrix{T,B}(A, BandedBlockBandedSizes(dims..., lu..., λμ...))
+
 BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
                         dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2,Int},
                         λμ::NTuple{2,Int}) =
