@@ -24,10 +24,31 @@ BroadcastStyle(::BandedBlockBandedStyle, M::ArrayMulArrayStyle) = M
 @blasmatvec BandedBlockBandedColumnMajor
 @blasmatmat BlockBandedColumnMajor BlockBandedColumnMajor BlockBandedColumnMajor
 @blasmatmat BandedBlockBandedColumnMajor BandedBlockBandedColumnMajor BandedBlockBandedColumnMajor
+@blasmatmat DenseColumnMajor BandedBlockBandedColumnMajor DenseColumnMajor
+@blasmatmat DenseColumnMajor BandedBlockBandedColumnMajor ColumnMajor
+@blasmatmat ColumnMajor BandedBlockBandedColumnMajor DenseColumnMajor
+@blasmatmat ColumnMajor BandedBlockBandedColumnMajor ColumnMajor
+@blasmatmat DenseColumnMajor BlockBandedColumnMajor DenseColumnMajor
+@blasmatmat DenseColumnMajor BlockBandedColumnMajor ColumnMajor
+@blasmatmat ColumnMajor BlockBandedColumnMajor DenseColumnMajor
+@blasmatmat ColumnMajor BlockBandedColumnMajor ColumnMajor
+@blasmatmat DenseColumnMajor DenseColumnMajor BandedBlockBandedColumnMajor
+@blasmatmat DenseColumnMajor ColumnMajor BandedBlockBandedColumnMajor
+@blasmatmat ColumnMajor DenseColumnMajor BandedBlockBandedColumnMajor
+@blasmatmat ColumnMajor ColumnMajor BandedBlockBandedColumnMajor
+@blasmatmat DenseColumnMajor DenseColumnMajor BlockBandedColumnMajor
+@blasmatmat DenseColumnMajor ColumnMajor BlockBandedColumnMajor
+@blasmatmat ColumnMajor DenseColumnMajor BlockBandedColumnMajor
+@blasmatmat ColumnMajor ColumnMajor BlockBandedColumnMajor
 
 
 
 MemoryLayout(A::PseudoBlockArray) = MemoryLayout(A.blocks)
+
+
+#############
+# BLAS overrides
+#############
 
 function blasmul!(y_in::AbstractVector, A::AbstractMatrix, x_in::AbstractVector, α, β,
                     ::AbstractStridedLayout, ::AbstractBlockBandedLayout, ::AbstractStridedLayout)
@@ -60,12 +81,49 @@ function blasmul!(Y::AbstractMatrix, A::AbstractMatrix, X::AbstractMatrix, α, �
     Y
 end
 
+function blasmul!(Y_in::AbstractMatrix, A::AbstractMatrix, X_in::AbstractMatrix, α, β,
+                    ::AbstractColumnMajor, ::AbstractBlockBandedLayout, ::AbstractColumnMajor)
+
+    lmul!(β, Y_in)
+    X = PseudoBlockArray(X_in, BlockSizes((cumulsizes(blocksizes(A),2),[1,size(X_in,2)+1])))
+    Y = PseudoBlockArray(Y_in, BlockSizes((cumulsizes(blocksizes(A),1), [1,size(Y_in,2)+1])))
+    for N=Block.(1:nblocks(X,1)), K=blockcolrange(A,N)
+        view(Y,K,Block(1)) .= α .* Mul( view(A,K,N), view(X,N,Block(1))) .+ view(Y,K,Block(1))
+    end
+    Y_in
+end
+
+function blasmul!(Y_in::AbstractMatrix, A_in::AbstractMatrix, X::AbstractMatrix, α, β,
+                    ::AbstractColumnMajor, ::AbstractColumnMajor, ::AbstractBlockBandedLayout)
+
+    lmul!(β, Y_in)
+    A = PseudoBlockArray(A_in, BlockSizes(([1,size(A_in,1)+1],cumulsizes(blocksizes(X),1))))
+    Y = PseudoBlockArray(Y_in, BlockSizes(([1,size(Y_in,1)+1],cumulsizes(blocksizes(X),2))))
+    for J=Block(1):Block(nblocks(X,2)), N=blockcolrange(X,J)
+        view(Y,Block(1),J) .= α .* Mul( view(A,Block(1),N), view(X,N,J)) .+ view(Y,Block(1),J)
+    end
+    Y_in
+end
+
+
+
 
 #############
-# BLAS overrides
+# * overrides
 #############
 
-function *(A::BlockBandedMatrix{T}, B::BlockBandedMatrix{V}) where {T<:Number,V<:Number}
+*(A::BlockBandedMatrix, B::BlockBandedMatrix) = materialize(Mul(A,B))
+*(A::BlockBandedMatrix, B::BandedBlockBandedMatrix) = materialize(Mul(A,B))
+*(A::BandedBlockBandedMatrix, B::BlockBandedMatrix) = materialize(Mul(A,B))
+*(A::BandedBlockBandedMatrix, B::BandedBlockBandedMatrix) = materialize(Mul(A,B))
+*(A::Matrix, B::BlockBandedMatrix) = materialize(Mul(A,B))
+*(A::BlockBandedMatrix, B::Matrix) = materialize(Mul(A,B))
+*(A::BandedBlockBandedMatrix, B::Matrix) = materialize(Mul(A,B))
+*(A::Matrix, B::BandedBlockBandedMatrix) = materialize(Mul(A,B))
+
+
+function similar(M::MatMulMat{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T
+    A,B = M.factors
     Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
     Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
     if Acols ≠ Brows
@@ -81,11 +139,11 @@ function *(A::BlockBandedMatrix{T}, B::BlockBandedMatrix{V}) where {T<:Number,V<
     n,m = size(A,1), size(B,2)
 
     l, u = A.l+B.l, A.u+B.u
-    BlockBandedMatrix{promote_type(T,V)}(undef,
-            BlockBandedSizes(BlockSizes((Arows,Bcols)), l, u)) .= Mul(A, B)
+    BlockBandedMatrix{T}(undef,BlockBandedSizes(BlockSizes((Arows,Bcols)), l, u))
 end
 
-function *(A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{V}) where {T<:Number,V<:Number}
+function similar(M::MatMulMat{BandedBlockBandedColumnMajor,BandedBlockBandedColumnMajor}, ::Type{T}) where T
+    A,B = M.factors
     Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
     Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
     if Acols ≠ Brows
@@ -103,8 +161,13 @@ function *(A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{V}) where {
 
     bs = BandedBlockBandedSizes(BlockSizes((Arows,Bcols)), A.l+B.l, A.u+B.u, A.λ+B.λ, A.μ+B.μ)
 
-    BandedBlockBandedMatrix{promote_type(T,V)}(undef, bs) .= Mul(A, B)
+    BandedBlockBandedMatrix{T}(undef, bs)
 end
+
+similar(M::MatMulMat{<:AbstractBlockBandedLayout,<:AbstractColumnMajor}, ::Type{T}) where T =
+    Matrix{T}(undef, size(M))
+similar(M::MatMulMat{<:AbstractColumnMajor,<:AbstractBlockBandedLayout}, ::Type{T}) where T =
+    Matrix{T}(undef, size(M))
 
 function blocksizes(V::SubBlockBandedMatrix{<:Any,BlockRange1,BlockRange1})
     A = parent(V)

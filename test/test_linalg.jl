@@ -32,6 +32,13 @@ end
     @test unsafe_load(pointer(V)) == 46
     @test unsafe_load(pointer(V) + stride(V,2)*sizeof(Float64)) == 53
 
+    x = randn(size(A,2))
+    @test A*x == (similar(x) .= Mul(A,x)) ≈ Matrix(A)*x
+
+    X = randn(size(A))
+    @test A*X == (similar(X) .= Mul(A,X)) ≈ Matrix(A)*X
+    @test X*A == (similar(X) .= Mul(X,A)) ≈  Matrix(X)*A
+
     v = fill(1.0,4)
     U = UpperTriangular(view(A, Block(N,N)))
     @test Matrix(U) == U
