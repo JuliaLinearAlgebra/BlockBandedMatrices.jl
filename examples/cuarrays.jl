@@ -71,7 +71,7 @@ function mul!(c, A::BandedBlockBandedMatrix{<:Any,<:BlockMatrix{<:Any,<:CuArray}
 
     for J = 1:N, K = max(1,J-l):min(N,J+u)
         B = _BandedMatrix(A.data.blocks[K-J+u+1,J],N,λ,μ)
-        LazyArrays.blasmul!(c.blocks[K],  B, b.blocks[J], 1f0, 1f0)
+        LazyArrays.materialize!(MulAdd(1f0, B, b.blocks[J], 1f0, c.blocks[K]))
     end
     c
 end
@@ -87,7 +87,7 @@ function mul2!(c, A::BandedBlockBandedMatrix{<:Any,<:BlockMatrix{<:Any,<:CuArray
         for J = 1-b:M
             K = J + b
             B = _BandedMatrix(A.data.blocks[b+u+1,J],N,λ,μ)
-            LazyArrays.blasmul!(c.blocks[K],  B, x.blocks[J], 1f0, 1f0)
+            LazyArrays.materialize!(MulAdd(1f0, B, x.blocks[J], 1f0, c.blocks[K]))
         end
     end
 
@@ -95,7 +95,7 @@ function mul2!(c, A::BandedBlockBandedMatrix{<:Any,<:BlockMatrix{<:Any,<:CuArray
         for J = 1:M-b
             K = J + b
             B = _BandedMatrix(A.data.blocks[b+u+1,J],N,λ,μ)
-            LazyArrays.blasmul!(c.blocks[K],  B, x.blocks[J], 1f0, 1f0)
+            LazyArrays.materialize!(MulAdd(1f0, B, x.blocks[J], 1f0, c.blocks[K]))
         end
     end
 

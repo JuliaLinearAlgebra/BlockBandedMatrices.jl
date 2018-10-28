@@ -142,8 +142,7 @@ end
     @test sum(B) == 20
     AB = A*B
     @test AB isa BlockBandedMatrix
-    Matrix(AB)
-    @test Matrix(AB) == Matrix(A)*Matrix(B)
+    @test Matrix(AB) ≈ Matrix(A)*Matrix(B)
 end
 
 

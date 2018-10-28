@@ -20,27 +20,6 @@ BroadcastStyle(M::ArrayMulArrayStyle, ::BandedBlockBandedStyle) = M
 BroadcastStyle(::BandedBlockBandedStyle, M::ArrayMulArrayStyle) = M
 
 @lazymul AbstractBlockBandedMatrix
-@blasmatvec BlockBandedColumnMajor
-@blasmatvec BandedBlockBandedColumnMajor
-@blasmatmat BlockBandedColumnMajor BlockBandedColumnMajor BlockBandedColumnMajor
-@blasmatmat BandedBlockBandedColumnMajor BandedBlockBandedColumnMajor BandedBlockBandedColumnMajor
-@blasmatmat DenseColumnMajor BandedBlockBandedColumnMajor DenseColumnMajor
-@blasmatmat DenseColumnMajor BandedBlockBandedColumnMajor ColumnMajor
-@blasmatmat ColumnMajor BandedBlockBandedColumnMajor DenseColumnMajor
-@blasmatmat ColumnMajor BandedBlockBandedColumnMajor ColumnMajor
-@blasmatmat DenseColumnMajor BlockBandedColumnMajor DenseColumnMajor
-@blasmatmat DenseColumnMajor BlockBandedColumnMajor ColumnMajor
-@blasmatmat ColumnMajor BlockBandedColumnMajor DenseColumnMajor
-@blasmatmat ColumnMajor BlockBandedColumnMajor ColumnMajor
-@blasmatmat DenseColumnMajor DenseColumnMajor BandedBlockBandedColumnMajor
-@blasmatmat DenseColumnMajor ColumnMajor BandedBlockBandedColumnMajor
-@blasmatmat ColumnMajor DenseColumnMajor BandedBlockBandedColumnMajor
-@blasmatmat ColumnMajor ColumnMajor BandedBlockBandedColumnMajor
-@blasmatmat DenseColumnMajor DenseColumnMajor BlockBandedColumnMajor
-@blasmatmat DenseColumnMajor ColumnMajor BlockBandedColumnMajor
-@blasmatmat ColumnMajor DenseColumnMajor BlockBandedColumnMajor
-@blasmatmat ColumnMajor ColumnMajor BlockBandedColumnMajor
-
 
 
 MemoryLayout(A::PseudoBlockArray) = MemoryLayout(A.blocks)
@@ -50,8 +29,28 @@ MemoryLayout(A::PseudoBlockArray) = MemoryLayout(A.blocks)
 # BLAS overrides
 #############
 
-function blasmul!(y_in::AbstractVector, A::AbstractMatrix, x_in::AbstractVector, α, β,
-                    ::AbstractStridedLayout, ::AbstractBlockBandedLayout, ::AbstractStridedLayout)
+function _copyto!(::AbstractStridedLayout, y_in::AbstractVector, M::MatMulVec{<:AbstractBlockBandedLayout, <:AbstractStridedLayout})
+    A, x_in = M.factors
+
+    if length(x_in) != size(A,2) || length(y_in) != size(A,1)
+        throw(DimensionMismatch())
+    end
+
+    # impose block structure
+    y = PseudoBlockArray(y_in, BlockSizes((cumulsizes(blocksizes(A),1),)))
+    x = PseudoBlockArray(x_in, BlockSizes((cumulsizes(blocksizes(A),2),)))
+
+    for J = Block.(1:nblocks(A,2))
+        for K = blockcolrange(A,J)
+            view(y,K) .= Mul(view(A,K,J), view(x,J))
+        end
+    end
+    y_in
+end
+
+
+function materialize!(M::MatMulVecAdd{<:AbstractBlockBandedLayout,<:AbstractStridedLayout,<:AbstractStridedLayout})
+    α, A, x_in, β, y_in = M.α, M.A, M.B, M.β, M.C
     if length(x_in) != size(A,2) || length(y_in) != size(A,1)
         throw(DimensionMismatch())
     end
@@ -70,9 +69,18 @@ function blasmul!(y_in::AbstractVector, A::AbstractMatrix, x_in::AbstractVector,
     y_in
 end
 
+function _copyto!(::AbstractBlockBandedLayout, Y::AbstractMatrix, M::MatMulMat{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout})
+    A,X = M.factors
+    for J=Block(1):Block(nblocks(X,2)),
+            N=blockcolrange(X,J), K=blockcolrange(A,N)
+        view(Y,K,J) .= Mul( view(A,K,N), view(X,N,J))
+    end
+    Y
+end
 
-function blasmul!(Y::AbstractMatrix, A::AbstractMatrix, X::AbstractMatrix, α, β,
-                    ::AbstractBlockBandedLayout, ::AbstractBlockBandedLayout, ::AbstractBlockBandedLayout)
+
+function materialize!(M::MatMulMatAdd{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout})
+    α, A, X, β, Y = M.α, M.A, M.B, M.β, M.C
     lmul!(β, Y)
     for J=Block(1):Block(nblocks(X,2)),
             N=blockcolrange(X,J), K=blockcolrange(A,N)
@@ -81,9 +89,19 @@ function blasmul!(Y::AbstractMatrix, A::AbstractMatrix, X::AbstractMatrix, α, �
     Y
 end
 
-function blasmul!(Y_in::AbstractMatrix, A::AbstractMatrix, X_in::AbstractMatrix, α, β,
-                    ::AbstractColumnMajor, ::AbstractBlockBandedLayout, ::AbstractColumnMajor)
+function _copyto!(::AbstractColumnMajor, Y_in::AbstractMatrix, M::MatMulMat{<:AbstractBlockBandedLayout, <:AbstractColumnMajor})
+    A, X_in = M.factors
 
+    X = PseudoBlockArray(X_in, BlockSizes((cumulsizes(blocksizes(A),2),[1,size(X_in,2)+1])))
+    Y = PseudoBlockArray(Y_in, BlockSizes((cumulsizes(blocksizes(A),1), [1,size(Y_in,2)+1])))
+    for N=Block.(1:nblocks(X,1)), K=blockcolrange(A,N)
+        view(Y,K,Block(1)) .= Mul( view(A,K,N), view(X,N,Block(1)))
+    end
+    Y_in
+end
+
+function materialize!(M::MatMulMatAdd{<:AbstractBlockBandedLayout,<:AbstractColumnMajor,<:AbstractColumnMajor})
+    α, A, X_in, β, Y_in = M.α, M.A, M.B, M.β, M.C
     lmul!(β, Y_in)
     X = PseudoBlockArray(X_in, BlockSizes((cumulsizes(blocksizes(A),2),[1,size(X_in,2)+1])))
     Y = PseudoBlockArray(Y_in, BlockSizes((cumulsizes(blocksizes(A),1), [1,size(Y_in,2)+1])))
@@ -93,9 +111,18 @@ function blasmul!(Y_in::AbstractMatrix, A::AbstractMatrix, X_in::AbstractMatrix,
     Y_in
 end
 
-function blasmul!(Y_in::AbstractMatrix, A_in::AbstractMatrix, X::AbstractMatrix, α, β,
-                    ::AbstractColumnMajor, ::AbstractColumnMajor, ::AbstractBlockBandedLayout)
+function _copyto!(::AbstractColumnMajor, Y_in::AbstractMatrix, M::MatMulMat{<:AbstractColumnMajor, <:AbstractBlockBandedLayout})
+    A_in, X = M.factors
+    A = PseudoBlockArray(A_in, BlockSizes(([1,size(A_in,1)+1],cumulsizes(blocksizes(X),1))))
+    Y = PseudoBlockArray(Y_in, BlockSizes(([1,size(Y_in,1)+1],cumulsizes(blocksizes(X),2))))
+    for J=Block(1):Block(nblocks(X,2)), N=blockcolrange(X,J)
+        view(Y,Block(1),J) .= Mul( view(A,Block(1),N), view(X,N,J))
+    end
+    Y_in
+end
 
+function materialize!(M::MatMulMatAdd{<:AbstractColumnMajor,<:AbstractBlockBandedLayout,<:AbstractColumnMajor})
+    α, A_in, X, β, Y_in = M.α, M.A, M.B, M.β, M.C
     lmul!(β, Y_in)
     A = PseudoBlockArray(A_in, BlockSizes(([1,size(A_in,1)+1],cumulsizes(blocksizes(X),1))))
     Y = PseudoBlockArray(Y_in, BlockSizes(([1,size(Y_in,1)+1],cumulsizes(blocksizes(X),2))))

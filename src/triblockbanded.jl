@@ -92,9 +92,11 @@ end
         _matchingblocks_triangular_mul!(Val(UPLO), Val(UNIT), triangulardata(U), dest)
     else # use default
         if x ≡ dest
-            blasmul!(dest, U, copy(x), one(T), zero(T), MemoryLayout(dest), BandedBlockBandedColumnMajor(), MemoryLayout(x))
+            materialize!(MulAdd(MemoryLayout(dest), BandedBlockBandedColumnMajor(), MemoryLayout(x),
+                                one(T), U, copy(x), zero(T), dest))
         else
-            blasmul!(dest, U, x, one(T), zero(T), MemoryLayout(dest), BandedBlockBandedColumnMajor(), MemoryLayout(x))
+            materialize!(MulAdd(MemoryLayout(dest), BandedBlockBandedColumnMajor(), MemoryLayout(x),
+                                one(T), U, x, zero(T), dest))
         end
     end
 end
