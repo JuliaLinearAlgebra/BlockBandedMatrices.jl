@@ -26,7 +26,7 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         ==, axes, copyto!, similar
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
-                        materialize
+                        materialize, materialize!
 
 import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
                         AbstractTriangular, AdjOrTrans, HermOrSym
