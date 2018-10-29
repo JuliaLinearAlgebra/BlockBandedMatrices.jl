@@ -158,7 +158,9 @@ end
 
     @test size(V) == (5,3)
     b = randn(size(V,2))
-    @test all(V*b .=== Matrix(V)*b .=== BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
+
+    @test all((similar(b,size(V,1)) .= Mul(V,b)) .=== Matrix(V)*b .===
+                BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
     V = view(A, Block.(1:3), Block(3)[2:3])
     @test_throws ArgumentError pointer(V)
@@ -174,7 +176,8 @@ end
 
     @test size(V) == (5,2)
     b = randn(size(V,2))
-    @test all(V*b .=== Matrix(V)*b .=== BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
+    @test all((similar(b,size(V,1)) .= Mul(V,b)) .=== Matrix(V)*b .===
+                BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
     V = view(A, Block.(1:3), Block(3)[2:3])
     @test_throws ArgumentError pointer(V)
