@@ -100,3 +100,10 @@ end
     bs = A.block_sizes.block_sizes
     bs.cumul_sizes[2][Int(blockrowstop(A, _find_block(bs, 1, i)[1]))+1]-1
 end
+
+# default implementation loops over all indices, including zeros
+function fill!(A::AbstractBlockBandedMatrix, val::Any)
+  iszero(val) || throw(BandError(A))
+  fill!(A.data, val)
+  A
+end

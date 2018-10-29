@@ -25,7 +25,8 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         reindex, _maybetail, tail, @_propagate_inbounds_meta,
                         ==, axes, copyto!, similar
 
-import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted
+import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
+                        materialize, materialize!
 
 import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
                         AbstractTriangular, AdjOrTrans, HermOrSym
@@ -35,10 +36,11 @@ import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, check
 
 import SparseArrays: sparse
 
-import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec, @blasmatmat, @lazymul, blasmul!,
+import LazyArrays: AbstractStridedLayout, ColumnMajor, @lazymul, MatMulMatAdd, MatMulVecAdd,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatMulVec, MatLdivVec,
                     triangulardata, subarraylayout, _copyto!, @lazyldiv, @lazylmul,
-                    ArrayMulArrayStyle
+                    ArrayMulArrayStyle, AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
+                    MatMulMat
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block

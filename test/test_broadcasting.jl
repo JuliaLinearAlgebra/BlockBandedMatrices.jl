@@ -139,7 +139,6 @@ end
     @time B .= A .+ B
     @test B == C
 
-
     C .= 2.0 .* A .+ B
     @test C == 2A+B == 2.0.*A .+ B
     @test 2A + B isa typeof(A)
