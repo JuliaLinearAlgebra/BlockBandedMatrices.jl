@@ -1,6 +1,8 @@
-# using CUDAnative
-# device!(0)
-# using CuArrays
+ using CUDAnative
+device!(0)
+using CuArrays
+using CuArrays.CUBLAS: libcublas_handle, cublasSetStream_v2, CuDefaultStream
+using CUDAnative.CUDAdrv: CuStream
 using GPUArrays
 using BlockArrays: _BlockArray, PseudoBlockArray, BlockArray, BlockMatrix, BlockVector,
                   nblocks, Block, cumulsizes, AbstractBlockVector
@@ -30,7 +32,7 @@ if @isdefined CuArray
 end
 ###############
 
-adapt(T::Type, b::BandedBlockBandedMatrix) =
+  adapt(T::Type, b::BandedBlockBandedMatrix) =
     _BandedBlockBandedMatrix(adapt(T, b.data), b.block_sizes)
 
 
@@ -55,6 +57,44 @@ function LinearAlgebra.mul!(c::BlockVector{T},
                    x.blocks[j], one(T), c.blocks[i])
     end
 
+    # mostly for symmetry with streamed version
+    # synchronizing could be left to user
+    synchronize(c)
+    c
+end
+
+function streamed_mul!(c::BlockVector{T},
+                       A::BandedBlockBandedMatrix{T, <: BlockMatrix},
+                       x::BlockVector{T};
+                       nstreams :: Union{Integer, Nothing} = nothing) where T
+    @assert nblocks(A, 1) == nblocks(c, 1)
+    @assert cumulsizes(A, 1) == cumulsizes(c, 1)
+    @assert nblocks(A, 2) == nblocks(x, 1)
+    @assert cumulsizes(A, 2) == cumulsizes(x, 1)
+
+    if nstreams isa Nothing
+      nₛ = nblocks(A, 1)
+    else
+      nₛ = min(nstreams, nblocks(A, 1))
+    end
+    streams = [CuStream() for u in 1:nₛ]
+    for (i, block) in enumerate(c.blocks)
+      cublasSetStream_v2(libcublas_handle[], streams[(i - 1) % nₛ + 1])
+      fill!(block, zero(eltype(block)))
+    end
+    l, u = blockbandwidths(A)
+    λ, μ = subblockbandwidths(A)
+    N,M = nblocks(A)
+
+    @inbounds for i = 1:N, j = max(1,i-l):min(M,i+u)
+        cublasSetStream_v2(libcublas_handle[], streams[(i - 1) % nₛ + 1])
+        BLAS.gbmv!('N', size(view(A, Block(i, j)), 1), λ, μ, one(T),
+                   A.data.blocks[i - j + u + 1, j],
+                   x.blocks[j], one(T), c.blocks[i])
+    end
+
+    synchronize(c)
+    cublasSetStream_v2(libcublas_handle[], CuDefaultStream())
     c
 end
 
@@ -83,31 +123,6 @@ function banded_mul!(c::BlockVector{T},
     c
 end
 
-function nofill_mul!(Cblock::BandedBlockBandedMatrix{T, <: BlockMatrix},
-                     Ablock::BandedBlockBandedMatrix{T, <: BlockMatrix},
-                     Xblock::BandedBlockBandedMatrix{T, <: BlockMatrix}) where T
-    @assert nblocks(Ablock, 1) == nblocks(Cblock, 1)
-    @assert cumulsizes(Ablock, 1) == cumulsizes(Cblock, 1)
-    @assert nblocks(Ablock, 2) == nblocks(Xblock, 1)
-    @assert cumulsizes(Ablock, 2) == cumulsizes(Xblock, 1)
-    @assert nblocks(Xblock, 2) == nblocks(Cblock, 2)
-    @assert cumulsizes(Xblock, 2) == cumulsizes(Xblock, 2)
-
-    lₐ, uₐ = blockbandwidths(Ablock)
-    lₓ, uₓ = blockbandwidths(xblock)
-    λ, μ = subblockbandwidths(Ablock)
-    N,M = nblocks(Ablock)
-    M, K = nblocks(Xblock)
-
-    @inbounds for i = 1:N, j = max(1,i-lₐ):min(M,i+uₐ), k = max(1, j - lₓ):min(j + uₓ, K)
-        BLAS.gbmv!('N', size(view(Ablock, Block(i, j)), 1), λ, μ, one(T),
-                   Ablock.data.blocks[i - j + u + 1, j],
-                   Xblock.blocks[j], one(T), Cblock.blocks[i])
-    end
-
-    Cblock
-end
-
 using Test
 
 function testme()
@@ -118,7 +133,7 @@ function testme()
       @test adapt(JLArray, bmat) isa BlockArray{T, 2, JLArray{T, 2}} where T
       @test eltype(adapt(JLArray, bmat)) === Float64
       if @isdefined CuArray
-        @test cu(bmat) isa BlockArray{T, 2, JLArray{T, 2}} where T
+        @test cu(bmat) isa BlockArray{T, 2, CuArray{T, 2}} where T
         @test eltype(cu(bmat)) === Float32
       end
     end
@@ -129,8 +144,8 @@ function testme()
       @test adapt(JLArray, bmat) isa PseudoBlockArray
       if @isdefined CuArray
         @test !(adapt(CuArray, bmat) isa PseudoBlockArray)
-        @test adapt(CuArray, bmat) isa BlockArray{T, 2, JLArray{T, 2}} where T
-        @test cu(bmat) isa BlockArray{T, 2, JLArray{T, 2}} where T
+        @test adapt(CuArray, bmat) isa BlockArray{T, 2, CuArray{T, 2}} where T
+        @test cu(bmat) isa BlockArray{T, 2, CuArray{T, 2}} where T
         @test eltype(cu(bmat)) === Float32
       end
     end
@@ -143,7 +158,7 @@ function testme()
       if @isdefined CuArray
         @test adapt(CuArray, bmat).data isa BlockArray{T, 2, CuArray{T, 2}} where T
         @test cu(bmat) isa BandedBlockBandedMatrix
-        @test cu(bmat).data isa BlockArray{T, 2, JLArray{T, 2}} where T
+        @test cu(bmat).data isa BlockArray{T, 2, CuArray{T, 2}} where T
         @test eltype(cu(bmat)) === Float32
       end
     end
@@ -164,7 +179,10 @@ function testme()
        @test LinearAlgebra.mul!(cblock, Ablock, xblock) ≈ A * x
        cblock .= 0
        @test banded_mul!(cblock, Ablock, xblock) ≈ A * x
+       cgpu = cu(cblock)
+       @test streamed_mul!(cgpu, cu(A), cu(x)) ≈ A * x
     end
+
   end
 end
 
@@ -173,16 +191,14 @@ using Statistics
 
 function benchmarks()
   suite = BenchmarkGroup()
-  suite["viabm"] = BenchmarkGroup()
+  # suite["viabm"] = BenchmarkGroup()
   suite["pseudo"] = BenchmarkGroup()
   suite["block"] = BenchmarkGroup()
-  possibles = [5, 10, 100, 500, 1000]
-  for N in possibles #, n in possibles
-    n = N
-    suite["pseudo"]["N=$N n=$n"] = BenchmarkGroup()
-    suite["block"]["N=$N n=$n"] = BenchmarkGroup()
-    suite["viabm"]["N=$N n=$n"] = BenchmarkGroup()
-
+  if @isdefined CuArrays
+    suite["gpu"] = BenchmarkGroup()
+    suite["streams"] = BenchmarkGroup()
+  end
+  for N in [10, 100, 500, 1000], n = [N ÷ 5, N, 5N, 10N]
     l, u, λ, μ = rand(0:2, 4)
     M, m = N, n
   
@@ -201,9 +217,17 @@ function benchmarks()
       LinearAlgebra.mul!($(adapt(BlockArray, c)), $(adapt(BlockArray, A)),
                          $(adapt(BlockArray, x)))
     end
-    suite["viabm"]["N=$N n=$n"] = @benchmarkable begin
-      banded_mul!($(adapt(BlockArray, c)), $(adapt(BlockArray, A)),
-                  $(adapt(BlockArray, x)))
+    if @isdefined CuArrays
+      gpus = Dict(:c => adapt(CuArray, c),
+                  :x => adapt(CuArray, x),
+                  :A => adapt(CuArray, A))
+
+      suite["gpu"]["N=$N n=$n"] = @benchmarkable begin
+        LinearAlgebra.mul!($(gpus[:c]), $(gpus[:A]), $(gpus[:x]))
+      end
+      suite["streams"]["N=$N n=$n"] = @benchmarkable begin
+        gpuc = streamed_mul!($(gpus[:c]), $(gpus[:A]), $(gpus[:x]))
+      end
     end
   end
   suite
