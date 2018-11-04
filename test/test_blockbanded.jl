@@ -1,5 +1,7 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Test
+using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, LazyArrays, LinearAlgebra, Test
     import BlockBandedMatrices: _BlockBandedMatrix, MemoryLayout, ColumnMajor
+    import LazyArrays: Mul, MulAdd
+    import Base.Broadcast: materialize!
 
 @testset "BlockBandedMatrix constructors" begin
     l , u = 1,1
@@ -12,10 +14,10 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, Test
     @test Matrix(BlockBandedMatrix{Int}(Zeros(sum(rows),sum(cols)), (rows,cols), (l,u))) ==
         zeros(Int, 10, 10)
 
-    @test Matrix(BlockBandedMatrix(Eye(sum(rows),sum(cols)), (rows,cols), (l,u))) ==
+    @test Matrix(BlockBandedMatrix(Eye(sum(rows)), (rows,cols), (l,u))) ==
         Matrix{Float64}(I, 10, 10)
 
-    @test Matrix(BlockBandedMatrix{Int}(Eye(sum(rows),sum(cols)), (rows,cols), (l,u))) ==
+    @test Matrix(BlockBandedMatrix{Int}(Eye(sum(rows)), (rows,cols), (l,u))) ==
         Matrix{Int}(I, 10, 10)
 
     @test Matrix(BlockBandedMatrix(I, (rows,cols), (l,u))) ==
@@ -140,12 +142,13 @@ end
     B = BlockBandedMatrix(Ones{Float64}((6,6)), ([2,2,2], [2,2,2]), (0,1))
     @test sum(A) == 20
     @test sum(B) == 20
+    C = BlockBandedMatrix{Float64}(undef, ([2,2], [2,2,2]), (0,3))
+    @test all(copyto!(C, Mul(A,B)) .=== materialize!(MulAdd(1.0,A,B,0.0,similar(C))) .===
+                A*B)
     AB = A*B
     @test AB isa BlockBandedMatrix
-    Matrix(AB)
-    @test Matrix(AB) == Matrix(A)*Matrix(B)
+    @test Matrix(AB) ≈ Matrix(A)*Matrix(B)
 end
-
 
 @testset "BlockBandedMatrix fill and copy" begin
     l , u = 1,1

@@ -1,5 +1,5 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays, Test, LazyArrays
-    import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowrange, colrange, rowrange, isbandedblockbanded
+using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays, Test, LazyArrays , LinearAlgebra
+import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowrange, colrange, rowrange, isbandedblockbanded
 
 @testset "BandedBlockBandedMatrix" begin
     @testset "constructors" begin
@@ -14,10 +14,10 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays
         @test Matrix(BandedBlockBandedMatrix{Int}(Zeros(sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ))) ==
             zeros(Int, 10, 10)
 
-        @test Matrix(BandedBlockBandedMatrix(Eye(sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ))) ==
+        @test Matrix(BandedBlockBandedMatrix(Eye(sum(rows)), (rows,cols), (l,u), (λ,μ))) ==
             Matrix{Float64}(I, 10, 10)
 
-        @test Matrix(BandedBlockBandedMatrix{Int}(Eye(sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ))) ==
+        @test Matrix(BandedBlockBandedMatrix{Int}(Eye(sum(rows)), (rows,cols), (l,u), (λ,μ))) ==
             Matrix{Int}(I, 10, 10)
 
         @test Matrix(BandedBlockBandedMatrix(I, (rows,cols), (l,u), (λ,μ))) ==
@@ -407,6 +407,34 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays
 
         B = BandedBlockBandedMatrix{Float64}(undef, (1:5,1:5), (1,-1), (-1,-1))
         @test Matrix(B) == zeros(size(B))
+    end
+
+    @testset "BandedBlockBanded with BlockMatrix" begin
+        WithBlockMatrix{T} = BandedBlockBandedMatrix{T, BlockMatrix{T, Matrix{T}}}
+        args = ([1, 2, 3], [2, 2, 1]), (1, 1), (1, 1)
+        A = WithBlockMatrix{Int64}(undef, args...)
+        B = BandedBlockBandedMatrix{Int64}(undef, A.block_sizes)
+
+        @test eltype(A) === eltype(B) === Int64
+        @test typeof(A.data) <: BlockArray
+        @test typeof(B.data) <: PseudoBlockArray
+        @test size(A) == size(B)
+        @test bandrange(A) == bandrange(B)
+        @test blockbandwidths(A) == blockbandwidths(B)
+        @test nblocks(A) == nblocks(B)
+
+        A = WithBlockMatrix{Int64}(Zeros{Int64}(sum.(args[1])...), args...)
+        B = BandedBlockBandedMatrix{Int64}(Zeros{Int64}(sum.(args[1])...), args...)
+        @test typeof(A.data) <: BlockArray
+        @test typeof(B.data) <: PseudoBlockArray
+        @test A == B
+
+        A = WithBlockMatrix{Int64}(Ones{Int64}(sum.(args[1])...), args...)
+        B = BandedBlockBandedMatrix{Int64}(Ones{Int64}(sum.(args[1])...), args...)
+        @test typeof(A.data) <: BlockArray
+        @test typeof(B.data) <: PseudoBlockArray
+        @test A == B
+        @test (A .+ 1) .* 2 == B .* 2 .+ 2
     end
 end
 

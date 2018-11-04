@@ -32,7 +32,29 @@ end
     @test unsafe_load(pointer(V)) == 46
     @test unsafe_load(pointer(V) + stride(V,2)*sizeof(Float64)) == 53
 
-    v = fill(1.0,4)
+x = randn(size(A,2))
+    @test A*x == (similar(x) .= Mul(A,x)) ≈ Matrix(A)*x
+
+z = randn(size(A,2)) + im*randn(size(A,2))
+A*z == (similar(z) .= Mul(A,z)) ≈ Matrix(A)*z
+
+Matrix(A)*z
+z[1]
+view(A,Block(1,1)) * z[1] + view(A,Block(1,2))*z[2:3]
+
+A*z
+
+X = randn(size(A))
+    @test A*X == (similar(X) .= Mul(A,X)) ≈ Matrix(A)*X
+    @test X*A == (similar(X) .= Mul(X,A)) ≈  Matrix(X)*A
+
+
+Z = randn(size(A)) + im*randn(size(A))
+
+A*Z
+
+
+v = fill(1.0,4)
     U = UpperTriangular(view(A, Block(N,N)))
     @test Matrix(U) == U
     w = Matrix(U) \ v
@@ -50,6 +72,8 @@ end
     @test v == fill(1.0,size(A,1))
     @test ldiv!(U, v) === v
     @test v ≈ w
+
+
 end
 
 @testset "BandedBlockBandedMatrix linear algebra" begin
