@@ -158,7 +158,7 @@ function blocksizes(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockRange1
     Bs.cumul_sizes[1]
     @assert KR[1] == JR[1] == 1
     BlockSkylineSizes(BlockSizes((Bs.cumul_sizes[1][KR[1]:KR[end]+1] .- Bs.cumul_sizes[1][KR[1]] .+ 1,
-                                       Bs.cumul_sizes[2][JR[1]:JR[end]+1] .- Bs.cumul_sizes[1][JR[1]] .+ 1)),
+                                       Bs.cumul_sizes[2][JR[1]:JR[end]+1] .- Bs.cumul_sizes[2][JR[1]] .+ 1)),
                            colblockbandwidth(A,1)[1:Int(JR[end])] .- shift, colblockbandwidth(A,2)[1:Int(JR[end])] .+ shift)
 end
 
