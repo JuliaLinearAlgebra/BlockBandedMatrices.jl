@@ -1,5 +1,5 @@
 using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, LazyArrays, LinearAlgebra, Test
-    import BlockBandedMatrices: _BlockBandedMatrix, MemoryLayout, ColumnMajor
+    import BlockBandedMatrices: MemoryLayout, ColumnMajor
     import LazyArrays: Mul, MulAdd
     import Base.Broadcast: materialize!
 
@@ -72,8 +72,6 @@ end
     @test Matrix{Float64}(Matrix(V)) == Matrix{Float64}(V)
     @test A[4:6,7:10] ≈ Matrix(V)
 
-
-
     A[1,1] = -5
     @test A[1,1] == -5
     A[1,3] = -6
@@ -84,6 +82,8 @@ end
 
     ## Bug in setindex!
     ret = BlockBandedMatrix(Zeros{Float64}((4,6)), ([2,2], [2,2,2]), (0,2))
+
+
     V = view(ret, Block(1), Block(2))
     V[1,1] = 2
     @test ret[1,2] == 0
@@ -172,7 +172,7 @@ end
 end
 
 @testset "BlockBandedMatrix type inferrence bug (#9)" begin
-    s = BlockBandedMatrices.RaggedBlockBandedSizes([1, 2], [1, 2], 0, 0)
+    s = BlockBandedMatrices.BlockBandedSizes([1, 2], [1, 2], 0, 0)
     f(s) = s.block_starts.data
     @inferred(f(s))
 end

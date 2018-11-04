@@ -23,7 +23,7 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         unsafe_convert, fill!, length, first, last,
                         eltype, getindex, to_indices, to_index,
                         reindex, _maybetail, tail, @_propagate_inbounds_meta,
-                        ==, axes, copyto!, similar
+                        ==, axes, copyto!, similar, OneTo
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
                         materialize, materialize!
@@ -42,7 +42,7 @@ import LazyArrays: AbstractStridedLayout, ColumnMajor, @lazymul, MatMulMatAdd, M
                     ArrayMulArrayStyle, AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
                     MatMulMat
 
-export BandedBlockBandedMatrix, BlockBandedMatrix, BlockTridiagonalMatrix, RaggedBlockBandedMatrix, blockbandwidth, blockbandwidths,
+export BandedBlockBandedMatrix, BlockBandedMatrix, BlockTridiagonalMatrix, BlockSkylineMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block
 
 

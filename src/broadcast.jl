@@ -68,8 +68,8 @@ end
 function _blockbanded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
     @boundscheck checkblocks(dest, src)
 
-    dl, du = blockbandwidths(dest)
-    sl, su = blockbandwidths(src)
+    dl, du = colblockbandwidths(dest)
+    sl, su = colblockbandwidths(src)
     M,N = nblocks(src)
     # Source matrix must fit within bands of destination matrix
     all(dl .≥ min.(sl,Ref(M-1))) && all(du .≥ min.(su,Ref(N-1))) || throw(BandError(dest))
