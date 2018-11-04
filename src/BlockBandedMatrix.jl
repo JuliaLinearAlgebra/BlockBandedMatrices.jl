@@ -1,14 +1,19 @@
-
+checkbandwidths(N, M, l::AbstractVector{Int}, u::AbstractVector{Int}) =
+    (N == 1 || length(l) == N) && (M == 1 || length(u) == M) ||
+    throw(DimensionMismatch("For a matrix of $(N)×$(M) blocks, $(N) lower bandwidths and $(M) upper bandwidths are required"))
 
 #### Routines for BandedSizes
-function bb_blockstarts(b_size, l, u)
+function bb_blockstarts(b_size, l::AbstractVector{Int}, u::AbstractVector{Int})
     N,M = nblocks(b_size)
-    b_start = BandedMatrix{Int}(undef, N, M, l, u)
-    -l > u && return b_start
+    L,U = maximum(l), maximum(u)
+    b_start = BandedMatrix{Int}(undef, N, M, L, U)
+    -L > U && return b_start
+
+    checkbandwidths(N, M, l, u)
 
     ind_shift = 0
     for J = 1:M
-        KR = max(1,J-u):min(J+l,N)
+        KR = max(1,J-u[J]):min(J+l[J],N)
         if !isempty(KR)
             b_start[KR,J] .= ind_shift .+ view(cumulsizes(b_size,1),KR) .- cumulsizes(b_size,1)[KR[1]] .+ 1
 
@@ -21,11 +26,15 @@ function bb_blockstarts(b_size, l, u)
     b_start
 end
 
-function bb_blockstrides(b_size, l, u)
+bb_blockstarts(b_size, l::Integer, u::Integer) = bb_blockstarts(b_size, Fill(l, nblocks(b_size,1)), Fill(u, nblocks(b_size,2)))
+
+function bb_blockstrides(b_size, l::AbstractVector{Int}, u::AbstractVector{Int})
     N, M = nblocks(b_size)
+    L,U = maximum(l), maximum(u)
+    checkbandwidths(N, M, l, u)
     b_strides = Vector{Int}(undef, M)
     for J=1:M
-        KR = max(1,J-u):min(J+l,N)
+        KR = max(1,J-u[J]):min(J+l[J],N)
         if !isempty(KR)
             b_strides[J] = cumulsizes(b_size,1,KR[end]+1)-cumulsizes(b_size,1,KR[1])
         else
@@ -35,33 +44,42 @@ function bb_blockstrides(b_size, l, u)
     b_strides
 end
 
-struct BlockBandedSizes <: AbstractBlockSizes{2}
+bb_blockstrides(b_size, l::Integer, u::Integer) = bb_blockstrides(b_size, Fill(l, nblocks(b_size,1)), Fill(u, nblocks(b_size,2)))
+
+struct RaggedBlockBandedSizes{LL<:AbstractVector{Int}, UU<:AbstractVector{Int}} <: AbstractBlockSizes{2}
     block_sizes::BlockSizes{2}
     block_starts::BandedMatrix{Int,Matrix{Int}} # gives index where the blocks start
     block_strides::Vector{Int} # gives stride to next block for J-th column
+    l::LL
+    u::UU
 end
 
-BlockBandedSizes(b_size::BlockSizes{2}, l, u) =
-    BlockBandedSizes(b_size, bb_blockstarts(b_size, l, u), bb_blockstrides(b_size, l, u))
+RaggedBlockBandedSizes(b_size::BlockSizes{2}, block_starts, block_strides, l::Int, u::Int) =
+    RaggedBlockBandedSizes(b_size, block_starts, block_strides,
+                           Fill(l, nblocks(b_size,1)), Fill(u, nblocks(b_size,2)))
 
-BlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l, u) =
-    BlockBandedSizes(BlockSizes(rows,cols), l, u)
+RaggedBlockBandedSizes(b_size::BlockSizes{2}, l, u) =
+    RaggedBlockBandedSizes(b_size, bb_blockstarts(b_size, l, u), bb_blockstrides(b_size, l, u), l, u)
 
-
-blockbandwidths(bs::BlockBandedSizes) = bandwidths(bs.block_starts)
-blockbandwidth(bs::BlockBandedSizes, i::Int) = bandwidth(bs.block_starts, i)
-
-==(A::BlockBandedSizes, B::BlockBandedSizes) = A.block_sizes == B.block_sizes && A.block_starts == B.block_starts
-
-cumulsizes(B::BlockBandedSizes) = cumulsizes(B.block_sizes)
+RaggedBlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l, u) =
+    RaggedBlockBandedSizes(BlockSizes(rows,cols), l, u)
 
 
-function bb_numentries(B::BlockBandedSizes)
-    b_size, l, u = B.block_sizes, B.block_starts.l, B.block_starts.u
+blockbandwidths(bs::RaggedBlockBandedSizes) = (bs.l,bs.u)
+blockbandwidth(bs::RaggedBlockBandedSizes, i::Int) = blockbandwidths(bs)[i]
+
+==(A::RaggedBlockBandedSizes, B::RaggedBlockBandedSizes) = A.block_sizes == B.block_sizes && A.block_starts == B.block_starts
+
+cumulsizes(B::RaggedBlockBandedSizes) = cumulsizes(B.block_sizes)
+
+colrange(B::RaggedBlockBandedSizes, J::Integer) = max(1, J-B.u[J]):min(nblocks(B.block_sizes,1), J+B.l[J])
+
+function bb_numentries(B::RaggedBlockBandedSizes)
+    b_size = B.block_sizes
     numentries = 0
     N = nblocks(b_size,1)
     for J = 1:nblocks(b_size,2),
-        KR = colrange(B.block_starts, J)
+        KR = colrange(B, J)
         num_rows = cumulsizes(b_size,1,KR[end]+1) - cumulsizes(b_size,1,KR[1])
         num_cols = blocksize(b_size, 2, J)
         numentries += num_rows*num_cols
@@ -75,51 +93,63 @@ function _BandedBlockMatrix end
 
 #  A block matrix where only the bands are nonzero
 #   isomorphic to BandedMatrix{Matrix{T}}
-struct BlockBandedMatrix{T} <: AbstractBlockBandedMatrix{T}
+struct RaggedBlockBandedMatrix{T, LL<:AbstractVector{Int}, UU<:AbstractVector{Int}} <: AbstractBlockBandedMatrix{T}
     data::Vector{T}
-    block_sizes::BlockBandedSizes
+    block_sizes::RaggedBlockBandedSizes{LL,UU}
 
-    l::Int  # block lower bandwidth
-    u::Int  # block upper bandwidth
+    l::LL  # block lower bandwidths
+    u::UU  # block upper bandwidths
 
-    global function _BlockBandedMatrix(data::Vector{T}, block_sizes::BlockBandedSizes) where T
-        new{T}(data, block_sizes, blockbandwidth(block_sizes,1), blockbandwidth(block_sizes,2))
+    global function _RaggedBlockBandedMatrix(data::Vector{T}, block_sizes::RaggedBlockBandedSizes{LL,UU}) where {T,LL,UU}
+        new{T,LL,UU}(data, block_sizes, blockbandwidth(block_sizes,1), blockbandwidth(block_sizes,2))
     end
 end
 
+const BlockBandedMatrix{T} = RaggedBlockBandedMatrix{T, Fill{Int,1}, Fill{Int,1}}
+const BlockTridiagonalMatrix{T} = RaggedBlockBandedMatrix{T, Ones{Int,1}, Ones{Int,1}}
+
 # Auxiliary outer constructors
-@inline _BlockBandedMatrix(data::AbstractVector, (kr,jr)::NTuple{2, AbstractVector{Int}}, (l,u)::NTuple{2, Int}) =
-    _BlockBandedMatrix(data, BlockBandedSizes(kr,jr, l,u))
+@inline _RaggedBlockBandedMatrix(data::AbstractVector, (kr,jr)::NTuple{2, AbstractVector{Int}}, (l,u)::NTuple{2, Int}) =
+    _RaggedBlockBandedMatrix(data, RaggedBlockBandedSizes(kr,jr, l,u))
 
-@inline BlockBandedMatrix{T}(::UndefInitializer, block_sizes::BlockBandedSizes) where T =
-    _BlockBandedMatrix(Vector{T}(undef, bb_numentries(block_sizes)), block_sizes)
+@inline RaggedBlockBandedMatrix{T}(::UndefInitializer, block_sizes::RaggedBlockBandedSizes) where T =
+    _RaggedBlockBandedMatrix(Vector{T}(undef, bb_numentries(block_sizes)), block_sizes)
 
-@inline BlockBandedMatrix{T}(::UndefInitializer, block_sizes::BlockSizes, (l,u)::NTuple{2, Int}) where T =
-    BlockBandedMatrix{T}(undef, BlockBandedSizes(block_sizes,l,u))
+@inline RaggedBlockBandedMatrix{T}(::UndefInitializer, block_sizes::BlockSizes, (l,u)::NTuple{2, Int}) where T =
+    RaggedBlockBandedMatrix{T}(undef, RaggedBlockBandedSizes(block_sizes,l,u))
+
+@inline RaggedBlockBandedMatrix{T}(::UndefInitializer, block_sizes::BlockSizes, (l,u)::NTuple{2, AbstractVector{Int}}) where T =
+    RaggedBlockBandedMatrix{T}(undef, RaggedBlockBandedSizes(block_sizes,l,u))
 
 """
-    BlockBandedMatrix{T}(undef, (rows, cols), (l, u))
+    RaggedBlockBandedMatrix{T,LL,UU}(undef, (rows, cols), (l::LL, u::UU))
 
 returns an undef `sum(rows)`×`sum(cols)` block-banded matrix `A`
 of type `T` with block-bandwidths `(l,u)` and where `A[Block(K,J)]`
 is a `Matrix{T}` of size `rows[K]`×`cols[J]`.
+
+`(l,u)` may be integers for constant bandwidths or integer vectors of
+lengths `rows` and `cols`, respectively, for ragged bands.
 """
-BlockBandedMatrix
+RaggedBlockBandedMatrix
 
-@inline BlockBandedMatrix{T}(::UndefInitializer, dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) where T =
-    BlockBandedMatrix{T}(undef, BlockBandedSizes(dims..., lu...))
+@inline RaggedBlockBandedMatrix{T}(::UndefInitializer, dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) where T =
+    RaggedBlockBandedMatrix{T}(undef, RaggedBlockBandedSizes(dims..., lu...))
+
+@inline RaggedBlockBandedMatrix{T}(::UndefInitializer, dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, AbstractVector{Int}}) where T =
+    RaggedBlockBandedMatrix{T}(undef, RaggedBlockBandedSizes(dims..., lu...))
 
 
 
-function BlockBandedMatrix{T}(Z::Zeros, block_sizes::BlockBandedSizes) where T
-   if size(Z) ≠ size(block_sizes)
-       throw(DimensionMismatch("Size of input $(size(Z)) must be consistent with $(size(block_sizes))"))
-   end
-   _BlockBandedMatrix(zeros(T, bb_numentries(block_sizes)), block_sizes)
+function RaggedBlockBandedMatrix{T}(Z::Zeros, block_sizes::RaggedBlockBandedSizes) where T
+    if size(Z) ≠ size(block_sizes)
+        throw(DimensionMismatch("Size of input $(size(Z)) must be consistent with $(size(block_sizes))"))
+    end
+    _RaggedBlockBandedMatrix(zeros(T, bb_numentries(block_sizes)), block_sizes)
 end
 
-function BlockBandedMatrix{T}(A::AbstractMatrix, block_sizes::BlockBandedSizes) where T
-    ret = BlockBandedMatrix(Zeros{T}(size(A)), block_sizes)
+function RaggedBlockBandedMatrix{T}(A::AbstractMatrix, block_sizes::RaggedBlockBandedSizes) where T
+    ret = RaggedBlockBandedMatrix(Zeros{T}(size(A)), block_sizes)
     for J = Block.(1:nblocks(ret, 2)), K = blockcolrange(ret, Int(J))
         kr, jr = globalrange(block_sizes, (Int(K), Int(J)))
         view(ret, K, J) .= view(A, kr, jr)
@@ -127,67 +157,74 @@ function BlockBandedMatrix{T}(A::AbstractMatrix, block_sizes::BlockBandedSizes) 
     ret
 end
 
-function BlockBandedMatrix{T}(E::Eye, block_sizes::BlockBandedSizes) where T
+function RaggedBlockBandedMatrix{T}(E::Eye, block_sizes::RaggedBlockBandedSizes) where T
     if size(E) ≠ size(block_sizes)
         throw(DimensionMismatch("Size of input $(size(E)) must be consistent with $(sum.(dims))"))
     end
-    ret = BlockBandedMatrix(Zeros{T}(size(E)), block_sizes)
+    ret = RaggedBlockBandedMatrix(Zeros{T}(size(E)), block_sizes)
     ret[diagind(ret)] .= one(T)
     ret
 end
 
-function BlockBandedMatrix{T}(A::UniformScaling, block_sizes::BlockBandedSizes) where T
-    ret = BlockBandedMatrix(Zeros{T}(size(block_sizes)), block_sizes)
+function RaggedBlockBandedMatrix{T}(A::UniformScaling, block_sizes::RaggedBlockBandedSizes) where T
+    ret = RaggedBlockBandedMatrix(Zeros{T}(size(block_sizes)), block_sizes)
     ret[diagind(ret)] .= convert(T, A.λ)
     ret
 end
 
-BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
-                        block_sizes::BlockBandedSizes) = BlockBandedMatrix{eltype(A)}(A, block_sizes)
+RaggedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
+                        block_sizes::RaggedBlockBandedSizes) = RaggedBlockBandedMatrix{eltype(A)}(A, block_sizes)
 
-BlockBandedMatrix{T}(A::Union{AbstractMatrix,UniformScaling},
-                     dims::NTuple{2,AbstractVector{Int}}, lu::NTuple{2,Int}) where T =
-    BlockBandedMatrix{T}(A, BlockBandedSizes(dims..., lu...))
+RaggedBlockBandedMatrix{T,LL,UU}(A::Union{AbstractMatrix,UniformScaling},
+                                 dims::NTuple{2,AbstractVector{Int}}, lu::NTuple{2,Int}) where {T,LL,UU} =
+                                     RaggedBlockBandedMatrix{T,LL,UU}(A, RaggedBlockBandedSizes(dims..., lu...))
+
+RaggedBlockBandedMatrix{T}(A::Union{AbstractMatrix,UniformScaling},
+                           dims::NTuple{2,AbstractVector{Int}}, lu::NTuple{2,AbstractVector{Int}}) where T =
+                               RaggedBlockBandedMatrix{T}(A, RaggedBlockBandedSizes(dims..., lu...))
 
 
-BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
+RaggedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
                         dims::NTuple{2, AbstractVector{Int}},
-                        lu::NTuple{2,Int}) = BlockBandedMatrix{eltype(A)}(A, dims, lu)
+                        lu::NTuple{2,Int}) = RaggedBlockBandedMatrix{eltype(A)}(A, dims, lu)
+RaggedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
+                        dims::NTuple{2, AbstractVector{Int}},
+                        lu::NTuple{2,AbstractVector{Int}}) = RaggedBlockBandedMatrix{eltype(A)}(A, dims, lu)
 
 
-function convert(::Type{BlockBandedMatrix}, A::AbstractMatrix)
+function convert(::Type{RaggedBlockBandedMatrix}, A::AbstractMatrix)
     @assert isblockbanded(A)
-    BlockBandedMatrix(A, convert(BlockBandedSizes, A.block_sizes))
+    RaggedBlockBandedMatrix(A, convert(RaggedBlockBandedSizes, A.block_sizes))
 end
 
 
-BlockBandedMatrix(A::AbstractMatrix) = convert(BlockBandedMatrix, A)
+RaggedBlockBandedMatrix(A::AbstractMatrix) = convert(RaggedBlockBandedMatrix, A)
 
-similar(A::BlockBandedMatrix, T::Type=eltype(A), bs::BlockBandedSizes=blocksizes(A)) =
-      BlockBandedMatrix{T}(undef, bs)
+similar(A::RaggedBlockBandedMatrix, T::Type=eltype(A), bs::RaggedBlockBandedSizes=blocksizes(A)) =
+    RaggedBlockBandedMatrix{T}(undef, bs)
 
 ################################
-# BlockBandedMatrix Interface #
+# RaggedBlockBandedMatrix Interface #
 ################################
 
-MemoryLayout(::BlockBandedMatrix) = BlockBandedColumnMajor()
-blockbandwidths(A::BlockBandedMatrix) = (A.l, A.u)
-BroadcastStyle(::Type{<:BlockBandedMatrix}) = BlockBandedStyle()
+MemoryLayout(::RaggedBlockBandedMatrix) = BlockBandedColumnMajor()
+blockbandwidths(A::RaggedBlockBandedMatrix) = (A.l, A.u)
+BroadcastStyle(::Type{<:RaggedBlockBandedMatrix}) = BlockBandedStyle()
 
 
 ################################
 # AbstractBlockArray Interface #
 ################################
 
-@inline blocksizes(block_array::BlockBandedMatrix) = block_array.block_sizes
+@inline blocksizes(block_array::RaggedBlockBandedMatrix) = block_array.block_sizes
 
 
-zeroblock(A::BlockBandedMatrix, K::Int, J::Int) =
+zeroblock(A::RaggedBlockBandedMatrix, K::Int, J::Int) =
     Matrix(Zeros{eltype(A)}(blocksize(A, (K, J))))
 
-@inline function getblock(A::BlockBandedMatrix, K::Int, J::Int)
+@inline function getblock(A::RaggedBlockBandedMatrix, K::Int, J::Int)
     @boundscheck blockcheckbounds(A, K, J)
-    if -A.l ≤ J - K ≤ A.u
+    if -A.l[J] ≤ J - K ≤ A.u[J]
         convert(Matrix, view(A, Block(K, J)))
     else
         zeroblock(A, K, J)
@@ -207,22 +244,22 @@ end
 # AbstractArray Interface #
 ###########################
 
-# @inline function Base.similar(block_array::BlockBandedMatrix{T}, ::Type{T2}) where {T,N,T2}
+# @inline function Base.similar(block_array::RaggedBlockBandedMatrix{T}, ::Type{T2}) where {T,N,T2}
 #     BlockArray(similar(block_array.blocks, Array{T2, N}), copy(block_array.block_sizes))
 # end
 
-Base.size(arr::BlockBandedMatrix) =
+Base.size(arr::RaggedBlockBandedMatrix) =
     @inbounds return (cumulsizes(arr.block_sizes.block_sizes,1)[end] - 1, cumulsizes(arr.block_sizes.block_sizes,2)[end] - 1)
 
 
-@inline function getindex(A::BlockBandedMatrix, i::Int, j::Int)
+@inline function getindex(A::RaggedBlockBandedMatrix, i::Int, j::Int)
     @boundscheck checkbounds(A, i, j)
     bi = global2blockindex(A.block_sizes, (i, j))
     @inbounds v = view(A, Block(bi.I))[bi.α...]
     return v
 end
 
-@inline function setindex!(A::BlockBandedMatrix{T}, v, i::Int, j::Int) where T
+@inline function setindex!(A::RaggedBlockBandedMatrix{T}, v, i::Int, j::Int) where T
     @boundscheck checkbounds(A, i, j)
     bi = global2blockindex(A.block_sizes, (i, j))
     V = view(A, Block(bi.I))
@@ -231,10 +268,10 @@ end
 end
 
 ## structured matrix methods ##
-function Base.replace_in_print_matrix(A::BlockBandedMatrix, i::Integer, j::Integer, s::AbstractString)
+function Base.replace_in_print_matrix(A::RaggedBlockBandedMatrix, i::Integer, j::Integer, s::AbstractString)
     bi = global2blockindex(A.block_sizes, (i, j))
     I,J = bi.I
-    -A.l ≤ J-I ≤ A.u ? s : Base.replace_with_centered_mark(s)
+    -A.l[J] ≤ J-I ≤ A.u[J] ? s : Base.replace_with_centered_mark(s)
 end
 
 ############
@@ -250,7 +287,7 @@ end
 # end
 #
 #
-@inline function setblock!(A::BlockBandedMatrix, v, K::Int, J::Int)
+@inline function setblock!(A::RaggedBlockBandedMatrix, v, K::Int, J::Int)
     @boundscheck blockcheckbounds(A, K, J)
 
     V = view(A, Block(K), Block(J))
@@ -309,14 +346,14 @@ end
 #   with StridedMatrix.
 ##################
 
-const BlockBandedBlock{T} = SubArray{T,2,BlockBandedMatrix{T},Tuple{BlockSlice1,BlockSlice1},false}
+const BlockBandedBlock{T,LL,UU} = SubArray{T,2,RaggedBlockBandedMatrix{T,LL,UU},Tuple{BlockSlice1,BlockSlice1},false}
 
 
 
 
 # gives the columns of parent(V).data that encode the block
 blocks(V::BlockBandedBlock)::Tuple{Int,Int} = first(first(parentindices(V)).block.n),
-                                                    first(last(parentindices(V)).block.n)
+first(last(parentindices(V)).block.n)
 
 ######################################
 # Matrix interface  for Blocks #
@@ -337,8 +374,9 @@ strides(V::BlockBandedBlock) = (1,parent(V).block_sizes.block_strides[blocks(V)[
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
     K,J = blocks(V)
-    if -A.l ≤ J-K ≤ A.u
+    if -A.l[J] ≤ J-K ≤ A.u[J]
         b_start = A.block_sizes.block_starts[K,J]
+        b_start == 0 && return zero(eltype(V))
         b_stride = A.block_sizes.block_strides[J]
         A.data[b_start + k-1 + (j-1)*b_stride ]
     else
@@ -350,11 +388,12 @@ end
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
     K,J = blocks(V)
-    if -A.l ≤ J-K ≤ A.u
+    if -A.l[J] ≤ J-K ≤ A.u[J]
         b_start = A.block_sizes.block_starts[K,J]
+        # TODO: What to do if b_start == 0 ?
         b_stride = A.block_sizes.block_strides[J]
         A.data[b_start + k-1 + (j-1)*b_stride ] = v
-    elseif iszero(v) # allow setindex for 0 datya
+    elseif iszero(v) # allow setindex for 0 data
         v
     else
         throw(BandError(A, J-K))

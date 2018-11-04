@@ -27,13 +27,15 @@ BandedBlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l, 
 cumulsizes(B::BandedBlockBandedSizes) = cumulsizes(B.block_sizes)
 
 
-convert(::Type{BlockBandedSizes}, B::BandedBlockBandedSizes) =
-    BlockBandedSizes(B.block_sizes, B.l, B.u)
+convert(::Type{RaggedBlockBandedSizes}, B::BandedBlockBandedSizes) =
+    RaggedBlockBandedSizes(B.block_sizes, B.l, B.u)
 
 convert(::Type{BlockSizes}, B::BandedBlockBandedSizes) = B.block_sizes
 convert(::Type{BlockSizes{2}}, B::BandedBlockBandedSizes) = B.block_sizes
 
 BlockBandedSizes(B::BandedBlockBandedSizes) = convert(BlockBandedSizes, B)
+RaggedBlockBandedSizes(B::BandedBlockBandedSizes) = convert(RaggedBlockBandedSizes, B)
+
 
 function check_data_sizes(data::AbstractBlockMatrix, B::BandedBlockBandedSizes)
     bs = data.block_sizes

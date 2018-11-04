@@ -8,7 +8,7 @@ import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blo
                         _unblock, _find_block, BlockIndexRange, blocksizes, cumulsizes,
                         AbstractBlockSizes
 
-import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex,
+import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrange,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
                         banded_generic_axpy!,
                         BlasFloat, banded_dense_axpy!, MemoryLayout,
@@ -40,7 +40,7 @@ import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec, @blasmatmat,
                     triangulardata, subarraylayout, _copyto!, @lazyldiv, @lazylmul,
                     ArrayMulArrayStyle
 
-export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
+export BandedBlockBandedMatrix, BlockBandedMatrix, BlockTridiagonalMatrix, RaggedBlockBandedMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block
 
 
