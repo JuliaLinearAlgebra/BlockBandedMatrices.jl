@@ -1,8 +1,8 @@
 using BlockBandedMatrices, BandedMatrices, BlockArrays, LazyArrays, LinearAlgebra, Test
 import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedColumnMajor,
                         BandedColumnMajor, tribandeddata, blocksizes, cumulsizes, nblocks,
-                        BlockBandedSizes, blockrowstop, blockcolstop, BlockSizes,
-                        ColumnMajor
+                        BlockSkylineSizes, blockrowstop, blockcolstop, BlockSizes,
+                        ColumnMajor, BlockBandedSizes
 
 @testset "triangular BandedBlockBandedMatrix mul" begin
     A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
@@ -96,7 +96,7 @@ end
     b = randn(size(A,1))
 
     V = view(A, Block.(1:3), Block.(1:4))
-    @test blocksizes(V) isa BlockBandedSizes
+    @test blocksizes(V) isa BlockSkylineSizes
     @test blocksizes(V) == blocksizes(A)
 
 
@@ -131,7 +131,7 @@ end
 
 
 
-@testset "SubBlockBandedMatrix linear algebra" begin
+@testset "SubBlockSkylineMatrix linear algebra" begin
     l , u = 1,1
     N = M = 5
     cols = rows = 1:N

@@ -2,7 +2,7 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, LazyArrays, LinearAlgebr
     import BandedMatrices: BandError, bandeddata
     import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!,
                                 blockcolstop, blockrowstop, BlockSizes, blocksizes,
-                                BlockBandedSizes
+                                BlockSkylineSizes
     import LazyArrays: ColumnMajor
 
 

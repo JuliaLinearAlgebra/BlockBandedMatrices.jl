@@ -2,11 +2,12 @@
 const Block1 = Block{1,Int}
 const BlockRange1 = BlockRange{1,Tuple{UnitRange{Int}}}
 const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int64}}}
-const SubBlockBandedMatrix{T,R1,R2} =
-    SubArray{T,2,<:BlockBandedMatrix{T},Tuple{BlockSlice{R1},BlockSlice{R2}}}
+const SubBlockSkylineMatrix{T,LL,UU,R1,R2} =
+    SubArray{T,2,BlockSkylineMatrix{T,LL,UU},Tuple{BlockSlice{R1},BlockSlice{R2}}}
 
 const SubBandedBlockBandedMatrix{T,R1,R2} =
     SubArray{T,2,<:BandedBlockBandedMatrix{T},Tuple{BlockSlice{R1},BlockSlice{R2}}}
+
 
 
 getindex(A::BandedBlockBandedMatrix, KR::BlockRange1, JR::BlockRange1) = BandedBlockBandedMatrix(view(A, KR, JR))
@@ -114,8 +115,8 @@ function similar(M::MatMulMat{<:AbstractBlockBandedLayout,<:AbstractBlockBandedL
     end
     n,m = size(A,1), size(B,2)
 
-    l, u = A.l+B.l, A.u+B.u
-    BlockBandedMatrix{T}(undef,BlockBandedSizes(BlockSizes((Arows,Bcols)), l, u))
+    l, u = blockbandwidths(A) .+ blockbandwidths(B)
+    BlockBandedMatrix{T}(undef, BlockBandedSizes(BlockSizes((Arows,Bcols)), l, u))
 end
 
 function similar(M::MatMulMat{BandedBlockBandedColumnMajor,BandedBlockBandedColumnMajor}, ::Type{T}) where T
@@ -140,12 +141,13 @@ function similar(M::MatMulMat{BandedBlockBandedColumnMajor,BandedBlockBandedColu
     BandedBlockBandedMatrix{T}(undef, bs)
 end
 
+
 similar(M::MatMulMat{<:AbstractBlockBandedLayout,<:AbstractColumnMajor}, ::Type{T}) where T =
     Matrix{T}(undef, size(M))
 similar(M::MatMulMat{<:AbstractColumnMajor,<:AbstractBlockBandedLayout}, ::Type{T}) where T =
     Matrix{T}(undef, size(M))
 
-function blocksizes(V::SubBlockBandedMatrix{<:Any,BlockRange1,BlockRange1})
+function blocksizes(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockRange1}) where {LL,UU}
     A = parent(V)
     Bs = A.block_sizes.block_sizes
 
@@ -155,12 +157,12 @@ function blocksizes(V::SubBlockBandedMatrix{<:Any,BlockRange1,BlockRange1})
 
     Bs.cumul_sizes[1]
     @assert KR[1] == JR[1] == 1
-    BlockBandedSizes(BlockSizes((Bs.cumul_sizes[1][KR[1]:KR[end]+1] .- Bs.cumul_sizes[1][KR[1]] .+ 1,
-                                 Bs.cumul_sizes[2][JR[1]:JR[end]+1] .- Bs.cumul_sizes[1][JR[1]] .+ 1)),
-                        blockbandwidth(A,1) - shift, blockbandwidth(A,2) + shift)
+    BlockSkylineSizes(BlockSizes((Bs.cumul_sizes[1][KR[1]:KR[end]+1] .- Bs.cumul_sizes[1][KR[1]] .+ 1,
+                                       Bs.cumul_sizes[2][JR[1]:JR[end]+1] .- Bs.cumul_sizes[1][JR[1]] .+ 1)),
+                           colblockbandwidth(A,1)[1:Int(JR[end])] .- shift, colblockbandwidth(A,2)[1:Int(JR[end])] .+ shift)
 end
 
-function blockbandwidths(V::SubBlockBandedMatrix{<:Any,BlockRange1,BlockRange1})
+function blockbandwidths(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockRange1}) where {LL,UU}
     A = parent(V)
     Bs = A.block_sizes.block_sizes
 
@@ -228,11 +230,11 @@ function blockbandwidths(V::SubBandedBlockBandedMatrix{<:Any,BlockRange1,BlockRa
 end
 
 
-strides(V::SubBlockBandedMatrix{<:Any,<:Union{BlockRange1,Block1},Block1}) =
+strides(V::SubBlockSkylineMatrix{<:Any,LL,UU,<:Union{BlockRange1,Block1},Block1}) where {LL,UU} =
     (1,parent(V).block_sizes.block_strides[Int(parentindices(V)[2].block)])
 
 
-function unsafe_convert(::Type{Ptr{T}}, V::SubBlockBandedMatrix{T,<:Union{BlockRange1,Block1},Block1}) where T
+function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:Union{BlockRange1,Block1},Block1}) where {T,LL,UU}
     A = parent(V)
     JR = parentindices(V)[2]
     KR = parentindices(V)[1].block
@@ -248,10 +250,10 @@ struct ShiftedLayout{T,ML<:MemoryLayout} <: MemoryLayout
 end
 
 
-strides(V::SubBlockBandedMatrix{<:Any,BlockRange1,BlockIndexRange1}) =
+strides(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockIndexRange1}) where {LL,UU} =
     (1,parent(V).block_sizes.block_strides[Int(Block(parentindices(V)[2]))])
 
-function unsafe_convert(::Type{Ptr{T}}, V::SubBlockBandedMatrix{T,BlockRange1,BlockIndexRange1}) where T
+function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,BlockRange1,BlockIndexRange1}) where {T,LL,UU}
     A = parent(V)
     JR = parentindices(V)[2]
     K = first(parentindices(V)[1].block)
@@ -261,7 +263,7 @@ function unsafe_convert(::Type{Ptr{T}}, V::SubBlockBandedMatrix{T,BlockRange1,Bl
     p + sizeof(T)*(JR.block.indices[1][1]-1)*stride(V,2)
 end
 
-function unsafe_convert(::Type{Ptr{T}}, V::SubBlockBandedMatrix{T,BlockIndexRange1,BlockIndexRange1}) where T
+function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,BlockIndexRange1,BlockIndexRange1}) where {T,LL,UU}
     A = parent(V)
     JR = parentindices(V)[2]
     K = parentindices(V)[1].block.block
@@ -272,10 +274,10 @@ function unsafe_convert(::Type{Ptr{T}}, V::SubBlockBandedMatrix{T,BlockIndexRang
     p + sizeof(T)*(kr[1]-1 + (jr[1]-1)*stride(V,2))
 end
 
-strides(V::SubBlockBandedMatrix{T,BlockIndexRange1,BlockIndexRange1}) where T =
+strides(V::SubBlockSkylineMatrix{T,LL,UU,BlockIndexRange1,BlockIndexRange1}) where {T,LL,UU} =
     (1,parent(V).block_sizes.block_strides[Int(parentindices(V)[2].block.block)])
 
-MemoryLayout(V::SubBlockBandedMatrix{T,BlockIndexRange1,BlockIndexRange1}) where T = ColumnMajor()
+MemoryLayout(V::SubBlockSkylineMatrix{T,LL,UU,BlockIndexRange1,BlockIndexRange1}) where {T,LL,UU} = ColumnMajor()
 
 
 #####
@@ -283,7 +285,7 @@ MemoryLayout(V::SubBlockBandedMatrix{T,BlockIndexRange1,BlockIndexRange1}) where
 #####
 
 # we want to make sure the block are matching up to the blocksize
-function hasmatchingblocks(V::SubBlockBandedMatrix{T,UnitRange{Int},UnitRange{Int}}) where T
+function hasmatchingblocks(V::SubBlockSkylineMatrix{T,LL,UU,UnitRange{Int},UnitRange{Int}}) where {T,LL,UU}
     A = parent(V)
     kr, jr = parentindices(V)
     N,  N_n = _find_block(blocksizes(A), 1, kr[end])
@@ -293,7 +295,7 @@ end
 
 # Write U as [U_11 U_12; 0 U_22] and b = [b_1,b_2,b_3] to use efficient block versions
 function ldiv!(U::UpperTriangular{T,SV},
-                   b::AbstractVector{T}) where SV<:SubBlockBandedMatrix{T,UnitRange{Int},UnitRange{Int}} where T
+               b::AbstractVector{T}) where SV<:SubBlockSkylineMatrix{T,LL,UU,UnitRange{Int},UnitRange{Int}} where {T,LL,UU}
     V = parent(U)
     if hasmatchingblocks(V)
         blockbanded_squareblocks_intrange_trtrs!(V, b)
@@ -346,7 +348,7 @@ function _squaredblocks_newbandwidth(l, kr, jr, cs)
     l_ret
 end
 
-function squaredblocks(bs::BlockBandedSizes)
+function squaredblocks(bs::BlockSkylineSizes)
     l, u = blockbandwidths(bs)
 
 
@@ -358,7 +360,7 @@ function squaredblocks(bs::BlockBandedSizes)
     cs = new_bs.cumul_sizes[1]
 
     new_l, new_u = _squaredblocks_newbandwidth(l, kr, jr, cs), _squaredblocks_newbandwidth(u, jr, kr, cs)
-    BlockBandedSizes(new_bs, new_l, new_u)
+    BlockSkylineSizes(new_bs, new_l, new_u)
 end
 
 function _squaredblocks_mapback(kr, cs)
@@ -417,14 +419,14 @@ function _cumul_maxsize!(KR, n)
     KR
 end
 
-function squaredblocks(bs::BlockBandedSizes, n::Int)
+function squaredblocks(bs::BlockSkylineSizes, n::Int)
     l, u = blockbandwidths(bs)
     kr, jr = bs.block_sizes.cumul_sizes
     new_bs = squaredblocks(bs.block_sizes)
     cs = new_bs.cumul_sizes[1]
     _cumul_maxsize!(cs,n)
     new_l, new_u = _squaredblocks_newbandwidth(l, kr, jr, cs), _squaredblocks_newbandwidth(u, jr, kr, cs)
-    BlockBandedSizes(new_bs, new_l, new_u)
+    BlockSkylineSizes(new_bs, new_l, new_u)
 end
 
 
