@@ -15,7 +15,7 @@ import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrang
                         BandedColumnMajor,
                         BandedSubBandedMatrix, bandeddata, tribandeddata,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop,
-                        BandedStyle,
+                        BandedStyle, _fill_lmul!,
                         _banded_colval, _banded_rowval, _banded_nzval # for sparse
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
