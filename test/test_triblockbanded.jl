@@ -1,8 +1,8 @@
-using BlockBandedMatrices, BandedMatrices, BlockArrays, LazyArrays, Test
+using BlockBandedMatrices, BandedMatrices, BlockArrays, LazyArrays, LinearAlgebra, Test
 import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedColumnMajor,
                         BandedColumnMajor, tribandeddata, blocksizes, cumulsizes, nblocks,
-                        BlockBandedSizes, blockrowstop, blockcolstop, BlockSizes,
-                        ColumnMajor
+                        BlockSkylineSizes, blockrowstop, blockcolstop, BlockSizes,
+                        ColumnMajor, BlockBandedSizes
 
 @testset "triangular BandedBlockBandedMatrix mul" begin
     A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
@@ -96,7 +96,7 @@ end
     b = randn(size(A,1))
 
     V = view(A, Block.(1:3), Block.(1:4))
-    @test blocksizes(V) isa BlockBandedSizes
+    @test blocksizes(V) isa BlockSkylineSizes
     @test blocksizes(V) == blocksizes(A)
 
 
@@ -111,7 +111,7 @@ end
 
     V = view(A, 1:11, 1:11)
     b = randn(size(V,1))
-    @test_broken all(UpperTriangular(V) \ b .===
+    @test_skip all(UpperTriangular(V) \ b .===
                     BlockBandedMatrices.blockbanded_rectblocks_intrange_trtrs!(V, copy(b)))
     @test UpperTriangular(V) \ b ≈ UpperTriangular(Matrix(V)) \ b ≈ UpperTriangular(A[1:11,1:11]) \ b
 
@@ -131,7 +131,7 @@ end
 
 
 
-@testset "SubBlockBandedMatrix linear algebra" begin
+@testset "SubBlockSkylineMatrix linear algebra" begin
     l , u = 1,1
     N = M = 5
     cols = rows = 1:N
@@ -158,7 +158,9 @@ end
 
     @test size(V) == (5,3)
     b = randn(size(V,2))
-    @test_broken all(V*b .=== Matrix(V)*b .=== BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
+
+    @test all((similar(b,size(V,1)) .= Mul(V,b)) .=== Matrix(V)*b .===
+                BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
     V = view(A, Block.(1:3), Block(3)[2:3])
     @test_throws ArgumentError pointer(V)
@@ -174,7 +176,8 @@ end
 
     @test size(V) == (5,2)
     b = randn(size(V,2))
-    @test_broken all(V*b .=== Matrix(V)*b .=== BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
+    @test all((similar(b,size(V,1)) .= Mul(V,b)) .=== Matrix(V)*b .===
+                BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
     V = view(A, Block.(1:3), Block(3)[2:3])
     @test_throws ArgumentError pointer(V)

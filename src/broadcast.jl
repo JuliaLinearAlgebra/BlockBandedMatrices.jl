@@ -68,19 +68,20 @@ end
 function _blockbanded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
     @boundscheck checkblocks(dest, src)
 
-    dl, du = blockbandwidths(dest)
-    sl, su = blockbandwidths(src)
+    dl, du = colblockbandwidths(dest)
+    sl, su = colblockbandwidths(src)
     M,N = nblocks(src)
-    (dl ≥ min(sl,M-1) && du ≥ min(su,N-1)) || throw(BandError(dest))
+    # Source matrix must fit within bands of destination matrix
+    all(dl .≥ min.(sl,Ref(M-1))) && all(du .≥ min.(su,Ref(N-1))) || throw(BandError(dest))
 
     for J = 1:N
-        for K = max(1,J-du):min(J-su-1,M)
+        for K = max(1,J-du[J]):min(J-su[J]-1,M)
             view(dest,Block(K),Block(J)) .= zero(T)
         end
-        for K = max(1,J-su):min(J+sl,M)
+        for K = max(1,J-su[J]):min(J+sl[J],M)
             view(dest,Block(K),Block(J)) .= view(src,Block(K),Block(J))
         end
-        for K = max(1,J+sl+1):min(J+dl,M)
+        for K = max(1,J+sl[J]+1):min(J+dl[J],M)
             view(dest,Block(K),Block(J)) .= zero(T)
         end
     end
@@ -254,35 +255,43 @@ for op in (:+, :-)
     end
 end
 
-function copyto!(dest::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(+),
+function copyto!(C::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(+),
                                                             <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
     A,B = bc.args
     A_l,A_u = blockbandwidths(A)
     B_l,B_u = blockbandwidths(B)
 
-    size(A) == size(B) == size(dest) || throw(DimensionMismatch())
-    N,M = nblocks(dest)
+    C_l,C_u = blockbandwidths(C)
+
+    size(A) == size(B) == size(C) || throw(DimensionMismatch())
+    N,M = nblocks(C)
 
     for J̃ = 1:M
         J = Block(J̃)
         for K = Block.(max(1,J̃-min(A_u,B_u)):min(N,J̃+min(A_l,B_l)))
-            view(dest,K,J) .= view(A,K,J) .+ view(B,K,J)
+            view(C,K,J) .= view(A,K,J) .+ view(B,K,J)
         end
         for K = Block.(max(1,J̃-A_u):min(N,J̃-B_u-1))
-            view(dest,K,J) .= view(A,K,J)
+            view(C,K,J) .= view(A,K,J)
         end
         for K = Block.(max(1,J̃-B_u):min(N,J̃-A_u-1))
-            view(dest,K,J) .= view(B,K,J)
+            view(C,K,J) .= view(B,K,J)
         end
         for K = Block.(max(1,J̃+B_l+1):min(N,J̃+A_u))
-            view(dest,K,J) .= view(A,K,J)
+            view(C,K,J) .= view(A,K,J)
         end
         for K = Block.(max(1,J̃+A_l+1):min(N,J̃+B_u))
-            view(dest,K,J) .= view(B,K,J)
+            view(C,K,J) .= view(B,K,J)
+        end
+        for K = Block.(max(J̃-C_u,1):min(J̃-max(A_u,B_u)-1,N))
+            view(C,K,J) .= zero(T)
+        end
+        for K = Block.(max(J̃+max(A_l,B_l)+1,1):min(J̃+C_u,N))
+            view(C,K,J) .= zero(T)
         end
     end
 
-    dest
+    C
 end
 
 function copyto!(dest::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(-),

@@ -8,7 +8,7 @@ import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blo
                         _unblock, _find_block, BlockIndexRange, blocksizes, cumulsizes,
                         AbstractBlockSizes
 
-import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex,
+import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrange,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
                         banded_generic_axpy!,
                         BlasFloat, banded_dense_axpy!, MemoryLayout,
@@ -23,9 +23,10 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         unsafe_convert, fill!, length, first, last,
                         eltype, getindex, to_indices, to_index,
                         reindex, _maybetail, tail, @_propagate_inbounds_meta,
-                        ==, axes, copyto!, similar
+                        ==, axes, copyto!, similar, OneTo
 
-import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted
+import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
+                        materialize, materialize!
 
 import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
                         AbstractTriangular, AdjOrTrans, HermOrSym
@@ -35,12 +36,13 @@ import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, check
 
 import SparseArrays: sparse
 
-import LazyArrays: AbstractStridedLayout, ColumnMajor, @blasmatvec, @blasmatmat, @lazymul, blasmul!,
+import LazyArrays: AbstractStridedLayout, ColumnMajor, @lazymul, MatMulMatAdd, MatMulVecAdd,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatMulVec, MatLdivVec,
                     triangulardata, subarraylayout, _copyto!, @lazyldiv, @lazylmul,
-                    ArrayMulArrayStyle
+                    ArrayMulArrayStyle, AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
+                    MatMulMat
 
-export BandedBlockBandedMatrix, BlockBandedMatrix, blockbandwidth, blockbandwidths,
+export BandedBlockBandedMatrix, BlockBandedMatrix, BlockTridiagonalMatrix, BlockSkylineMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block
 
 
