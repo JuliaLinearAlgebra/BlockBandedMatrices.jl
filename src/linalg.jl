@@ -40,7 +40,7 @@ function materialize!(M::MatMulVecAdd{<:AbstractBlockBandedLayout,<:AbstractStri
     y = PseudoBlockArray(y_in, BlockSizes((cumulsizes(blocksizes(A),1),)))
     x = PseudoBlockArray(x_in, BlockSizes((cumulsizes(blocksizes(A),2),)))
 
-    lmul!(β, y)
+    _fill_lmul!(β, y)
 
     for J = Block.(1:nblocks(A,2))
         for K = blockcolrange(A,J)
@@ -52,7 +52,7 @@ end
 
 function materialize!(M::MatMulMatAdd{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout})
     α, A, X, β, Y = M.α, M.A, M.B, M.β, M.C
-    lmul!(β, Y)
+    _fill_lmul!(β, Y)
     for J=Block(1):Block(nblocks(X,2)),
             N=blockcolrange(X,J), K=blockcolrange(A,N)
         view(Y,K,J) .= α .* Mul( view(A,K,N), view(X,N,J)) .+ view(Y,K,J)
@@ -62,7 +62,7 @@ end
 
 function materialize!(M::MatMulMatAdd{<:AbstractBlockBandedLayout,<:AbstractColumnMajor,<:AbstractColumnMajor})
     α, A, X_in, β, Y_in = M.α, M.A, M.B, M.β, M.C
-    lmul!(β, Y_in)
+    _fill_lmul!(β, Y_in)
     X = PseudoBlockArray(X_in, BlockSizes((cumulsizes(blocksizes(A),2),[1,size(X_in,2)+1])))
     Y = PseudoBlockArray(Y_in, BlockSizes((cumulsizes(blocksizes(A),1), [1,size(Y_in,2)+1])))
     for N=Block.(1:nblocks(X,1)), K=blockcolrange(A,N)
@@ -73,7 +73,7 @@ end
 
 function materialize!(M::MatMulMatAdd{<:AbstractColumnMajor,<:AbstractBlockBandedLayout,<:AbstractColumnMajor})
     α, A_in, X, β, Y_in = M.α, M.A, M.B, M.β, M.C
-    lmul!(β, Y_in)
+    _fill_lmul!(β, Y_in)
     A = PseudoBlockArray(A_in, BlockSizes(([1,size(A_in,1)+1],cumulsizes(blocksizes(X),1))))
     Y = PseudoBlockArray(Y_in, BlockSizes(([1,size(Y_in,1)+1],cumulsizes(blocksizes(X),2))))
     for J=Block(1):Block(nblocks(X,2)), N=blockcolrange(X,J)
