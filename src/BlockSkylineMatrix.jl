@@ -116,8 +116,11 @@ const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Fill{Int,1,Tuple{OneTo{Int}}}
 const BlockTridiagonalMatrix{T} = BlockSkylineMatrix{T, Ones{Int,1,Tuple{OneTo{Int}}}, Ones{Int,1,Tuple{OneTo{Int}}}}
 
 # Auxiliary outer constructors
+@inline _BlockBandedMatrix(data::AbstractVector, bs::BlockBandedSizes) =
+    _BlockSkylineMatrix(data, bs)
+
 @inline _BlockBandedMatrix(data::AbstractVector, (kr,jr)::NTuple{2, AbstractVector{Int}}, (l,u)::NTuple{2, Int}) =
-    _BlockSkylineMatrix(data, BlockBandedSizes(kr,jr, l,u))
+    _BlockBandedMatrix(data, BlockBandedSizes(kr,jr, l,u))
 
 @inline BlockSkylineMatrix{T}(::UndefInitializer, block_sizes::BlockSkylineSizes) where T =
     _BlockSkylineMatrix(Vector{T}(undef, bb_numentries(block_sizes)), block_sizes)

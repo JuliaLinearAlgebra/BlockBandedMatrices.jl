@@ -48,7 +48,7 @@ export BandedBlockBandedMatrix, BlockBandedMatrix, BlockTridiagonalMatrix, Block
 
 include("AbstractBlockBandedMatrix.jl")
 include("broadcast.jl")
-include("BlockBandedMatrix.jl")
+include("BlockSkylineMatrix.jl")
 include("BandedBlockBandedMatrix.jl")
 
 include("linalg.jl")
