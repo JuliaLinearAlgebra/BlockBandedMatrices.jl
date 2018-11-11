@@ -1,7 +1,7 @@
 # BlockBandedMatrix with block range indexes is also block-banded
 const Block1 = Block{1,Int}
 const BlockRange1 = BlockRange{1,Tuple{UnitRange{Int}}}
-const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int64}}}
+const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int}}}
 const SubBlockSkylineMatrix{T,LL,UU,R1,R2} =
     SubArray{T,2,BlockSkylineMatrix{T,LL,UU},Tuple{BlockSlice{R1},BlockSlice{R2}}}
 
