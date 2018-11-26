@@ -99,6 +99,28 @@ end
 *(A::Matrix, B::BandedBlockBandedMatrix) = materialize(Mul(A,B))
 
 
+function add_bandwidths(A::AbstractBlockBandedMatrix,B::AbstractBlockBandedMatrix)
+    Al,Au = colblockbandwidths(A)
+    Bl,Bu = colblockbandwidths(B)
+
+    l = copy(Al)
+    u = copy(Au)
+
+    for (v,Bv) in [(l,Bl),(u,Bu)]
+        n = length(v)
+        for i = 1:n
+            sel = max(i-Au[i],1):min(i+Al[i],n)
+            isempty(sel) && continue
+            v[i] += maximum(Bv[sel])
+        end
+    end
+
+    l,u
+end
+
+add_bandwidths(A::BlockBandedMatrix,B::BlockBandedMatrix) =
+    colblockbandwidths(A) .+ colblockbandwidths(B)
+
 function similar(M::MatMulMat{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T
     A,B = M.factors
     Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
@@ -115,8 +137,8 @@ function similar(M::MatMulMat{<:AbstractBlockBandedLayout,<:AbstractBlockBandedL
     end
     n,m = size(A,1), size(B,2)
 
-    l, u = blockbandwidths(A) .+ blockbandwidths(B)
-    BlockBandedMatrix{T}(undef, BlockBandedSizes(BlockSizes((Arows,Bcols)), l, u))
+    l,u = add_bandwidths(A,B)
+    BlockSkylineMatrix{T}(undef, BlockSkylineSizes(BlockSizes((Arows,Bcols)), l, u))
 end
 
 function similar(M::MatMulMat{BandedBlockBandedColumnMajor,BandedBlockBandedColumnMajor}, ::Type{T}) where T
