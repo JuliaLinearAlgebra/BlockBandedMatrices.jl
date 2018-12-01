@@ -103,23 +103,25 @@ function add_bandwidths(A::AbstractBlockBandedMatrix,B::AbstractBlockBandedMatri
     Al,Au = colblockbandwidths(A)
     Bl,Bu = colblockbandwidths(B)
 
-    l = copy(Al)
-    u = copy(Au)
+    l = copy(Bl)
+    u = copy(Bu)
 
-    for (v,Bv) in [(l,Bl),(u,Bu)]
+    for (v,Av) in [(l,Al),(u,Au)]
         n = length(v)
         for i = 1:n
-            sel = max(i-Au[i],1):min(i+Al[i],n)
+            sel = max(i-Bu[i],1):min(i+Bl[i],length(Av))
             isempty(sel) && continue
-            v[i] += maximum(Bv[sel])
+            v[i] += maximum(Av[sel])
         end
     end
 
     l,u
 end
 
-add_bandwidths(A::BlockBandedMatrix,B::BlockBandedMatrix) =
-    colblockbandwidths(A) .+ colblockbandwidths(B)
+function add_bandwidths(A::BlockBandedMatrix,B::BlockBandedMatrix)
+    l,u = blockbandwidths(A) .+ blockbandwidths(B)
+    Fill(l,nblocks(B,2)), Fill(u,nblocks(B,2))
+end
 
 function similar(M::MatMulMat{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T
     A,B = M.factors

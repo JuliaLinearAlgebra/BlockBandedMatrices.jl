@@ -32,29 +32,29 @@ end
     @test unsafe_load(pointer(V)) == 46
     @test unsafe_load(pointer(V) + stride(V,2)*sizeof(Float64)) == 53
 
-x = randn(size(A,2))
-    @test A*x == (similar(x) .= Mul(A,x)) ≈ Matrix(A)*x
+    x = randn(size(A,2))
+        @test A*x == (similar(x) .= Mul(A,x)) ≈ Matrix(A)*x
 
-z = randn(size(A,2)) + im*randn(size(A,2))
-A*z == (similar(z) .= Mul(A,z)) ≈ Matrix(A)*z
+    z = randn(size(A,2)) + im*randn(size(A,2))
+    A*z == (similar(z) .= Mul(A,z)) ≈ Matrix(A)*z
 
-Matrix(A)*z
-z[1]
-view(A,Block(1,1)) * z[1] + view(A,Block(1,2))*z[2:3]
+    Matrix(A)*z
+    z[1]
+    view(A,Block(1,1)) * z[1] + view(A,Block(1,2))*z[2:3]
 
-A*z
+    A*z
 
-X = randn(size(A))
-    @test A*X == (similar(X) .= Mul(A,X)) ≈ Matrix(A)*X
-    @test X*A == (similar(X) .= Mul(X,A)) ≈  Matrix(X)*A
-
-
-Z = randn(size(A)) + im*randn(size(A))
-
-A*Z
+    X = randn(size(A))
+        @test A*X == (similar(X) .= Mul(A,X)) ≈ Matrix(A)*X
+        @test X*A == (similar(X) .= Mul(X,A)) ≈  Matrix(X)*A
 
 
-v = fill(1.0,4)
+    Z = randn(size(A)) + im*randn(size(A))
+
+    A*Z
+
+
+    v = fill(1.0,4)
     U = UpperTriangular(view(A, Block(N,N)))
     @test Matrix(U) == U
     w = Matrix(U) \ v
@@ -72,8 +72,6 @@ v = fill(1.0,4)
     @test v == fill(1.0,size(A,1))
     @test ldiv!(U, v) === v
     @test v ≈ w
-
-
 end
 
 @testset "BandedBlockBandedMatrix linear algebra" begin
@@ -154,4 +152,27 @@ end
 
     @time BLAS.axpy!(1.0, A, B)
     @test B ≈ AB
+end
+
+@testset "Rectangular block *" begin
+    A = BlockBandedMatrix{Float64}(undef, (Ones{Int}(2), Ones{Int}(2)), (0,2))
+        A.data .= randn.()
+    B = BlockBandedMatrix{Float64}(undef, (Ones{Int}(2), Ones{Int}(3)), (0,2))
+        B.data .= randn.()
+
+    @test A*B ≈ Matrix(A)*Matrix(B)
+
+
+    rows = rand(1:10, 5)
+    l = rand(0:2, 5)
+    u = rand(0:2, 5)
+
+    m = sum(rows)
+
+    A = BlockSkylineMatrix(Zeros(m,m), (rows,rows), (l,u))
+    A.data .= randn.()
+
+    B = BlockSkylineMatrix(Zeros(m,m+1), (rows,[rows;1]), ([l;1],[u;1]))
+    B.data .= randn.()
+    @test A*B ≈ Matrix(A)*Matrix(B)
 end
