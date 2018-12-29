@@ -29,7 +29,7 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Br
                         materialize, materialize!
 
 import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
-                        AbstractTriangular, AdjOrTrans, HermOrSym
+                        AbstractTriangular, AdjOrTrans, HermOrSym, StructuredMatrixStyle
 import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex
 import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo

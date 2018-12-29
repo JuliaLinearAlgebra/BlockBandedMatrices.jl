@@ -35,6 +35,12 @@ convert(::Type{BlockBandedSizes}, B::BandedBlockBandedSizes) =
 convert(::Type{BlockSizes}, B::BandedBlockBandedSizes) = B.block_sizes
 convert(::Type{BlockSizes{2}}, B::BandedBlockBandedSizes) = B.block_sizes
 
+const BandedOrBlockBandedSizes = Union{BandedBlockBandedSizes,BlockBandedSizes}
+
+==(A::BandedOrBlockBandedSizes, B::BandedOrBlockBandedSizes) = A.block_sizes == B.block_sizes
+==(A::BandedOrBlockBandedSizes, B::AbstractBlockSizes) = A.block_sizes == B
+==(A::AbstractBlockSizes, B::BandedOrBlockBandedSizes) = A == B.block_sizes
+
 BlockBandedSizes(B::BandedBlockBandedSizes) = convert(BlockBandedSizes, B)
 BlockSkylineSizes(B::BandedBlockBandedSizes) = convert(BlockSkylineSizes, B)
 
@@ -283,6 +289,9 @@ matrix. In other words, `A[Block(K,J)]` will return a `BandedMatrix` with
 bandwidths given by `subblockbandwidths(A)`.
 """
 subblockbandwidths(A::BandedBlockBandedMatrix) = (A.λ, A.μ)
+
+# default is to use bandwidth
+subblockbandwidths(A::AbstractMatrix) = bandwidths(A)
 
 """
     subblockbandwidth(A, i)
