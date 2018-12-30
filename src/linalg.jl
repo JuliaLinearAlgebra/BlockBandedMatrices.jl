@@ -171,6 +171,12 @@ similar(M::MatMulMat{<:AbstractBlockBandedLayout,<:AbstractColumnMajor}, ::Type{
 similar(M::MatMulMat{<:AbstractColumnMajor,<:AbstractBlockBandedLayout}, ::Type{T}) where T =
     Matrix{T}(undef, size(M))
 
+similar(M::MatMulMat{<:AbstractBlockBandedLayout,<:DiagonalLayout}, ::Type{T}) where T =
+    similar(first(M.factors), T)
+similar(M::MatMulMat{<:DiagonalLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T =
+    similar(last(M.factors), T)
+
+
 function blocksizes(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockRange1}) where {LL,UU}
     A = parent(V)
     Bs = A.block_sizes.block_sizes

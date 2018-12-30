@@ -76,5 +76,15 @@ size(F::FiniteDifference) = (F.n,F.n)
         @test blockbandwidths(D_xx + D) == blockbandwidths(D_xx)
         @test subblockbandwidths(D_xx + D) == subblockbandwidths(D_xx)
         @test D_xx + D == Matrix(D_xx) + D
+
+        @test D_xx*D == Matrix(D_xx)*D
+        @test D_xx*D isa BandedBlockBandedMatrix
+        @test blockbandwidths(D_xx*D) == blockbandwidths(D_xx)
+        @test subblockbandwidths(D_xx*D) == subblockbandwidths(D_xx)
+
+        @test D*D_xx == D*Matrix(D_xx)
+        @test D*D_xx isa BandedBlockBandedMatrix
+        @test blockbandwidths(D*D_xx) == blockbandwidths(D_xx)
+        @test subblockbandwidths(D*D_xx) == subblockbandwidths(D_xx)        
     end
 end
