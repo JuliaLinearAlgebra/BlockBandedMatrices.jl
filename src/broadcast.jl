@@ -270,57 +270,43 @@ for op in (:+, :-)
     end
 end
 
-function copyto!(C::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(+),
-                                                            <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
-    A,B = _combined_blocksizes(bc.args...)
-    A_l,A_u = blockbandwidths(A)
-    B_l,B_u = blockbandwidths(B)
-    C_l,C_u = blockbandwidths(C)
+for op in (:+, :-)
+    @eval function copyto!(C::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof($op),
+                                                                <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
+        A,B = _combined_blocksizes(bc.args...)
+        A_l,A_u = blockbandwidths(A)
+        B_l,B_u = blockbandwidths(B)
+        C_l,C_u = blockbandwidths(C)
 
-    size(A) == size(B) == size(C) || throw(DimensionMismatch())
-    N,M = nblocks(C)
+        size(A) == size(B) == size(C) || throw(DimensionMismatch())
+        N,M = nblocks(C)
 
-    for J̃ = 1:M
-        J = Block(J̃)
-        for K = Block.(max(1,J̃-min(A_u,B_u)):min(N,J̃+min(A_l,B_l)))
-            view(C,K,J) .= view(A,K,J) .+ view(B,K,J)
+        for J̃ = 1:M
+            J = Block(J̃)
+            for K = Block.(max(1,J̃-min(A_u,B_u)):min(N,J̃+min(A_l,B_l)))
+                view(C,K,J) .= $op.(view(A,K,J), view(B,K,J))
+            end
+            for K = Block.(max(1,J̃-A_u):min(N,J̃-B_u-1))
+                view(C,K,J) .= view(A,K,J)
+            end
+            for K = Block.(max(1,J̃-B_u):min(N,J̃-A_u-1))
+                view(C,K,J) .= $op.(view(B,K,J))
+            end
+            for K = Block.(max(1,J̃+B_l+1):min(N,J̃+A_u))
+                view(C,K,J) .= view(A,K,J)
+            end
+            for K = Block.(max(1,J̃+A_l+1):min(N,J̃+B_u))
+                view(C,K,J) .= $op.(view(B,K,J))
+            end
+            for K = Block.(max(J̃-C_u,1):min(J̃-max(A_u,B_u)-1,N))
+                view(C,K,J) .= zero(T)
+            end
+            for K = Block.(max(J̃+max(A_l,B_l)+1,1):min(J̃+C_u,N))
+                view(C,K,J) .= zero(T)
+            end
         end
-        for K = Block.(max(1,J̃-A_u):min(N,J̃-B_u-1))
-            view(C,K,J) .= view(A,K,J)
-        end
-        for K = Block.(max(1,J̃-B_u):min(N,J̃-A_u-1))
-            view(C,K,J) .= view(B,K,J)
-        end
-        for K = Block.(max(1,J̃+B_l+1):min(N,J̃+A_u))
-            view(C,K,J) .= view(A,K,J)
-        end
-        for K = Block.(max(1,J̃+A_l+1):min(N,J̃+B_u))
-            view(C,K,J) .= view(B,K,J)
-        end
-        for K = Block.(max(J̃-C_u,1):min(J̃-max(A_u,B_u)-1,N))
-            view(C,K,J) .= zero(T)
-        end
-        for K = Block.(max(J̃+max(A_l,B_l)+1,1):min(J̃+C_u,N))
-            view(C,K,J) .= zero(T)
-        end
-    end
 
-    C
-end
-
-function copyto!(dest::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(-),
-                                                            <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
-    A,B = bc.args
-
-    if dest ≡ B
-        lmul!(-one(T), B)
-        blockbanded_axpy!(one(T), A, dest)
-    elseif dest ≡ A
-        blockbanded_axpy!(-one(T), B, dest)
-    else
-        blockbanded_copyto!(dest, B)
-        lmul!(-one(T), dest)
-        blockbanded_axpy!(one(T), A, dest)
+        C
     end
 end
 
