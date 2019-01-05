@@ -266,7 +266,7 @@ function sparse(A::BandedBlockBandedMatrix)
         append!(j, j̃)
         append!(z, z̃)
     end
-    sparse(i, j, z)
+    sparse(i, j, z, size(A)...)
 end
 
 ################################

@@ -436,6 +436,11 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         @test A == B
         @test (A .+ 1) .* 2 == B .* 2 .+ 2
     end
+
+    @testset "Sparse dimensions" begin
+        A = BandedBlockBandedMatrix{Float64}(undef, (1:5,1:5), (-1,1), (-1,1))
+        @test size(sparse(A)) == size(A) == (15,15)
+    end
 end
 
 if false # turned off since tests have check-bounds=yes
