@@ -214,12 +214,18 @@ BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 
 function convert(::Type{BlockSkylineMatrix}, A::AbstractMatrix)
     @assert isblockbanded(A)
-    BlockSkylineMatrix(A, convert(BlockSkylineSizes, A.block_sizes))
+    block_sizes = convert(BlockSkylineSizes, A.block_sizes)
+
+    ret = BlockSkylineMatrix{eltype(A)}(undef, block_sizes)
+    for J = Block.(1:nblocks(ret, 2)), K = blockcolrange(ret, Int(J))
+        view(ret, K, J) .= view(A, K, J)
+    end
+    ret
 end
 
 function convert(::Type{BlockBandedMatrix}, A::AbstractMatrix)
     @assert isblockbanded(A)
-    BlockBandedMatrix(A, convert(BlockBandedSizes, A.block_sizes))
+    convert(BlockSkylineMatrix, A)
 end
 
 
