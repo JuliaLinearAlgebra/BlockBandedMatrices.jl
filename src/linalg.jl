@@ -124,7 +124,7 @@ function add_bandwidths(A::BlockBandedMatrix,B::BlockBandedMatrix)
 end
 
 function similar(M::MatMulMat{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T
-    A,B = M.factors
+    A,B = M.args
     Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
     Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
     if Acols ≠ Brows
@@ -144,7 +144,7 @@ function similar(M::MatMulMat{<:AbstractBlockBandedLayout,<:AbstractBlockBandedL
 end
 
 function similar(M::MatMulMat{BandedBlockBandedColumnMajor,BandedBlockBandedColumnMajor}, ::Type{T}) where T
-    A,B = M.factors
+    A,B = M.args
     Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
     Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
     if Acols ≠ Brows
@@ -172,9 +172,9 @@ similar(M::MatMulMat{<:AbstractColumnMajor,<:AbstractBlockBandedLayout}, ::Type{
     Matrix{T}(undef, size(M))
 
 similar(M::MatMulMat{<:AbstractBlockBandedLayout,<:DiagonalLayout}, ::Type{T}) where T =
-    similar(first(M.factors), T)
+    similar(first(M.args), T)
 similar(M::MatMulMat{<:DiagonalLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T =
-    similar(last(M.factors), T)
+    similar(last(M.args), T)
 
 
 function blocksizes(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockRange1}) where {LL,UU}

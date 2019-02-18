@@ -85,7 +85,7 @@ end
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
          M::MatMulVec{<:TriangularLayout{UPLO,UNIT,LAY},
                                    <:AbstractStridedLayout,T,T}) where {UPLO,UNIT,T<:BlasFloat,LAY<:BandedBlockBandedColumnMajor}
-    U,x = M.factors
+    U,x = M.args
     @boundscheck size(U,1) == size(dest,1) || throw(BoundsError())
     if hasmatchingblocks(U)
         x ≡ dest || copyto!(dest, x)
@@ -106,8 +106,7 @@ end
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
          M::MatLdivVec{<:TriangularLayout{'U',UNIT,BandedBlockBandedColumnMajor},
                                    <:AbstractStridedLayout}) where {T,UNIT}
-    Ui,x = M.factors
-    U = inv(Ui)
+    U,x = M.args
     x ≡ dest || copyto!(dest, x)
     A = triangulardata(U)
     @assert hasmatchingblocks(A)
@@ -139,8 +138,7 @@ end
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
          M::MatLdivVec{<:TriangularLayout{'L',UNIT,BandedBlockBandedColumnMajor},
                                    <:AbstractStridedLayout}) where {UNIT,T}
-    Li,x = M.factors
-    L = inv(Li)
+    L,x = M.args
     x ≡ dest || copyto!(dest, x)
     A = triangulardata(L)
     @assert hasmatchingblocks(A)
