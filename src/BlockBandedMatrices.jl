@@ -6,7 +6,7 @@ using LinearAlgebra
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,
                         _unblock, _find_block, BlockIndexRange, blocksizes, cumulsizes,
-                        AbstractBlockSizes
+                        AbstractBlockSizes, sizes_from_blocks
 
 import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrange,
                         inbands_setindex!, inbands_getindex, banded_setindex!,

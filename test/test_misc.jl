@@ -94,3 +94,12 @@ size(F::FiniteDifference) = (F.n,F.n)
         @test subblockbandwidths(D*D_xx) == subblockbandwidths(D_xx)
     end
 end
+
+@testset "Block Tridiagonal" begin
+    A = mortar(Tridiagonal(fill([1 2],3), fill([3 4],4), fill([4 5],3)))
+    @test A[Block(1,1)] == [3 4]
+    @test @inferred(A[Block(1,2)]) == [4 5]
+    @test @inferred(getblock(A,1,3)) == @inferred(A[Block(1,3)]) == [0 0]
+end
+
+
