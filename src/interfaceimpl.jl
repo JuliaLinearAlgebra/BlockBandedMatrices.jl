@@ -41,16 +41,17 @@ BroadcastStyle(::Type{<:SubKron{<:Any,<:Any,B,Block1,Block1}}) where B =
 
 
 # Block Tridiagonal
+_sizes_from_blocks(sz, _) = BlockSizes(sz...)
 
 function sizes_from_blocks(A::Tridiagonal{<:AbstractMatrix})
     sz = (size.(A.d, 1), size.(A.d,2))
-    for k = 1:length(A.du)
-        size(A.du[k],1) == sz[1][k] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
-        size(A.du[k],2) == sz[2][k+1] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
-        size(A.dl[k],1) == sz[1][k+1] || throw(ArgumentError("block sizes of lower diagonal inconsisent with diagonal"))
-        size(A.dl[k],2) == sz[2][k] || throw(ArgumentError("block sizes of lower diagonal inconsisent with diagonal"))
-    end
-    sz
+    # for k = 1:length(A.du)
+    #     size(A.du[k],1) == sz[1][k] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
+    #     size(A.du[k],2) == sz[2][k+1] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
+    #     size(A.dl[k],1) == sz[1][k+1] || throw(ArgumentError("block sizes of lower diagonal inconsisent with diagonal"))
+    #     size(A.dl[k],2) == sz[2][k] || throw(ArgumentError("block sizes of lower diagonal inconsisent with diagonal"))
+    # end
+    _sizes_from_blocks(sz, axes.(sz,1))
 end
 
 @inline function getblock(block_arr::BlockMatrix{T,<:Tridiagonal{VT}}, K::Int, J::Int) where {T,VT<:AbstractMatrix}
