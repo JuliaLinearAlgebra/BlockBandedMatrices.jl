@@ -59,3 +59,10 @@ end
     abs(J-K) ≥ 2 && return convert(VT, Zeros{T}(blocksize(block_arr,(K,J))))
     block_arr.blocks[K,J]
 end
+
+function Base.replace_in_print_matrix(A::BlockMatrix{<:Any,<:Tridiagonal{<:AbstractMatrix}}, i::Integer, j::Integer, s::AbstractString)
+    bi = global2blockindex(A.block_sizes, (i, j))
+    I,J = bi.I
+    i,j = bi.α
+    -1 ≤ J-I ≤ 1 ? s : Base.replace_with_centered_mark(s)
+end
