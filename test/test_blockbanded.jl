@@ -1,7 +1,9 @@
 using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, LazyArrays, LinearAlgebra, Test
-    import BlockBandedMatrices: MemoryLayout, ColumnMajor
+    import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle, BlockBandedStyle
     import LazyArrays: Mul, MulAdd
     import Base.Broadcast: materialize!
+
+@test BroadcastStyle(BlockBandedMatrix) == BlockBandedStyle()
 
 @testset "BlockBandedMatrix constructors" begin
     l , u = 1,1

@@ -242,7 +242,8 @@ similar(A::BlockSkylineMatrix, T::Type=eltype(A), bs::BlockSkylineSizes=blocksiz
 MemoryLayout(::BlockSkylineMatrix) = BlockBandedColumnMajor()
 colblockbandwidths(A::BlockSkylineMatrix) = (A.l, A.u)
 blockbandwidths(A::BlockSkylineMatrix) = maximum.(colblockbandwidths(A))
-BroadcastStyle(::Type{<:BlockSkylineMatrix}) = BlockBandedStyle()
+BroadcastStyle(::Type{<:BlockSkylineMatrix}) = BlockSkylineStyle()
+BroadcastStyle(::Type{<:BlockBandedMatrix}) = BlockBandedStyle()
 
 
 ################################
