@@ -38,6 +38,8 @@ convert(::Type{BlockSizes{2}}, B::BandedBlockBandedSizes) = B.block_sizes
 const BandedOrBlockBandedSizes = Union{BandedBlockBandedSizes,BlockBandedSizes}
 
 ==(A::BandedOrBlockBandedSizes, B::BandedOrBlockBandedSizes) = A.block_sizes == B.block_sizes
+==(A::BandedOrBlockBandedSizes, B::BlockSkylineSizes) = A.block_sizes == B.block_sizes
+==(A::BlockSkylineSizes, B::BandedOrBlockBandedSizes) = A.block_sizes == B.block_sizes
 ==(A::BandedOrBlockBandedSizes, B::AbstractBlockSizes) = A.block_sizes == B
 ==(A::AbstractBlockSizes, B::BandedOrBlockBandedSizes) = A == B.block_sizes
 
