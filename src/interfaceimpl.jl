@@ -45,17 +45,14 @@ const BlockTridiagonal{T,VT<:Matrix{T}} = BlockMatrix{T,<:Tridiagonal{VT}}
 
 BlockTridiagonal(A,B,C) = mortar(Tridiagonal(A,B,C))
 
-_sizes_from_blocks(sz, _) = BlockSizes(sz...)
-
-function sizes_from_blocks(A::Tridiagonal{<:AbstractMatrix})
-    sz = (size.(A.d, 1), size.(A.d,2))
+function sizes_from_blocks(A::Tridiagonal, _) 
     # for k = 1:length(A.du)
     #     size(A.du[k],1) == sz[1][k] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
     #     size(A.du[k],2) == sz[2][k+1] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
     #     size(A.dl[k],1) == sz[1][k+1] || throw(ArgumentError("block sizes of lower diagonal inconsisent with diagonal"))
     #     size(A.dl[k],2) == sz[2][k] || throw(ArgumentError("block sizes of lower diagonal inconsisent with diagonal"))
     # end
-    _sizes_from_blocks(sz, axes.(sz,1))
+    BlockSizes(size.(A.d, 1), size.(A.d,2))
 end
 
 @inline function getblock(block_arr::BlockTridiagonal{T,VT}, K::Int, J::Int) where {T,VT<:AbstractMatrix}
@@ -83,7 +80,7 @@ for op in (:-, :+)
     end
 end
 
-function replace_in_print_matrix(A::BlockMatrix{<:Any,<:Tridiagonal{<:AbstractMatrix}}, i::Integer, j::Integer, s::AbstractString)
+function replace_in_print_matrix(A::BlockTridiagonal, i::Integer, j::Integer, s::AbstractString)
     bi = global2blockindex(A.block_sizes, (i, j))
     I,J = bi.I
     i,j = bi.α
