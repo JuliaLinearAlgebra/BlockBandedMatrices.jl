@@ -103,8 +103,8 @@ function add_bandwidths(A::AbstractBlockBandedMatrix,B::AbstractBlockBandedMatri
     Al,Au = colblockbandwidths(A)
     Bl,Bu = colblockbandwidths(B)
 
-    l = copy(Bl)
-    u = copy(Bu)
+    l = Vector(Bl)
+    u = Vector(Bu)
 
     for (v,Av) in [(l,Al),(u,Au)]
         n = length(v)
