@@ -29,11 +29,19 @@ conjlayout(::Type{<:Complex}, M::AbstractBlockBandedLayout) = ConjLayout(M)
 
 abstract type AbstractBlockBandedStyle <: AbstractArrayStyle{2} end
 struct BandedBlockBandedStyle <: AbstractBlockBandedStyle end
-struct BlockBandedStyle <: AbstractBlockBandedStyle end
+abstract type AbstractBlockSkylineStyle <: AbstractBlockBandedStyle end
+struct BlockSkylineStyle <: AbstractBlockSkylineStyle end
+struct BlockBandedStyle <: AbstractBlockSkylineStyle end
+BlockSkylineStyle(::Val{2}) = BlockBandedStyle()
 BlockBandedStyle(::Val{2}) = BlockBandedStyle()
 BandedBlockBandedStyle(::Val{2}) = BandedBlockBandedStyle()
 BroadcastStyle(::DefaultArrayStyle{2}, ::AbstractBlockBandedStyle) = DefaultArrayStyle{2}()
 BroadcastStyle(::AbstractBlockBandedStyle, ::DefaultArrayStyle{2}) = DefaultArrayStyle{2}()
+
+BroadcastStyle(::BlockSkylineStyle, ::BandedBlockBandedStyle) = BlockSkylineStyle()
+BroadcastStyle(::BandedBlockBandedStyle, ::BlockSkylineStyle) = BlockSkylineStyle()
+BroadcastStyle(::BlockSkylineStyle, ::BlockBandedStyle) = BlockSkylineStyle()
+BroadcastStyle(::BlockBandedStyle, ::BlockSkylineStyle) = BlockSkylineStyle()
 
 BroadcastStyle(::BlockBandedStyle, ::BandedBlockBandedStyle) = BlockBandedStyle()
 BroadcastStyle(::BandedBlockBandedStyle, ::BlockBandedStyle) = BlockBandedStyle()
@@ -240,7 +248,7 @@ _combine_blocksizes(::Diagonal, B) = blocksizes(B)
 _combine_blocksizes(A, ::Diagonal) = blocksizes(A)
 
 function _combined_blocksizes(A, B)
-    blocksizes(A) == blocksizes(B) || throw(DimensionMismatch())
+    blocksizes(A) == blocksizes(B) || throw(DimensionMismatch("Block sizes do not agree"))
     (A,B)
 end
 
@@ -251,6 +259,13 @@ _combined_blocksizes(A, B::Diagonal) = A, PseudoBlockArray(B, blocksizes(A).bloc
 
 for op in (:+, :-)
     @eval begin
+        function similar(bc::Broadcasted{<:BlockSkylineStyle, <:Any, typeof($op), <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}, ::Type{T}) where T
+            A,B = bc.args
+            Al,Au = colblockbandwidths(A)
+            Bl,Bu = colblockbandwidths(B)
+            BlockSkylineMatrix{T}(undef, _combine_blocksizes(A,B), (max.(Al,Bl), max.(Au,Bu)))
+        end
+
         function similar(bc::Broadcasted{<:BlockBandedStyle, <:Any, typeof($op), <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}, ::Type{T}) where T
             A,B = bc.args
             Al,Au = blockbandwidths(A)

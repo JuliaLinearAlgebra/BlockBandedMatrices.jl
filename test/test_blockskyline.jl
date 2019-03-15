@@ -1,5 +1,6 @@
 using LazyArrays, BlockBandedMatrices, LinearAlgebra, Random, Test
-import BlockBandedMatrices: colblockbandwidths
+import BlockBandedMatrices: colblockbandwidths,
+    BroadcastStyle, BlockSkylineStyle, blocksizes
 
 Random.seed!(0)
 
@@ -66,5 +67,39 @@ Random.seed!(0)
         OO = O*O
         @test OO isa BlockSkylineMatrix
         @test OO == Matrix(O)^2
+    end
+
+    @testset "Broadcasting" begin
+        rows = [3, 1, 2, 1, 2, 1, 2, 1, 2, 1, 3]
+        l,u = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1], [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1]
+
+        M = BlockSkylineMatrix{Float64}(undef, (rows,rows), (l,u))
+        M.data .= 1
+
+        @test BroadcastStyle(BlockSkylineMatrix) == BlockSkylineStyle()
+        @test blocksizes(M + M) == blocksizes(M)
+
+        # A is a BlockSkylineMatrix with varying bandwidths
+        rows = [3,4,5]
+        A = BlockSkylineMatrix{Float64}(undef, (rows,rows), ([1,0,1],[0,1,0]))
+        A.data .= 1
+
+        # B is diagonal
+        B = BandedBlockBandedMatrix{Float64}(undef, (rows, rows), (0,0), (0,0))
+        B.data .= -1
+
+        # AB should have the same structure as A
+        AB = A+B
+        @test Matrix(AB) == Matrix(A) + Matrix(B)
+        @test blocksizes(AB) == blocksizes(A)
+
+        # C has larger bandwidths than A
+        C = BandedBlockBandedMatrix{Float64}(undef, (rows, rows), (1,1), (1,1))
+        C.data .= -1
+
+        # Thus, AC should be a BlockSkylineMatrix with C's bandwidths.
+        AC = A+C
+        @test Matrix(AC) == Matrix(A) + Matrix(C)
+        @test blocksizes(AC) == blocksizes(C)
     end
 end
