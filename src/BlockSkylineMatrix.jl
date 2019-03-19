@@ -211,6 +211,8 @@ BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
                         dims::NTuple{2, AbstractVector{Int}},
                         lu::NTuple{2,Int}) = BlockBandedMatrix{eltype(A)}(A, dims, lu)
 
+BlockBandedMatrix(A::BlockBandedMatrix, lu::NTuple{2,Int}) = BlockBandedMatrix(A, BlockBandedSizes(blocksizes(A).block_sizes, lu...))
+
 function convert(::Type{BlockSkylineMatrix}, A::AbstractMatrix)
     @assert isblockbanded(A)
     block_sizes = convert(BlockSkylineSizes, A.block_sizes)
