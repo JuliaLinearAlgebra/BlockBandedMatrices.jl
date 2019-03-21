@@ -1,8 +1,8 @@
 
 
 struct BandedBlockBandedSizes <: AbstractBlockSizes{2}
-    block_sizes::BlockSizes{2}
-    data_block_sizes::BlockSizes{2}
+    block_sizes::BlockSizes{2,Vector{Int}}
+    data_block_sizes::BlockSizes{2,Vector{Int}}
     l::Int
     u::Int
     λ::Int

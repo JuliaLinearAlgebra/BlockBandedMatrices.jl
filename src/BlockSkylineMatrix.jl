@@ -47,7 +47,7 @@ end
 bb_blockstrides(b_size, l::Integer, u::Integer) = bb_blockstrides(b_size, Fill(l, nblocks(b_size,1)), Fill(u, nblocks(b_size,2)))
 
 struct BlockSkylineSizes{LL<:AbstractVector{Int}, UU<:AbstractVector{Int}} <: AbstractBlockSizes{2}
-    block_sizes::BlockSizes{2}
+    block_sizes::BlockSizes{2,Vector{Int}}
     block_starts::BandedMatrix{Int,Matrix{Int},OneTo{Int}} # gives index where the blocks start
     block_strides::Vector{Int} # gives stride to next block for J-th column
     l::LL
@@ -156,6 +156,15 @@ function BlockSkylineMatrix{T}(A::AbstractMatrix, block_sizes::BlockSkylineSizes
     for J = Block.(1:nblocks(ret, 2)), K = blockcolrange(ret, Int(J))
         kr, jr = globalrange(block_sizes, (Int(K), Int(J)))
         view(ret, K, J) .= view(A, kr, jr)
+    end
+    ret
+end
+
+function BlockSkylineMatrix{T}(A::AbstractBlockBandedMatrix, block_sizes::BlockSkylineSizes) where T
+    ret = BlockSkylineMatrix(Zeros{T}(size(A)), block_sizes)
+    block_sizes == blocksizes(A) || throw(ArgumentError())
+    for J = Block.(1:nblocks(ret, 2)), K = blockcolrange(ret, Int(J))
+        view(ret, K, J) .= view(A, K, J)
     end
     ret
 end

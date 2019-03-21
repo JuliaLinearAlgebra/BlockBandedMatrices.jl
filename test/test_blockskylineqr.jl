@@ -1,13 +1,11 @@
-using Revise, BlockBandedMatrices
+using BlockBandedMatrices, LinearAlgebra
 
-N = 10
-A = BlockBandedMatrix{Float64}(undef, (1:N,1:N), (1,1))
-A.data .= randn.()
-A = BlockBandedMatrix(A, (1,2))
-l,u = blockbandwidths(A)
-K = 1
-F = qr!(view(A,Block.(K:K+l),K))
+@testset "BlockBandedMatrix QR" begin
+    N = 10
+    A = BlockBandedMatrix{Float64}(undef, (1:N,1:N), (2,1))
+    A.data .= randn.()
 
-qr!(randn(5,5)).factors
-
-qr!(randn(5,5)).T
+    F = qr(A)
+    @test F.factors ≈ qr(Matrix(A)).factors
+    @test F.τ ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).τ
+end

@@ -14,8 +14,9 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Br
                         materialize, materialize!
 
 import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
-                        AbstractTriangular, AdjOrTrans, HermOrSym, StructuredMatrixStyle
-import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex
+                        AbstractTriangular, AdjOrTrans, HermOrSym, StructuredMatrixStyle,
+                        qr, qr!
+import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex, BlasReal
 import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
 
@@ -52,6 +53,7 @@ include("BlockSkylineMatrix.jl")
 include("BandedBlockBandedMatrix.jl")
 
 include("linalg.jl")
+include("blockskylineqr.jl")
 
 include("interfaceimpl.jl")
 include("triblockbanded.jl")
