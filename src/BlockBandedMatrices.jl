@@ -15,7 +15,7 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Br
 
 import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
                         AbstractTriangular, AdjOrTrans, HermOrSym, StructuredMatrixStyle,
-                        qr, qr!
+                        qr, qr!, QRPackedQ
 import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex, BlasReal
 import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
@@ -26,7 +26,7 @@ import LazyArrays: AbstractStridedLayout, ColumnMajor, @lazymul, MatMulMatAdd, M
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatMulVec, MatLdivVec,
                     triangulardata, subarraylayout, _copyto!, @lazyldiv, @lazylmul,
                     ArrayMulArrayStyle, AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
-                    DiagonalLayout, MatMulMat
+                    DiagonalLayout, MatMulMat, apply!
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,
