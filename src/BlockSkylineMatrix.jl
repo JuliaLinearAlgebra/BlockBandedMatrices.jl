@@ -113,7 +113,6 @@ struct BlockSkylineMatrix{T, LL<:AbstractVector{Int}, UU<:AbstractVector{Int}} <
 end
 
 const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}}
-const BlockTridiagonalMatrix{T} = BlockSkylineMatrix{T, Ones{Int,1,Tuple{OneTo{Int}}}, Ones{Int,1,Tuple{OneTo{Int}}}}
 
 # Auxiliary outer constructors
 @inline _BlockBandedMatrix(data::AbstractVector, bs::BlockBandedSizes) =

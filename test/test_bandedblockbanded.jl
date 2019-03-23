@@ -410,7 +410,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
     end
 
     @testset "BandedBlockBanded with BlockMatrix" begin
-        WithBlockMatrix{T} = BandedBlockBandedMatrix{T, BlockMatrix{T, Matrix{T}}}
+        WithBlockMatrix{T} = BandedBlockBandedMatrix{T, BlockMatrix{T, Matrix{Matrix{T}}}}
         args = ([1, 2, 3], [2, 2, 1]), (1, 1), (1, 1)
         A = WithBlockMatrix{Int64}(undef, args...)
         B = BandedBlockBandedMatrix{Int64}(undef, A.block_sizes)
