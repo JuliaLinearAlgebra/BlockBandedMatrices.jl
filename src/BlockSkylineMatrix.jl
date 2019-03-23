@@ -100,19 +100,16 @@ function _BandedBlockMatrix end
 
 #  A block matrix where only the bands are nonzero
 #   isomorphic to BandedMatrix{Matrix{T}}
-struct BlockSkylineMatrix{T, LL<:AbstractVector{Int}, UU<:AbstractVector{Int}} <: AbstractBlockBandedMatrix{T}
-    data::Vector{T}
-    block_sizes::BlockSkylineSizes{LL,UU}
+struct BlockSkylineMatrix{T, DATA<:AbstractVector{T}, BS<:AbstractBlockSizes{2}} <: AbstractBlockBandedMatrix{T}
+    data::DATA
+    block_sizes::BS
 
-    l::LL  # block lower bandwidths
-    u::UU  # block upper bandwidths
-
-    global function _BlockSkylineMatrix(data::Vector{T}, block_sizes::BlockSkylineSizes{LL,UU}) where {T,LL,UU}
-        new{T,LL,UU}(data, block_sizes, colblockbandwidth(block_sizes,1), colblockbandwidth(block_sizes,2))
+    global function _BlockSkylineMatrix(data::DATA, block_sizes::BS) where {T,DATA<:AbstractVector{T}, BS<:AbstractBlockSizes{2}}
+        new{T,DATA,BS}(data, block_sizes)
     end
 end
 
-const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}}
+const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, BlockSkylineSizes{Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}}}
 
 # Auxiliary outer constructors
 @inline _BlockBandedMatrix(data::AbstractVector, bs::BlockBandedSizes) =
@@ -250,7 +247,7 @@ similar(A::BlockSkylineMatrix, T::Type=eltype(A), bs::BlockSkylineSizes=blocksiz
 ################################
 
 MemoryLayout(::BlockSkylineMatrix) = BlockBandedColumnMajor()
-colblockbandwidths(A::BlockSkylineMatrix) = (A.l, A.u)
+colblockbandwidths(A::BlockSkylineMatrix) = (A.block_sizes.l, A.block_sizes.u)
 blockbandwidths(A::BlockSkylineMatrix) = maximum.(colblockbandwidths(A))
 BroadcastStyle(::Type{<:BlockSkylineMatrix}) = BlockSkylineStyle()
 BroadcastStyle(::Type{<:BlockBandedMatrix}) = BlockBandedStyle()
@@ -268,7 +265,7 @@ zeroblock(A::BlockSkylineMatrix, K::Int, J::Int) =
 
 @inline function getblock(A::BlockSkylineMatrix, K::Int, J::Int)
     @boundscheck blockcheckbounds(A, K, J)
-    if -A.l[J] ≤ J - K ≤ A.u[J]
+    if -A.block_sizes.l[J] ≤ J - K ≤ A.block_sizes.u[J]
         convert(Matrix, view(A, Block(K, J)))
     else
         zeroblock(A, K, J)
@@ -315,7 +312,7 @@ end
 function Base.replace_in_print_matrix(A::BlockSkylineMatrix, i::Integer, j::Integer, s::AbstractString)
     bi = global2blockindex(A.block_sizes, (i, j))
     I,J = bi.I
-    -A.l[J] ≤ J-I ≤ A.u[J] ? s : Base.replace_with_centered_mark(s)
+    -A.block_sizes.l[J] ≤ J-I ≤ A.block_sizes.u[J] ? s : Base.replace_with_centered_mark(s)
 end
 
 ############
@@ -418,7 +415,7 @@ strides(V::BlockBandedBlock) = (1,parent(V).block_sizes.block_strides[blocks(V)[
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
     K,J = blocks(V)
-    if -A.l[J] ≤ J-K ≤ A.u[J]
+    if -A.block_sizes.l[J] ≤ J-K ≤ A.block_sizes.u[J]
         b_start = A.block_sizes.block_starts[K,J]
         b_start == 0 && return zero(eltype(V))
         b_stride = A.block_sizes.block_strides[J]
@@ -432,7 +429,7 @@ end
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
     K,J = blocks(V)
-    if -A.l[J] ≤ J-K ≤ A.u[J]
+    if -A.block_sizes.l[J] ≤ J-K ≤ A.block_sizes.u[J]
         b_start = A.block_sizes.block_starts[K,J]
         # TODO: What to do if b_start == 0 ?
         b_stride = A.block_sizes.block_strides[J]
