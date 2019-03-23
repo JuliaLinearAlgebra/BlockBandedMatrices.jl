@@ -1,4 +1,4 @@
-using BlockBandedMatrices, LinearAlgebra
+using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
 
 @testset "BlockBandedMatrix QR" begin
     N = 5
@@ -8,6 +8,19 @@ using BlockBandedMatrices, LinearAlgebra
     F = qr(A)
     @test F.factors ≈ qr(Matrix(A)).factors
     @test F.τ ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).τ
+
+    b = randn(size(A,1))
+    @test F\b ≈ ldiv!(F, copy(b)) ≈ Matrix(A)\b ≈ A\b
+end
+
+@testset "BlockBandedMatrix QL" begin
+    N = 5
+    A = BlockBandedMatrix{Float64}(undef, (1:N,1:N), (2,1))
+    A.data .= randn.()
+
+    F = ql(A)
+    @test F.factors ≈ ql(Matrix(A)).factors
+    @test F.τ ≈ MatrixFactorizations.qlfactUnblocked!(Matrix(A)).τ
 
     b = randn(size(A,1))
     @test F\b ≈ ldiv!(F, copy(b)) ≈ Matrix(A)\b ≈ A\b
