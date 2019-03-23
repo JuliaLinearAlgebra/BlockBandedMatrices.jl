@@ -3,4 +3,4 @@ BandedMatrices 0.8.2
 BlockArrays 0.8
 FillArrays 0.5
 LazyArrays 0.7.1
-MatrixFactorizations 0.0.3
+MatrixFactorizations 0.0.4
