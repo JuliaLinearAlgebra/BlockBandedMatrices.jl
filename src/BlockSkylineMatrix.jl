@@ -46,10 +46,10 @@ end
 
 bb_blockstrides(b_size, l::Integer, u::Integer) = bb_blockstrides(b_size, Fill(l, nblocks(b_size,1)), Fill(u, nblocks(b_size,2)))
 
-struct BlockSkylineSizes{LL<:AbstractVector{Int}, UU<:AbstractVector{Int}} <: AbstractBlockSizes{2}
-    block_sizes::BlockSizes{2,Vector{Int}}
-    block_starts::BandedMatrix{Int,Matrix{Int},OneTo{Int}} # gives index where the blocks start
-    block_strides::Vector{Int} # gives stride to next block for J-th column
+struct BlockSkylineSizes{BS<:AbstractBlockSizes{2}, LL<:AbstractVector{Int}, UU<:AbstractVector{Int}, BStarts, BStrides} <: AbstractBlockSizes{2}
+    block_sizes::BS
+    block_starts::BStarts # gives index where the blocks start, usually a BandedMatrix{Int}
+    block_strides::BStrides # gives stride to next block for J-th column, usually a Vector{Int}
     l::LL
     u::UU
 end
@@ -60,7 +60,8 @@ BlockSkylineSizes(b_size::BlockSizes{2}, l::AbstractVector{Int}, u::AbstractVect
 BlockSkylineSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l::AbstractVector{Int}, u::AbstractVector{Int}) =
     BlockSkylineSizes(BlockSizes(rows,cols), l, u)
 
-const BlockBandedSizes = BlockSkylineSizes{Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}}
+const BlockBandedSizes = BlockSkylineSizes{BlockSizes{2,Vector{Int}}, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, 
+                                            BandedMatrix{Int,Matrix{Int},OneTo{Int}}, Vector{Int}}
 
 
 BlockBandedSizes(b_size::BlockSizes{2}, l::Int, u::Int) =
@@ -69,6 +70,12 @@ BlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l::Int, u
     BlockSkylineSizes(rows, cols, Fill(l, length(cols)), Fill(u, length(cols)))
 
 colblockbandwidths(bs::BlockSkylineSizes) = (bs.l, bs.u)
+
+blockstart(block_sizes::BlockSkylineSizes, K, J) = block_sizes.block_starts[K,J]
+blockstride(block_sizes::BlockSkylineSizes, J) = block_sizes.block_strides[J]
+
+blockstart(A::AbstractMatrix, K, J) = blockstart(blocksizes(A),K,J)
+blockstride(A::AbstractMatrix, J) = blockstride(blocksizes(A),J)
 
 blockbandwidths(bs::BlockSkylineSizes) = maximum.(colblockbandwidths(bs))
 blockbandwidth(bs::BlockSkylineSizes, i::Int) = blockbandwidths(bs)[i]
@@ -109,7 +116,7 @@ struct BlockSkylineMatrix{T, DATA<:AbstractVector{T}, BS<:AbstractBlockSizes{2}}
     end
 end
 
-const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, BlockSkylineSizes{Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}}}
+const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, BlockBandedSizes}
 
 # Auxiliary outer constructors
 @inline _BlockBandedMatrix(data::AbstractVector, bs::BlockBandedSizes) =
@@ -406,7 +413,7 @@ MemoryLayout(::BlockBandedBlock) = ColumnMajor()
 function Base.unsafe_convert(::Type{Ptr{T}}, V::BlockBandedBlock{T}) where T
     A = parent(V)
     K,J = blocks(V)
-    Base.unsafe_convert(Ptr{T}, A.data) + sizeof(T)*(A.block_sizes.block_starts[K,J]-1)
+    Base.unsafe_convert(Ptr{T}, A.data) + sizeof(T)*(blockstart(A,K,J)-1)
 end
 
 strides(V::BlockBandedBlock) = (1,parent(V).block_sizes.block_strides[blocks(V)[2]])
@@ -416,9 +423,9 @@ strides(V::BlockBandedBlock) = (1,parent(V).block_sizes.block_strides[blocks(V)[
     A = parent(V)
     K,J = blocks(V)
     if -A.block_sizes.l[J] ≤ J-K ≤ A.block_sizes.u[J]
-        b_start = A.block_sizes.block_starts[K,J]
+        b_start = blockstart(A,K,J)
         b_start == 0 && return zero(eltype(V))
-        b_stride = A.block_sizes.block_strides[J]
+        b_stride = blockstride(A,J)
         A.data[b_start + k-1 + (j-1)*b_stride ]
     else
         zero(eltype(V))
@@ -430,7 +437,7 @@ end
     A = parent(V)
     K,J = blocks(V)
     if -A.block_sizes.l[J] ≤ J-K ≤ A.block_sizes.u[J]
-        b_start = A.block_sizes.block_starts[K,J]
+        b_start = blockstart(A,K,J)
         # TODO: What to do if b_start == 0 ?
         b_stride = A.block_sizes.block_strides[J]
         A.data[b_start + k-1 + (j-1)*b_stride ] = v
