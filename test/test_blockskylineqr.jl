@@ -9,7 +9,15 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
     @test F.factors ≈ qr(Matrix(A)).factors
     @test F.τ ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).τ
 
+    Q,R = F
+    Q̃,R̃ = qr(Matrix(A))
+    @test R ≈ R̃
+    @test Q ≈ Q̃
+    
     b = randn(size(A,1))
+    @test Q'b ≈ Q̃'b
+    @test Q*b ≈ Q̃*b
+    
     @test F\b ≈ ldiv!(F, copy(b)) ≈ Matrix(A)\b ≈ A\b
 end
 
@@ -21,6 +29,15 @@ end
     F = ql(A)
     @test F.factors ≈ ql(Matrix(A)).factors
     @test F.τ ≈ MatrixFactorizations.qlfactUnblocked!(Matrix(A)).τ
+
+    Q,L = F
+    Q̃,L̃ = ql(Matrix(A))
+    @test L ≈ L̃
+    @test Q ≈ Q̃
+    
+    b = randn(size(A,1))
+    @test Q'b ≈ Q̃'b
+    @test Q*b ≈ Q̃*b
 
     b = randn(size(A,1))
     @test F\b ≈ ldiv!(F, copy(b)) ≈ Matrix(A)\b ≈ A\b

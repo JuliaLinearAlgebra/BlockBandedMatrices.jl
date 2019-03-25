@@ -58,7 +58,7 @@ end
 returns true if a matrix implements the block banded interface.
 """
 isblockbanded(::AbstractBlockBandedMatrix) = true
-isblockbanded(_) = false
+isblockbanded(A) = all(isfinite.(blockbandwidths(A)))
 
 # override bandwidth(A,k) for each AbstractBandedMatrix
 # override inbands_getindex(A,k,j)
