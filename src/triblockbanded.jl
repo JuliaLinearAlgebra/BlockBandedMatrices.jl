@@ -35,7 +35,7 @@ blockbandwidths(A::Union{LowerTriangular,UnitLowerTriangular}) = let P = parent(
     end
 subblockbandwidths(A::AbstractTriangular) = subblockbandwidths(parent(A))
 
-triangularlayout(::Type{Tri}, ML::BandedBlockBandedColumnMajor) where {Tri} = Tri(ML)
+triangularlayout(::Type{Tri}, ML::AbstractBlockBandedLayout) where {Tri} = Tri(ML)
 
 _triangular_matrix(::Val{'U'}, ::Val{'N'}, A) = UpperTriangular(A)
 _triangular_matrix(::Val{'L'}, ::Val{'N'}, A) = LowerTriangular(A)
@@ -83,8 +83,8 @@ function _matchingblocks_triangular_mul!(::Val{'L'}, UNIT, A, dest)
 end
 
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatMulVec{<:TriangularLayout{UPLO,UNIT,LAY},
-                                   <:AbstractStridedLayout,T,T}) where {UPLO,UNIT,T<:BlasFloat,LAY<:BandedBlockBandedColumnMajor}
+         M::MatMulVec{<:TriangularLayout{UPLO,UNIT,<:AbstractBlockBandedLayout},
+                                   <:AbstractStridedLayout,T,T}) where {UPLO,UNIT,T<:BlasFloat}
     U,x = M.args
     @boundscheck size(U,1) == size(dest,1) || throw(BoundsError())
     if hasmatchingblocks(U)
@@ -104,7 +104,7 @@ end
 
 
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatLdivVec{<:TriangularLayout{'U',UNIT,BandedBlockBandedColumnMajor},
+         M::MatLdivVec{<:TriangularLayout{'U',UNIT,<:AbstractBlockBandedLayout},
                                    <:AbstractStridedLayout}) where {T,UNIT}
     U,x = M.args
     x ≡ dest || copyto!(dest, x)
@@ -136,7 +136,7 @@ end
 end
 
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatLdivVec{<:TriangularLayout{'L',UNIT,BandedBlockBandedColumnMajor},
+         M::MatLdivVec{<:TriangularLayout{'L',UNIT,<:AbstractBlockBandedLayout},
                                    <:AbstractStridedLayout}) where {UNIT,T}
     L,x = M.args
     x ≡ dest || copyto!(dest, x)

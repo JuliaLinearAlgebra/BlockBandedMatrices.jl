@@ -1,6 +1,6 @@
 
 module BlockBandedMatrices
-using BlockArrays, BandedMatrices, LazyArrays, FillArrays, SparseArrays
+using BlockArrays, BandedMatrices, LazyArrays, FillArrays, SparseArrays, MatrixFactorizations
 using LinearAlgebra
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
@@ -14,18 +14,19 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Br
                         materialize, materialize!
 
 import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
-                        AbstractTriangular, AdjOrTrans, HermOrSym, StructuredMatrixStyle
-import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex
+                        AbstractTriangular, AdjOrTrans, HermOrSym, StructuredMatrixStyle,
+                        qr, qr!, QRPackedQ
+import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex, BlasReal
 import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
-
+import MatrixFactorizations: ql, ql!, QLPackedQ
 import SparseArrays: sparse
 
 import LazyArrays: AbstractStridedLayout, ColumnMajor, @lazymul, MatMulMatAdd, MatMulVecAdd,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatMulVec, MatLdivVec,
                     triangulardata, subarraylayout, _copyto!, @lazyldiv, @lazylmul,
                     ArrayMulArrayStyle, AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
-                    DiagonalLayout, MatMulMat
+                    DiagonalLayout, MatMulMat, apply!
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,
@@ -43,7 +44,7 @@ import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrang
                         _banded_colval, _banded_rowval, _banded_nzval # for sparse
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, BlockSkylineMatrix, blockbandwidth, blockbandwidths,
-        subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block, BlockTridiagonal
+        subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block, BlockTridiagonal, isblockbanded
 
 
 include("AbstractBlockBandedMatrix.jl")
@@ -52,6 +53,7 @@ include("BlockSkylineMatrix.jl")
 include("BandedBlockBandedMatrix.jl")
 
 include("linalg.jl")
+include("blockskylineqr.jl")
 
 include("interfaceimpl.jl")
 include("triblockbanded.jl")
