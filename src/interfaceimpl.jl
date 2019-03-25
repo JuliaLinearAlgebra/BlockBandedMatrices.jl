@@ -56,6 +56,7 @@ function sizes_from_blocks(A::Tridiagonal, _)
 end
 
 blockbandwidths(A::BlockArray) = bandwidths(A.blocks)
+isblockbanded(A::BlockArray) = isbanded(A.blocks)
 
 @inline function getblock(block_arr::BlockTridiagonal{T,VT}, K::Int, J::Int) where {T,VT<:AbstractMatrix}
     @boundscheck blockcheckbounds(block_arr, K, J)

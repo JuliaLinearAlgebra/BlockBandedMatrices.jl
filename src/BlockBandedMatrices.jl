@@ -44,7 +44,7 @@ import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrang
                         _banded_colval, _banded_rowval, _banded_nzval # for sparse
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, BlockSkylineMatrix, blockbandwidth, blockbandwidths,
-        subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block, BlockTridiagonal
+        subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block, BlockTridiagonal, isblockbanded
 
 
 include("AbstractBlockBandedMatrix.jl")
