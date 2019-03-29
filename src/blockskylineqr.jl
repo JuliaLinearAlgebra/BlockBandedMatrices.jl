@@ -13,16 +13,16 @@ _apply_ql!(::AbstractColumnMajor, ::AbstractStridedLayout, ::AbstractStridedLayo
 apply_ql!(A, τ, B) = _apply_ql!(MemoryLayout(A), MemoryLayout(τ), MemoryLayout(B), A, τ, B)
 
 function qr!(A::BlockBandedMatrix)
-    bs = BlockSizes((cumulsizes(blocksizes(A),1),))
-    τ = PseudoBlockVector{Float64}(undef, bs)
     l,u = blockbandwidths(A)
-    N,M = nblocks(A)
-    for K = 1:N
-        KR = Block.(K:min(K+l,N))
+    M,N = nblocks(A)
+    bs = M < N ? BlockSizes((cumulsizes(blocksizes(A),1),)) : BlockSizes((cumulsizes(blocksizes(A),2),))
+    τ = PseudoBlockVector{Float64}(undef, bs)
+    for K = 1:min(N,M)
+        KR = Block.(K:min(K+l,M))
         V = view(A,KR,Block(K))
         t = view(τ,Block(K))
         qrf!(V,t)
-        for J = K+1:min(K+u,M)
+        for J = K+1:min(K+u,N)
             apply_qr!(V, t, view(A,KR,Block(J)))
         end
     end
@@ -30,14 +30,21 @@ function qr!(A::BlockBandedMatrix)
 end
 
 function ql!(A::BlockBandedMatrix)
-    bs = BlockSizes((cumulsizes(blocksizes(A),1),))
-    τ = PseudoBlockVector{Float64}(undef, bs)
     l,u = blockbandwidths(A)
-    N,M = nblocks(A)
-    for K = N:-1:1
-        KR = Block.(max(K-u,1):K)
+    M,N = nblocks(A)
+
+    bs = if M < N
+        throw(ArgumentError("Wide block-QL not implented"))
+    else
+        BlockSizes((cumulsizes(blocksizes(A),2),))
+    end
+    τ = PseudoBlockVector{Float64}(undef, bs)
+    
+    for K = N:-1:max(N - M + 1,1)
+        μ = M+K-N
+        KR = Block.(max(K-u,1):μ)
         V = view(A,KR,Block(K))
-        t = view(τ,Block(K))
+        t = view(τ,Block(K-N+min(M,N)))
         qlf!(V,t)
         for J = K-1:-1:max(K-l,1)
             apply_ql!(V, t, view(A,KR,Block(J)))
@@ -58,7 +65,7 @@ function lmul!(adjQ::Adjoint{<:Any,<:QRPackedQ{<:Any,<:BlockSkylineMatrix}}, Bin
     bs = BlockSizes((cumulsizes(blocksizes(A),1),))
     τ  = PseudoBlockArray(Q.τ, bs)
     B = PseudoBlockArray(Bin, bs)
-    for K = 1:N
+    for K = 1:min(N,M)
         KR = Block.(K:min(K+l,N))
         V = view(A,KR,Block(K))
         t = view(τ,Block(K))
@@ -87,14 +94,23 @@ end
 
 # avoid LinearALgebra Strided obsession 
 
+for Typ in (:StridedVector, :StridedMatrix, :AbstractVector, :AbstractMatrix)
+    @eval function ldiv!(A::QR{<:Any,<:BlockSkylineMatrix}, B::$Typ)
+        lmul!(adjoint(A.Q), B)
+        apply!(\, UpperTriangular(A.factors), B)
+    end
+end
+
+
+
 function ldiv!(A::QL{<:Any,<:BlockSkylineMatrix}, B::AbstractVector)
     lmul!(adjoint(A.Q), B)
-    B .= Ldiv(LowerTriangular(A.factors), B)
+    apply!(\, LowerTriangular(A.factors), B)
 end
 
 function ldiv!(A::QL{<:Any,<:BlockSkylineMatrix}, B::AbstractMatrix)
     lmul!(adjoint(A.Q), B)
-    B .= Ldiv(LowerTriangular(A.factors), B)
+    apply!(\, LowerTriangular(A.factors), B)
 end
 
 \(A::AbstractBlockBandedMatrix, b::AbstractVecOrMat) = qr(A)\b  # use QR because LU would be a _mess_ to implement

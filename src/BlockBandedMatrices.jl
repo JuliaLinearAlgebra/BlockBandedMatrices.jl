@@ -26,7 +26,7 @@ import LazyArrays: AbstractStridedLayout, ColumnMajor, @lazymul, MatMulMatAdd, M
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatMulVec, MatLdivVec,
                     triangulardata, subarraylayout, _copyto!, @lazyldiv, @lazylmul,
                     ArrayMulArrayStyle, AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
-                    DiagonalLayout, MatMulMat, apply!
+                    DiagonalLayout, MatMulMat, apply!, materialize!
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,

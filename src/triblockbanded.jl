@@ -82,32 +82,25 @@ function _matchingblocks_triangular_mul!(::Val{'L'}, UNIT, A, dest)
     dest
 end
 
-@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatMulVec{<:TriangularLayout{UPLO,UNIT,<:AbstractBlockBandedLayout},
+@inline function materialize!(M::MatMulVec{<:TriangularLayout{UPLO,UNIT,<:AbstractBlockBandedLayout},
                                    <:AbstractStridedLayout,T,T}) where {UPLO,UNIT,T<:BlasFloat}
     U,x = M.args
-    @boundscheck size(U,1) == size(dest,1) || throw(BoundsError())
+    @boundscheck size(U,1) == size(x,1) || throw(BoundsError())
     if hasmatchingblocks(U)
-        x ≡ dest || copyto!(dest, x)
-        _matchingblocks_triangular_mul!(Val(UPLO), Val(UNIT), triangulardata(U), dest)
+        _matchingblocks_triangular_mul!(Val(UPLO), Val(UNIT), triangulardata(U), x)
     else # use default
-        if x ≡ dest
-            materialize!(MulAdd(MemoryLayout(dest), BandedBlockBandedColumnMajor(), MemoryLayout(x),
-                                one(T), U, copy(x), zero(T), dest))
-        else
-            materialize!(MulAdd(MemoryLayout(dest), BandedBlockBandedColumnMajor(), MemoryLayout(x),
-                                one(T), U, x, zero(T), dest))
-        end
+        materialize!(MulAdd(MemoryLayout(dest), BandedBlockBandedColumnMajor(), MemoryLayout(x),
+                            one(T), U, copy(x), zero(T), dest))
     end
 end
 
 
 
-@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatLdivVec{<:TriangularLayout{'U',UNIT,<:AbstractBlockBandedLayout},
-                                   <:AbstractStridedLayout}) where {T,UNIT}
-    U,x = M.args
-    x ≡ dest || copyto!(dest, x)
+@inline function materialize!(M::MatLdivVec{<:TriangularLayout{'U',UNIT,<:AbstractBlockBandedLayout},
+                                   <:AbstractStridedLayout}) where UNIT
+    U,dest = M.args
+    T = eltype(dest)
+
     A = triangulardata(U)
     @assert hasmatchingblocks(A)
 
@@ -122,7 +115,7 @@ end
     for K = N:-1:1
         b_2 = view(b, Block(K))
         Ũ = _triangular_matrix(Val('U'), Val(UNIT), view(A, Block(K,K)))
-        b_2 .= Ldiv(Ũ, b_2)
+        apply!(\, Ũ, b_2)
 
         if K ≥ 2
             KR = blockcolstart(A, K):Block(K-1)
@@ -135,11 +128,10 @@ end
     dest
 end
 
-@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatLdivVec{<:TriangularLayout{'L',UNIT,<:AbstractBlockBandedLayout},
-                                   <:AbstractStridedLayout}) where {UNIT,T}
-    L,x = M.args
-    x ≡ dest || copyto!(dest, x)
+@inline function materialize!(M::MatLdivVec{<:TriangularLayout{'L',UNIT,<:AbstractBlockBandedLayout},
+                                   <:AbstractStridedLayout}) where UNIT
+    L,dest = M.args
+    T = eltype(dest)
     A = triangulardata(L)
     @assert hasmatchingblocks(A)
 
