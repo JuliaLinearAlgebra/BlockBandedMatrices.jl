@@ -97,7 +97,11 @@ end
 for Typ in (:StridedVector, :StridedMatrix, :AbstractVector, :AbstractMatrix)
     @eval function ldiv!(A::QR{<:Any,<:BlockSkylineMatrix}, B::$Typ)
         lmul!(adjoint(A.Q), B)
-        apply!(\, UpperTriangular(A.factors), B)
+        M,N = nblocks(A.factors)
+        MN = min(M,N)
+        V = view(A.factors,Block.(1:MN), Block.(1:MN))
+        apply!(\, UpperTriangular(V), view(B,1:size(V,1),:))
+        B
     end
 end
 
