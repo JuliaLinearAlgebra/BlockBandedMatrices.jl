@@ -31,7 +31,7 @@ import LazyArrays: AbstractStridedLayout, ColumnMajor, @lazymul, MatMulMatAdd, M
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,
                         _unblock, _find_block, BlockIndexRange, blocksizes, cumulsizes,
-                        AbstractBlockSizes, sizes_from_blocks
+                        AbstractBlockSizes, sizes_from_blocks, DefaultBlockSizes
 
 import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrange,
                         inbands_setindex!, inbands_getindex, banded_setindex!,

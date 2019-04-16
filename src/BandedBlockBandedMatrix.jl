@@ -1,8 +1,8 @@
 
 
 struct BandedBlockBandedSizes <: AbstractBlockSizes{2}
-    block_sizes::BlockSizes{2,Vector{Int}}
-    data_block_sizes::BlockSizes{2,Vector{Int}}
+    block_sizes::DefaultBlockSizes{2}
+    data_block_sizes::DefaultBlockSizes{2}
     l::Int
     u::Int
     λ::Int
@@ -34,6 +34,7 @@ convert(::Type{BlockBandedSizes}, B::BandedBlockBandedSizes) =
 
 convert(::Type{BlockSizes}, B::BandedBlockBandedSizes) = B.block_sizes
 convert(::Type{BlockSizes{2}}, B::BandedBlockBandedSizes) = B.block_sizes
+convert(::Type{DefaultBlockSizes{2}}, B::BandedBlockBandedSizes) = B.block_sizes
 
 const BandedOrBlockBandedSizes = Union{BandedBlockBandedSizes,BlockBandedSizes}
 

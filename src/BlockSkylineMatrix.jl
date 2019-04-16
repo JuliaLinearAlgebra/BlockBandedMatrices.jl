@@ -60,7 +60,7 @@ BlockSkylineSizes(b_size::BlockSizes{2}, l::AbstractVector{Int}, u::AbstractVect
 BlockSkylineSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l::AbstractVector{Int}, u::AbstractVector{Int}) =
     BlockSkylineSizes(BlockSizes(rows,cols), l, u)
 
-const BlockBandedSizes = BlockSkylineSizes{BlockSizes{2,Vector{Int}}, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, 
+const BlockBandedSizes = BlockSkylineSizes{DefaultBlockSizes{2}, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, 
                                             BandedMatrix{Int,Matrix{Int},OneTo{Int}}, Vector{Int}}
 
 
