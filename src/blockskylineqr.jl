@@ -12,11 +12,11 @@ _apply_ql!(::AbstractColumnMajor, ::AbstractStridedLayout, ::AbstractStridedLayo
     LAPACK.ormql!('L','T',A,τ,B)
 apply_ql!(A, τ, B) = _apply_ql!(MemoryLayout(A), MemoryLayout(τ), MemoryLayout(B), A, τ, B)
 
-function qr!(A::BlockBandedMatrix)
+function qr!(A::BlockBandedMatrix{T}) where T
     l,u = blockbandwidths(A)
     M,N = nblocks(A)
     bs = M < N ? BlockSizes((cumulsizes(blocksizes(A),1),)) : BlockSizes((cumulsizes(blocksizes(A),2),))
-    τ = PseudoBlockVector{Float64}(undef, bs)
+    τ = PseudoBlockVector{T}(undef, bs)
     for K = 1:min(N,M)
         KR = Block.(K:min(K+l,M))
         V = view(A,KR,Block(K))
@@ -29,7 +29,7 @@ function qr!(A::BlockBandedMatrix)
     QR(A,τ.blocks)
 end
 
-function ql!(A::BlockBandedMatrix)
+function ql!(A::BlockBandedMatrix{T}) where T
     l,u = blockbandwidths(A)
     M,N = nblocks(A)
 
@@ -38,7 +38,7 @@ function ql!(A::BlockBandedMatrix)
     else
         BlockSizes((cumulsizes(blocksizes(A),2),))
     end
-    τ = PseudoBlockVector{Float64}(undef, bs)
+    τ = PseudoBlockVector{T}(undef, bs)
     
     for K = N:-1:max(N - M + 1,1)
         μ = M+K-N

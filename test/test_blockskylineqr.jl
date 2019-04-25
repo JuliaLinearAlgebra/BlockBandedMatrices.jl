@@ -119,6 +119,15 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
 
         @test_throws ArgumentError ql(A)
     end
+
+    @testset "Complex QR" begin
+        A=BlockBandedMatrix{Float64}(I, ([1,1],[1,1]), (0,0))
+        Af=qr(A)
+        B=BlockBandedMatrix{ComplexF64}(I, ([1,1],[1,1]), (0,0))
+        Bf=qr(B)
+        @test Af.factors == Bf.factors
+        @test Af.τ == Bf.τ
+    end
 end
 
 
