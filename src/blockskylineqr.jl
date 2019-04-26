@@ -3,6 +3,8 @@ _qrf!(::AbstractColumnMajor,::AbstractStridedLayout,A::AbstractMatrix{T},τ::Abs
     LAPACK.geqrf!(A,τ)
 _apply_qr!(::AbstractColumnMajor, ::AbstractStridedLayout, ::AbstractStridedLayout, A::AbstractMatrix{T}, τ::AbstractVector{T}, B::AbstractVecOrMat{T}) where T<:BlasReal =
     LAPACK.ormqr!('L','T',A,τ,B)
+_apply_qr!(::AbstractColumnMajor, ::AbstractStridedLayout, ::AbstractStridedLayout, A::AbstractMatrix{T}, τ::AbstractVector{T}, B::AbstractVecOrMat{T}) where T<:BlasComplex =
+    LAPACK.ormqr!('L','C',A,τ,B)
 apply_qr!(A, τ, B) = _apply_qr!(MemoryLayout(A), MemoryLayout(τ), MemoryLayout(B), A, τ, B)
 
 qlf!(A,τ) = _qlf!(MemoryLayout(A),MemoryLayout(τ),A,τ)
@@ -10,6 +12,8 @@ _qlf!(::AbstractColumnMajor,::AbstractStridedLayout,A::AbstractMatrix{T},τ::Abs
     LAPACK.geqlf!(A,τ)
 _apply_ql!(::AbstractColumnMajor, ::AbstractStridedLayout, ::AbstractStridedLayout, A::AbstractMatrix{T}, τ::AbstractVector{T}, B::AbstractVecOrMat{T}) where T<:BlasReal =
     LAPACK.ormql!('L','T',A,τ,B)
+_apply_ql!(::AbstractColumnMajor, ::AbstractStridedLayout, ::AbstractStridedLayout, A::AbstractMatrix{T}, τ::AbstractVector{T}, B::AbstractVecOrMat{T}) where T<:BlasComplex =
+    LAPACK.ormql!('L','C',A,τ,B)
 apply_ql!(A, τ, B) = _apply_ql!(MemoryLayout(A), MemoryLayout(τ), MemoryLayout(B), A, τ, B)
 
 function qr!(A::BlockBandedMatrix{T}) where T
