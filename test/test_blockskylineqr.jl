@@ -14,11 +14,11 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
         Q̃,R̃ = qr(Matrix(A))
         @test R ≈ R̃
         @test Q ≈ Q̃
-        
+
         b = randn(size(A,1))
         @test Q'b ≈ Q̃'b
         @test Q*b ≈ Q̃*b
-        
+
         @test F\b ≈ ldiv!(F, copy(b)) ≈ Matrix(A)\b ≈ A\b
     end
 
@@ -35,13 +35,13 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
         Q̃,R̃ = qr(Matrix(A))
         @test R ≈ R̃
         @test Q ≈ Q̃
-        
+
         b = randn(size(A,1))
         @test Q'b ≈ Q̃'b
         @test Q*b ≈ Q̃*b
 
         @test Q'b ≈ lmul!(Q', copy(b)) ≈ Q̃'*b
-        
+
         @test F\b ≈ ldiv!(F, copy(b))[1:15] ≈ Matrix(A)\b ≈ A\b
     end
 
@@ -58,13 +58,13 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
         Q̃,R̃ = qr(Matrix(A))
         @test R ≈ R̃
         @test Q ≈ Q̃
-        
+
         b = randn(size(A,1))
         @test Q'b ≈ Q̃'b
         @test Q*b ≈ Q̃*b
         Q'b
         # @test_broken DimensionMismatch ldiv!(F, copy(b))
-        
+
         @test_broken F\b ≈ ldiv!(F, copy(b)) ≈ Matrix(A)\b ≈ A\b
     end
 
@@ -81,7 +81,7 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
         Q̃,L̃ = ql(Matrix(A))
         @test L ≈ L̃
         @test Q ≈ Q̃
-        
+
         b = randn(size(A,1))
         @test Q'b ≈ Q̃'b
         @test Q*b ≈ Q̃*b
@@ -103,7 +103,7 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
         # Q̃,L̃ = ql(Matrix(A))
         # @test L ≈ L̃
         # @test Q ≈ Q̃
-        
+
         # b = randn(size(A,1))
         # @test Q'b ≈ Q̃'b
         # @test Q*b ≈ Q̃*b
@@ -120,13 +120,31 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
         @test_throws ArgumentError ql(A)
     end
 
-    @testset "Complex QR" begin
-        A=BlockBandedMatrix{Float64}(I, ([1,1],[1,1]), (0,0))
-        Af=qr(A)
-        B=BlockBandedMatrix{ComplexF64}(I, ([1,1],[1,1]), (0,0))
-        Bf=qr(B)
-        @test Af.factors == Bf.factors
-        @test Af.τ == Bf.τ
+    @testset "Complex QR/QL" begin
+        @testset "Simple" begin
+            A=BlockBandedMatrix{Float64}(I, ([1,1],[1,1]), (0,0))
+            Af=qr(A)
+            B=BlockBandedMatrix{ComplexF64}(I, ([1,1],[1,1]), (0,0))
+            Bf=qr(B)
+            @test Af.factors == Bf.factors
+            @test Af.τ == Bf.τ
+        end
+
+        @testset "Off-diagonals" begin
+            for qrl in [qr,ql]
+                for T in [Float64, ComplexF64]
+                    A = BlockBandedMatrix{T}(undef, ([3,2,1,3],[3,2,1,3]), (1,1))
+                    A.data .= rand(T, size(A.data))
+                    Af = qrl(A)
+                    @test Af.factors isa BlockBandedMatrix
+
+                    Am = Matrix(A)
+                    Amf = qrl(Am)
+
+                    @test Af.factors ≈ Amf.factors
+                end
+            end
+        end
     end
 end
 
@@ -138,4 +156,3 @@ end
 # @time F = qr(A); # 11s
 # b = randn(size(A,1));
 # @time F\b; # 0.6s
-
