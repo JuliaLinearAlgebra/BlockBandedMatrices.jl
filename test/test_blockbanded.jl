@@ -11,6 +11,7 @@ using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, LazyArrays, 
     cols = rows = 1:N
 
     @test Matrix(BlockBandedMatrix(Zeros(sum(rows),sum(cols)), (rows, cols), (l,u))) ==
+        Array(BlockBandedMatrix(Zeros(sum(rows),sum(cols)), (rows, cols), (l,u))) == 
         zeros(Float64, 10, 10)
 
     @test Matrix(BlockBandedMatrix{Int}(Zeros(sum(rows),sum(cols)), (rows,cols), (l,u))) ==

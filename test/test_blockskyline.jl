@@ -15,6 +15,9 @@ Random.seed!(0)
 
         A = BlockSkylineMatrix(Zeros(m,m), (rows,rows), (l,u))
         @test @inferred(size(A)) == (sum(rows),sum(rows))
+
+        @test Array(A) == Matrix(A)
+
         A.data .= rand(size(A.data)...)
 
         V = zeros(m,2)
