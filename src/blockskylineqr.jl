@@ -60,6 +60,9 @@ end
 qr(A::BlockBandedMatrix) = qr!(BlockBandedMatrix(A, (blockbandwidth(A,1), blockbandwidth(A,1)+blockbandwidth(A,2))))
 ql(A::BlockBandedMatrix) = ql!(BlockBandedMatrix(A, (blockbandwidth(A,1)+blockbandwidth(A,2),blockbandwidth(A,2))))
 
+qr(A::BandedBlockBandedMatrix) = qr(BlockBandedMatrix(A))
+ql(A::BandedBlockBandedMatrix) = ql(BlockBandedMatrix(A))
+
 function lmul!(adjQ::Adjoint{<:Any,<:QRPackedQ{<:Any,<:BlockSkylineMatrix}}, Bin::AbstractVector)
     Q = parent(adjQ)
     A = Q.factors
