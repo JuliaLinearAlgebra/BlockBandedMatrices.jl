@@ -24,7 +24,7 @@ N = M = 4          # number of row/column blocks
 cols = rows = 1:N  # block sizes
 
 BlockBandedMatrix(Zeros(sum(rows),sum(cols)), (rows,cols), (l,u)) # creates a block-banded matrix of zeros
-BlockBandedMatrix(Zeros(sum(rows),sum(cols)), (rows,cols), (l,u)) # creates a block-banded matrix with ones in the non-zero entries
+BlockBandedMatrix(Ones(sum(rows),sum(cols)), (rows,cols), (l,u)) # creates a block-banded matrix with ones in the non-zero entries
 BlockBandedMatrix(I, (rows,cols), (l,u))                          # creates a block-banded  identity matrix
 ```
 
