@@ -253,7 +253,7 @@ similar(A::BlockSkylineMatrix, T::Type=eltype(A), bs::BlockSkylineSizes=blocksiz
 # BlockSkylineMatrix Interface #
 ################################
 
-MemoryLayout(::BlockSkylineMatrix) = BlockBandedColumnMajor()
+MemoryLayout(::Type{<:BlockSkylineMatrix}) = BlockBandedColumnMajor()
 colblockbandwidths(A::BlockSkylineMatrix) = (A.block_sizes.l, A.block_sizes.u)
 blockbandwidths(A::BlockSkylineMatrix) = maximum.(colblockbandwidths(A))
 BroadcastStyle(::Type{<:BlockSkylineMatrix}) = BlockSkylineStyle()
@@ -408,7 +408,7 @@ first(last(parentindices(V)).block.n)
 ######################################
 
 
-MemoryLayout(::BlockBandedBlock) = ColumnMajor()
+MemoryLayout(::Type{<:BlockBandedBlock}) = ColumnMajor()
 
 function Base.unsafe_convert(::Type{Ptr{T}}, V::BlockBandedBlock{T}) where T
     A = parent(V)

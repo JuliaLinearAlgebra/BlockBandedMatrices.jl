@@ -22,11 +22,11 @@ import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, check
 import MatrixFactorizations: ql, ql!, QLPackedQ
 import SparseArrays: sparse
 
-import LazyArrays: AbstractStridedLayout, ColumnMajor, @lazymul, MatMulMatAdd, MatMulVecAdd,
-                    triangularlayout, UpperTriangularLayout, TriangularLayout, MatMulVec, MatLdivVec,
-                    triangulardata, subarraylayout, _copyto!, @lazyldiv, @lazylmul,
-                    ArrayMulArrayStyle, AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
-                    DiagonalLayout, MatMulMat, apply!, materialize!
+import LazyArrays: AbstractStridedLayout, ColumnMajor, @lazymul, MatMulMatAdd, MatMulVecAdd, BlasMatLmulVec,
+                    triangularlayout, UpperTriangularLayout, TriangularLayout, MatLdivVec,
+                    triangulardata, subarraylayout, @lazyldiv, @lazylmul,
+                    AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
+                    DiagonalLayout, apply!, materialize!, AbstractMulAddStyle, mulapplystyle
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,

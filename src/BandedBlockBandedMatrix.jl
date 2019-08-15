@@ -276,7 +276,7 @@ end
 # BandedBlockBandedMatrix Interface #
 ################################
 
-MemoryLayout(::BandedBlockBandedMatrix) = BandedBlockBandedColumnMajor()
+MemoryLayout(::Type{<:BandedBlockBandedMatrix}) = BandedBlockBandedColumnMajor()
 BroadcastStyle(::Type{<:BandedBlockBandedMatrix}) = BandedBlockBandedStyle()
 
 isbandedblockbanded(_) = false

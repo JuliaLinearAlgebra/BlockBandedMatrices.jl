@@ -56,7 +56,7 @@ function _matchingblocks_triangular_mul!(::Val{'U'}, UNIT, A, dest)
         b_2 .= Mul(Ũ, b_2)
         JR = Block(K+1):blockrowstop(A,K)
         if !isempty(JR)
-            b_2 .= Mul(view(A, Block(K), JR), view(b,JR)) .+ b_2
+            b_2 .= applied(+, applied(*, view(A, Block(K), JR), view(b,JR)), b_2)
         end
     end
     dest
@@ -75,22 +75,23 @@ function _matchingblocks_triangular_mul!(::Val{'L'}, UNIT, A, dest)
         b_2 .= Mul(L̃, b_2)
         JR = blockrowstart(A,K):Block(K-1)
         if !isempty(JR)
-            b_2 .= Mul(view(A, Block(K), JR), view(b,JR)) .+ b_2
+            b_2 .= applied(+, applied(*, view(A, Block(K), JR), view(b,JR)), b_2)
         end
     end
 
     dest
 end
 
-@inline function materialize!(M::MatMulVec{<:TriangularLayout{UPLO,UNIT,<:AbstractBlockBandedLayout},
-                                   <:AbstractStridedLayout,T,T}) where {UPLO,UNIT,T<:BlasFloat}
-    U,x = M.args
+@inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{UPLO,UNIT,<:AbstractBlockBandedLayout},
+                                   <:AbstractStridedLayout}) where {UPLO,UNIT}
+    U,x = M.A,M.B
     @boundscheck size(U,1) == size(x,1) || throw(BoundsError())
     if hasmatchingblocks(U)
         _matchingblocks_triangular_mul!(Val(UPLO), Val(UNIT), triangulardata(U), x)
     else # use default
-        materialize!(MulAdd(MemoryLayout(dest), BandedBlockBandedColumnMajor(), MemoryLayout(x),
-                            one(T), U, copy(x), zero(T), dest))
+        materialize!(MulAdd{BandedBlockBandedColumnMajor, 
+                            typeof(MemoryLayout(typeof(x))),
+                            typeof(MemoryLayout(typeof(dest)))}(one(T), U, copy(x), zero(T), dest))
     end
 end
 
@@ -98,7 +99,7 @@ end
 
 @inline function materialize!(M::MatLdivVec{<:TriangularLayout{'U',UNIT,<:AbstractBlockBandedLayout},
                                    <:AbstractStridedLayout}) where UNIT
-    U,dest = M.args
+    U,dest = M.A,M.B
     T = eltype(dest)
 
     A = triangulardata(U)
@@ -130,7 +131,7 @@ end
 
 @inline function materialize!(M::MatLdivVec{<:TriangularLayout{'L',UNIT,<:AbstractBlockBandedLayout},
                                    <:AbstractStridedLayout}) where UNIT
-    L,dest = M.args
+    L,dest = M.A, M.B
     T = eltype(dest)
     A = triangulardata(L)
     @assert hasmatchingblocks(A)
@@ -177,7 +178,7 @@ end
 #
 # isbanded(::UpperBandedBlockBandedBlock) = true
 # # Not type stable, but infers Union type so should be "fast"
-# MemoryLayout(B::UpperBandedBlockBandedBlock) =
+# MemoryLayout(B::Type{<:UpperBandedBlockBandedBlock}) =
 #     ==(parentindices(B)...) ? UpperTriangularLayout(BandedColumnMajor()) : BandedColumnMajor()
 #
 # function inblockbands(V::UpperBandedBlockBandedBlock)
