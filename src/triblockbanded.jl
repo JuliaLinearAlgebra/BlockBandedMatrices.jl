@@ -19,23 +19,25 @@ isblockbanded(A::AbstractTriangular) =
     isblockbanded(parent(A))
 isbandedblockbanded(A::AbstractTriangular) =
     isbandedblockbanded(parent(A))
-blockbandwidths(A::Union{UpperTriangular,UnitUpperTriangular}) = let P = parent(A)
-        if hasmatchingblocks(P)
-            (min(0,blockbandwidths(P,1)), blockbandwidth(P,2))
-        else
-            blockbandwidths(P)
-        end
+function blockbandwidths(A::Union{UpperTriangular,UnitUpperTriangular}) 
+    P = parent(A)
+    if hasmatchingblocks(P)
+        (min(0,blockbandwidths(P,1)), blockbandwidth(P,2))
+    else
+        blockbandwidths(P)
     end
-blockbandwidths(A::Union{LowerTriangular,UnitLowerTriangular}) = let P = parent(A)
-        if hasmatchingblocks(P)
-            (blockbandwidth(P,1), min(0,blockbandwidth(P,2)))
-        else
-            blockbandwidths(P)
-        end
+end
+function blockbandwidths(A::Union{LowerTriangular,UnitLowerTriangular}) 
+    P = parent(A)
+    if hasmatchingblocks(P)
+        (blockbandwidth(P,1), min(0,blockbandwidth(P,2)))
+    else
+        blockbandwidths(P)
     end
+end
 subblockbandwidths(A::AbstractTriangular) = subblockbandwidths(parent(A))
 
-triangularlayout(::Type{Tri}, ML::AbstractBlockBandedLayout) where {Tri} = Tri(ML)
+triangularlayout(::Type{Tri}, ::ML) where {Tri,ML<:AbstractBlockBandedLayout} = Tri{ML}()
 
 _triangular_matrix(::Val{'U'}, ::Val{'N'}, A) = UpperTriangular(A)
 _triangular_matrix(::Val{'L'}, ::Val{'N'}, A) = LowerTriangular(A)

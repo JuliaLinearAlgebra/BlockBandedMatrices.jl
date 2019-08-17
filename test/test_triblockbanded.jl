@@ -10,27 +10,27 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
             A.data .= randn.()
 
         U = UpperTriangular(A)
-        @test MemoryLayout(typeof(U)) == TriangularLayout{'U','N'}(BandedBlockBandedColumnMajor())
+        @test MemoryLayout(typeof(U)) == TriangularLayout{'U','N',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
         @test U*b isa Vector{Float64}
         @test (similar(b) .= Mul(U,b)) ≈ U*b  ≈ Matrix(U)*b
 
 
         U = UnitUpperTriangular(A)
-        @test MemoryLayout(typeof(U)) == TriangularLayout{'U','U'}(BandedBlockBandedColumnMajor())
+        @test MemoryLayout(typeof(U)) == TriangularLayout{'U','U',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
         @test U*b isa Vector{Float64}
         @test (similar(b) .= Mul(U,b)) ≈ U*b  ≈ Matrix(U)*b
 
         L = LowerTriangular(A)
-        @test MemoryLayout(typeof(L)) == TriangularLayout{'L','N'}(BandedBlockBandedColumnMajor())
+        @test MemoryLayout(typeof(L)) == TriangularLayout{'L','N',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
         @test L*b isa Vector{Float64}
         @test (similar(b) .= Mul(L,b)) ≈ L*b  ≈ Matrix(L)*b
 
 
         L = UnitLowerTriangular(A)
-        @test MemoryLayout(typeof(L)) == TriangularLayout{'L','U'}(BandedBlockBandedColumnMajor())
+        @test MemoryLayout(typeof(L)) == TriangularLayout{'L','U',BandedBlockBandedColumnMajor}()
         b = randn(size(L,1))
         @test L*b isa Vector{Float64}
         @test (similar(b) .= Mul(L,b)) ≈ L*b  ≈ Matrix(L)*b
