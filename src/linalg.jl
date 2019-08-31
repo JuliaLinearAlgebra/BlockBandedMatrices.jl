@@ -118,18 +118,8 @@ function add_bandwidths(A::BlockBandedMatrix,B::BlockBandedMatrix)
     Fill(l,nblocks(B,2)), Fill(u,nblocks(B,2))
 end
 
-struct BlockBandedMulAddStyle <: AbstractMulAddStyle end
-struct BandedBlockBandedMulAddStyle <: AbstractMulAddStyle end
-
-mulapplystyle(A::AbstractBlockBandedLayout, B::AbstractBlockBandedLayout) = BlockBandedMulAddStyle()
-mulapplystyle(A::AbstractBlockBandedLayout, B::DiagonalLayout) = mulapplystyle(A,A)
-mulapplystyle(A::DiagonalLayout, B::AbstractBlockBandedLayout) = mulapplystyle(B,B)
-mulapplystyle(A::BandedBlockBandedColumnMajor, B::BandedBlockBandedColumnMajor) = BandedBlockBandedMulAddStyle()
-
-function similar(M::Mul{BlockBandedMulAddStyle}, ::Type{T}) where T
-    A,B = M.args
-    A isa Diagonal && return similar(B,T)
-    B isa Diagonal && return similar(A,T)
+function similar(M::MulAdd{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T
+    A,B = M.A, M.B
 
     Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
     Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
@@ -149,10 +139,8 @@ function similar(M::Mul{BlockBandedMulAddStyle}, ::Type{T}) where T
     BlockSkylineMatrix{T}(undef, BlockSkylineSizes(BlockSizes((Arows,Bcols)), l, u))
 end
 
-function similar(M::Mul{BandedBlockBandedMulAddStyle}, ::Type{T}) where T
-    A,B = M.args
-    A isa Diagonal && return similar(B,T)
-    B isa Diagonal && return similar(A,T)
+function similar(M::MulAdd{BandedBlockBandedColumnMajor,BandedBlockBandedColumnMajor}, ::Type{T}) where T
+    A,B = M.A, M.B
 
     Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
     Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
@@ -173,6 +161,10 @@ function similar(M::Mul{BandedBlockBandedMulAddStyle}, ::Type{T}) where T
 
     BandedBlockBandedMatrix{T}(undef, bs)
 end
+
+similar(M::MulAdd{<:DiagonalLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T = similar(M.B,T)
+similar(M::MulAdd{<:AbstractBlockBandedLayout,<:DiagonalLayout}, ::Type{T}) where T = similar(M.A,T)
+
 
 
 

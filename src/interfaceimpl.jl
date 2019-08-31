@@ -18,12 +18,12 @@ BroadcastStyle(::Type{<:SubArray{<:Any,2,<:PseudoBlockMatrix{<:Any,<:Diagonal},
                                 NTuple{2,BlockSlice1}}}) = BandedStyle()
 
 
-isblockbanded(K::Kron{<:Any,2}) = isbanded(first(K.arrays))
-isbandedblockbanded(K::Kron{<:Any,2}) = all(isbanded, K.arrays)
-blockbandwidths(K::Kron{<:Any,2}) = bandwidths(first(K.arrays))
-subblockbandwidths(K::Kron{<:Any,2}) = bandwidths(last(K.arrays))
+isblockbanded(K::Kron{<:Any,2}) = isbanded(first(K.args))
+isbandedblockbanded(K::Kron{<:Any,2}) = all(isbanded, K.args)
+blockbandwidths(K::Kron{<:Any,2}) = bandwidths(first(K.args))
+subblockbandwidths(K::Kron{<:Any,2}) = bandwidths(last(K.args))
 function blocksizes(K::Kron{<:Any,2})
-    A,B = K.arrays
+    A,B = K.args
     BlockSizes(Fill(size(B,1), size(A,1)), Fill(size(B,2), size(A,2)))
 end
 
