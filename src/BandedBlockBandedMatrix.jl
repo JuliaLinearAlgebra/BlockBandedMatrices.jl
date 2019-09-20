@@ -468,7 +468,10 @@ end
 ######################################
 # BandedMatrix interface  for Blocks #
 ######################################
-@inline bandwidths(V::BandedBlockBandedBlock) = subblockbandwidths(parent(V))
+@inline function bandwidths(V::BandedBlockBandedBlock) 
+    inblockbands(V) && return subblockbandwidths(parent(V))
+    (-720,-720)
+end
 
 
 
@@ -477,7 +480,8 @@ blocks(V::BandedBlockBandedBlock)::Tuple{Int,Int} = Int(first(parentindices(V)).
                                                     Int(last(parentindices(V)).block)
 
 
-function bandeddata(V::BandedBlockBandedBlock)
+function bandeddata(V::BandedBlockBandedBlock{T}) where T
+    inblockbands(V) || return Array{T}(undef, 0, size(V,2))
     A = parent(V)
     u = A.u
     K_sl, J_sl = parentindices(V)
