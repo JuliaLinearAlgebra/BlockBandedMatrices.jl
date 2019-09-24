@@ -125,7 +125,7 @@ for UNIT in ('U', 'N')
                     KR = blockcolstart(A, K):Block(K-1)
                     V_12 = view(A, KR, Block(K))
                     b̃_1 = view(b, KR)
-                    b̃_1 .=  (-one(T)).*Mul(V_12, b_2) .+ b̃_1
+                    materialize!(MulAdd(-one(T), V_12, b_2, one(T), b̃_1))
                 end
             end
 
@@ -156,7 +156,7 @@ for UNIT in ('U', 'N')
                     KR = Block(K+1):blockcolstop(A, K)
                     V_12 = view(A, KR, Block(K))
                     b̃_1 = view(b, KR)
-                    b̃_1 .=  (-one(T)).*Mul(V_12, b_2) .+ b̃_1
+                    materialize!(MulAdd(-one(T), V_12, b_2, one(T), b̃_1))
                 end
             end
 
