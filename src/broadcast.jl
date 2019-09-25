@@ -357,3 +357,9 @@ function similar(bc::Broadcasted{BandedBlockBandedStyle, <:Any, typeof(+),
 
     BandedBlockBandedMatrix{T}(undef, _combine_blocksizes(A,B), (max(Al,Bl), max(Au,Bu)), (max(Aλ,Bλ), max(Aμ,Bμ)))
 end
+
+
+####
+# Special case for Diagonal multiplicartion
+####
+

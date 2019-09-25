@@ -98,68 +98,71 @@ end
 end
 
 
+for UNIT in ('U', 'N')
+    @eval begin
+        @inline function materialize!(M::MatLdivVec{<:TriangularLayout{'U',$UNIT,<:AbstractBlockBandedLayout},
+                                        <:AbstractStridedLayout})
+            U,dest = M.A,M.B
+            T = eltype(dest)
 
-@inline function materialize!(M::MatLdivVec{<:TriangularLayout{'U',UNIT,<:AbstractBlockBandedLayout},
-                                   <:AbstractStridedLayout}) where UNIT
-    U,dest = M.A,M.B
-    T = eltype(dest)
+            A = triangulardata(U)
+            @assert hasmatchingblocks(A)
 
-    A = triangulardata(U)
-    @assert hasmatchingblocks(A)
+            @boundscheck size(A,1) == size(dest,1) || throw(BoundsError())
 
-    @boundscheck size(A,1) == size(dest,1) || throw(BoundsError())
+            # impose block structure
+            b = PseudoBlockArray(dest, BlockSizes((cumulsizes(blocksizes(A),1),)))
 
-    # impose block structure
-    b = PseudoBlockArray(dest, BlockSizes((cumulsizes(blocksizes(A),1),)))
+            Bs = blocksizes(A)
+            N = nblocks(Bs,1)
 
-    Bs = blocksizes(A)
-    N = nblocks(Bs,1)
+            for K = N:-1:1
+                b_2 = view(b, Block(K))
+                Ũ = _triangular_matrix(Val('U'), Val($UNIT), view(A, Block(K,K)))
+                apply!(\, Ũ, b_2)
 
-    for K = N:-1:1
-        b_2 = view(b, Block(K))
-        Ũ = _triangular_matrix(Val('U'), Val(UNIT), view(A, Block(K,K)))
-        apply!(\, Ũ, b_2)
+                if K ≥ 2
+                    KR = blockcolstart(A, K):Block(K-1)
+                    V_12 = view(A, KR, Block(K))
+                    b̃_1 = view(b, KR)
+                    materialize!(MulAdd(-one(T), V_12, b_2, one(T), b̃_1))
+                end
+            end
 
-        if K ≥ 2
-            KR = blockcolstart(A, K):Block(K-1)
-            V_12 = view(A, KR, Block(K))
-            b̃_1 = view(b, KR)
-            b̃_1 .=  (-one(T)).*Mul(V_12, b_2) .+ b̃_1
+            dest
+        end
+
+        @inline function materialize!(M::MatLdivVec{<:TriangularLayout{'L',$UNIT,<:AbstractBlockBandedLayout},
+                                        <:AbstractStridedLayout})
+            L,dest = M.A, M.B
+            T = eltype(dest)
+            A = triangulardata(L)
+            @assert hasmatchingblocks(A)
+
+            @boundscheck size(A,1) == size(dest,1) || throw(BoundsError())
+
+            # impose block structure
+            b = PseudoBlockArray(dest, BlockSizes((cumulsizes(blocksizes(A),1),)))
+
+            Bs = blocksizes(A)
+            N = nblocks(Bs,1)
+
+            for K = 1:N
+                b_2 = view(b, Block(K))
+                L̃ = _triangular_matrix(Val('L'), Val($UNIT), view(A, Block(K,K)))
+                b_2 .= Ldiv(L̃, b_2)
+
+                if K < N
+                    KR = Block(K+1):blockcolstop(A, K)
+                    V_12 = view(A, KR, Block(K))
+                    b̃_1 = view(b, KR)
+                    materialize!(MulAdd(-one(T), V_12, b_2, one(T), b̃_1))
+                end
+            end
+
+            dest
         end
     end
-
-    dest
-end
-
-@inline function materialize!(M::MatLdivVec{<:TriangularLayout{'L',UNIT,<:AbstractBlockBandedLayout},
-                                   <:AbstractStridedLayout}) where UNIT
-    L,dest = M.A, M.B
-    T = eltype(dest)
-    A = triangulardata(L)
-    @assert hasmatchingblocks(A)
-
-    @boundscheck size(A,1) == size(dest,1) || throw(BoundsError())
-
-    # impose block structure
-    b = PseudoBlockArray(dest, BlockSizes((cumulsizes(blocksizes(A),1),)))
-
-    Bs = blocksizes(A)
-    N = nblocks(Bs,1)
-
-    for K = 1:N
-       b_2 = view(b, Block(K))
-       L̃ = _triangular_matrix(Val('L'), Val(UNIT), view(A, Block(K,K)))
-       b_2 .= Ldiv(L̃, b_2)
-
-       if K < N
-           KR = Block(K+1):blockcolstop(A, K)
-           V_12 = view(A, KR, Block(K))
-           b̃_1 = view(b, KR)
-           b̃_1 .=  (-one(T)).*Mul(V_12, b_2) .+ b̃_1
-       end
-    end
-
-    dest
 end
 
 

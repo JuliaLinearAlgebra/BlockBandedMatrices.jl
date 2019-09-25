@@ -165,7 +165,8 @@ end
 similar(M::MulAdd{<:DiagonalLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T = similar(M.B,T)
 similar(M::MulAdd{<:AbstractBlockBandedLayout,<:DiagonalLayout}, ::Type{T}) where T = similar(M.A,T)
 
-
+mulapplystyle(::DiagonalLayout, ::AbstractBlockBandedLayout) = MulAddStyle()
+mulapplystyle(::AbstractBlockBandedLayout, ::DiagonalLayout) = MulAddStyle()
 
 
 

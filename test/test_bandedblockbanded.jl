@@ -1,5 +1,5 @@
 using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays, Test, LazyArrays , LinearAlgebra
-import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowrange, colrange, rowrange, isbandedblockbanded
+import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowrange, colrange, rowrange, isbandedblockbanded, bandeddata
 
 @testset "BandedBlockBandedMatrix" begin
     @testset "constructors" begin
@@ -190,7 +190,11 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         @test A[1,2] == view(A,Block(1,2))[1,1] == 11
         @test A[1,3] == view(A,Block(1,2))[1,2] == view(A,Block(1,2))[2] == 19
 
-        @test view(A, Block(3),Block(1)) ≈ [0,0,0]
+        @test bandwidths(view(A, Block(3),Block(1))) == (-720,-720)
+        @test isempty(bandeddata(view(A, Block(3),Block(1))))
+
+        @test A[Block(3,1)] == view(A, Block(3),Block(1)) == zeros(3,1)
+        @test A[Block(3,1)] ≈ view(A, Block(3),Block(1)) ≈ zeros(3,1)
         @test_throws BandError view(A, Block(3),Block(1))[1,1] = 4
         @test_throws BoundsError view(A, Block(5,1))
     end
