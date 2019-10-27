@@ -6,7 +6,7 @@ checkbandwidths(N, M, l::AbstractVector{Int}, u::AbstractVector{Int}) =
 function bb_blockstarts(b_size, l::AbstractVector{Int}, u::AbstractVector{Int})
     N,M = nblocks(b_size)
     L,U = maximum(l), maximum(u)
-    b_start = BandedMatrix{Int}(undef, N, M, L, U)
+    b_start = BandedMatrix{Int}(undef, (N, M), (L, U))
     -L > U && return b_start
 
     checkbandwidths(N, M, l, u)
