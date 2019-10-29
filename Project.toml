@@ -1,6 +1,6 @@
 name = "BlockBandedMatrices"
 uuid = "ffab5731-97b5-5995-9138-79e8c1846df0"
-version = "0.5.2"
+version = "0.5.3"
 
 [deps]
 BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
@@ -21,7 +21,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [compat]
 BandedMatrices = "0.12, 0.13"
 BlockArrays = "0.10"
-FillArrays = "0.7"
+FillArrays = "0.7, 0.8"
 LazyArrays = "0.12"
-MatrixFactorizations = "0.1,0.2"
+MatrixFactorizations = "0.1, 0.2"
 julia = "1"
