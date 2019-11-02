@@ -1,8 +1,8 @@
 using LazyArrays, BlockBandedMatrices, BandedMatrices, BlockArrays, LinearAlgebra, Test
 import Base: getindex, size
-import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle, bandeddata
+import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle, bandeddata, BandedColumns
 import BlockArrays: blocksizes, BlockSizes
-import LazyArrays: DenseColumnMajor
+import LazyArrays: DenseColumnMajor, DiagonalLayout
 
 struct FiniteDifference{T} <: AbstractBandedMatrix{T}
     n::Int
