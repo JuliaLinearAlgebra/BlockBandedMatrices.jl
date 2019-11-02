@@ -12,6 +12,8 @@ function blockbandwidths(P::PseudoBlockMatrix{<:Any,<:Diagonal})
     cumulsizes(bs)[1] == cumulsizes(bs)[2] || throw(DimensionMismatch())
     (0,0)
 end
+
+bandeddata(P::PseudoBlockMatrix) = bandeddata(P.blocks)
 bandwidths(P::PseudoBlockMatrix) = bandwidths(P.blocks)
 
 BroadcastStyle(::Type{<:SubArray{<:Any,2,<:PseudoBlockMatrix{<:Any,<:Diagonal},
@@ -38,6 +40,19 @@ BroadcastStyle(::Type{<:SubKron{<:Any,<:Any,B,Block1,Block1}}) where B =
     subblockbandwidths(parent(V))
 
 
+const BlockDiagonal{T,VT<:Matrix{T}} = BlockMatrix{T,<:Diagonal{VT}}
+
+BlockDiagonal(A) = mortar(Diagonal(A))
+
+function sizes_from_blocks(A::Diagonal, _) 
+    # for k = 1:length(A.du)
+    #     size(A.du[k],1) == sz[1][k] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
+    #     size(A.du[k],2) == sz[2][k+1] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
+    #     size(A.dl[k],1) == sz[1][k+1] || throw(ArgumentError("block sizes of lower diagonal inconsisent with diagonal"))
+    #     size(A.dl[k],2) == sz[2][k] || throw(ArgumentError("block sizes of lower diagonal inconsisent with diagonal"))
+    # end
+    BlockSizes(size.(A.diag, 1), size.(A.diag,2))
+end    
 
 
 # Block Tridiagonal
@@ -81,6 +96,13 @@ for op in (:-, :+)
             mortar(Tridiagonal(A.blocks.dl, broadcast($op, Ref(λ), A.blocks.d), A.blocks.du))
         end
     end
+end
+
+function replace_in_print_matrix(A::BlockDiagonal, i::Integer, j::Integer, s::AbstractString)
+    bi = global2blockindex(A.block_sizes, (i, j))
+    I,J = bi.I
+    i,j = bi.α
+    J-I == 0 ? s : Base.replace_with_centered_mark(s)
 end
 
 function replace_in_print_matrix(A::BlockTridiagonal, i::Integer, j::Integer, s::AbstractString)

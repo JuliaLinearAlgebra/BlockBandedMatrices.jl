@@ -1,7 +1,8 @@
 using LazyArrays, BlockBandedMatrices, BandedMatrices, BlockArrays, LinearAlgebra, Test
 import Base: getindex, size
-import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle
+import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle, bandeddata, BandedColumns
 import BlockArrays: blocksizes, BlockSizes
+import LazyArrays: DenseColumnMajor, DiagonalLayout
 
 struct FiniteDifference{T} <: AbstractBandedMatrix{T}
     n::Int
@@ -68,10 +69,15 @@ size(F::FiniteDifference) = (F.n,F.n)
 
         PD = PseudoBlockArray(D, blocksizes(D_xx).block_sizes)
         @test blockbandwidths(PD) == bandwidths(PD) == (0,0)
+        @test MemoryLayout(typeof(PD)) isa DiagonalLayout{DenseColumnMajor}
+        @test bandeddata(PD) == bandeddata(D)
 
         V = view(PD, Block(1,1))
         @test bandwidths(V) == (0,0)
         @test Broadcast.BroadcastStyle(typeof(V)) == BandedStyle()
+        @test MemoryLayout(typeof(V)) isa BandedColumns{DenseColumnMajor}
+        @test bandeddata(V) == bandeddata(PD)[:,1:n]
+        @test BandedMatrix(V) == V
 
         @test D_xx + D isa BandedBlockBandedMatrix
         @test blockbandwidths(D_xx + D) == blockbandwidths(D_xx)
