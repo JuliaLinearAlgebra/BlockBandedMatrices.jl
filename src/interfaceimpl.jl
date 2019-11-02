@@ -12,6 +12,8 @@ function blockbandwidths(P::PseudoBlockMatrix{<:Any,<:Diagonal})
     cumulsizes(bs)[1] == cumulsizes(bs)[2] || throw(DimensionMismatch())
     (0,0)
 end
+
+bandeddata(P::PseudoBlockMatrix) = bandeddata(P.blocks)
 bandwidths(P::PseudoBlockMatrix) = bandwidths(P.blocks)
 
 BroadcastStyle(::Type{<:SubArray{<:Any,2,<:PseudoBlockMatrix{<:Any,<:Diagonal},
