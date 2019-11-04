@@ -153,7 +153,7 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
         @test size(V) == (5,3)
         b = randn(size(V,2))
 
-        @test all((similar(b,size(V,1)) .= Mul(V,b)) .=== Matrix(V)*b .===
+        @test all((similar(b,size(V,1)) .= MulAdd(V,b)) .=== Matrix(V)*b .===
                     BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
         V = view(A, Block.(1:3), Block(3)[2:3])
@@ -170,7 +170,7 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
 
         @test size(V) == (5,2)
         b = randn(size(V,2))
-        @test all((similar(b,size(V,1)) .= Mul(V,b)) .=== Matrix(V)*b .===
+        @test all((similar(b,size(V,1)) .= MulAdd(V,b)) .=== Matrix(V)*b .===
                     BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
         V = view(A, Block.(1:3), Block(3)[2:3])
@@ -188,7 +188,7 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
         @test unsafe_load(pointer(V_22)) == V_22[1,1] == V[1,1]
         @test strides(V_22) == strides(V) == (1,9)
         b = randn(N)
-        @test all(copyto!(similar(b) , Mul(V,b)) .=== copyto!(similar(b) , Mul(V_22,b)) .===
+        @test all(copyto!(similar(b) , MulAdd(V,b)) .=== copyto!(similar(b) , MulAdd(V_22,b)) .===
             Matrix(V)*b .===
             BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
 
