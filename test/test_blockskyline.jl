@@ -1,11 +1,10 @@
-using LazyArrays, BlockBandedMatrices, LinearAlgebra, Random, Test
+using ArrayLayouts, BlockBandedMatrices, LinearAlgebra, Random, Test
 import BlockBandedMatrices: colblockbandwidths,
     BroadcastStyle, BlockSkylineStyle, blocksizes
 
 Random.seed!(0)
 
 @testset "BlockSkylineMatrix" begin
-
     @testset "@jagot lmul! bug" begin
         rows = rand(1:10, 5)
         l = rand(-2:2, 5)
@@ -24,11 +23,11 @@ Random.seed!(0)
         V[:,1] .= rand(m)
         reference = A*V[:,1]
 
-        @view(V[:,2]) .= Mul(A, @view(V[:,1]))
+        @view(V[:,2]) .= MulAdd(A, @view(V[:,1]))
         @test V[:,2] ≈ reference
 
         V[:,2] .= NaN
-        @view(V[:,2]) .= Mul(A, @view(V[:,1]))
+        @view(V[:,2]) .= MulAdd(A, @view(V[:,1]))
         @test V[:,2] ≈ reference
     end
 

@@ -12,7 +12,7 @@ using BlockBandedMatrices: BandedBlockBandedMatrix, _BandedBlockBandedMatrix,
 using LinearAlgebra: BLAS
 using BandedMatrices: _BandedMatrix
 using SharedArrays
-using LazyArrays
+using ArrayLayouts
 import Distributed
 
 import Adapt: adapt
@@ -117,7 +117,7 @@ function banded_mul!(c::BlockVector{T},
       B = _BandedMatrix(A.data.blocks[i - j + u + 1, j],
                         size(view(A, Block(i, j)), 1), 
                         λ, μ)
-      c[Block(i)] .+= Mul(B, x.blocks[j])
+        muladd!(one(T), B, x.blocks[j], one(T), c[Block(i)])
     end
 
     c

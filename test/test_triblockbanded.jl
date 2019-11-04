@@ -1,4 +1,4 @@
-using BlockBandedMatrices, BandedMatrices, BlockArrays, LazyArrays, LinearAlgebra, Test
+using BlockBandedMatrices, BandedMatrices, BlockArrays, ArrayLayouts, LinearAlgebra, Test
 import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedColumnMajor,
                         BandedColumnMajor, tribandeddata, blocksizes, cumulsizes, nblocks,
                         BlockSkylineSizes, blockrowstop, blockcolstop, BlockSizes,
@@ -13,27 +13,27 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
         @test MemoryLayout(typeof(U)) == TriangularLayout{'U','N',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
         @test U*b isa Vector{Float64}
-        @test (similar(b) .= Mul(U,b)) ≈ U*b  ≈ Matrix(U)*b
+        @test lmul(U,b) ≈ U*b  ≈ Matrix(U)*b
 
 
         U = UnitUpperTriangular(A)
         @test MemoryLayout(typeof(U)) == TriangularLayout{'U','U',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
         @test U*b isa Vector{Float64}
-        @test (similar(b) .= Mul(U,b)) ≈ U*b  ≈ Matrix(U)*b
+        @test lmul(U,b) ≈ U*b  ≈ Matrix(U)*b
 
         L = LowerTriangular(A)
         @test MemoryLayout(typeof(L)) == TriangularLayout{'L','N',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
         @test L*b isa Vector{Float64}
-        @test (similar(b) .= Mul(L,b)) ≈ L*b  ≈ Matrix(L)*b
+        @test lmul(L,b) ≈ L*b  ≈ Matrix(L)*b
 
 
         L = UnitLowerTriangular(A)
         @test MemoryLayout(typeof(L)) == TriangularLayout{'L','U',BandedBlockBandedColumnMajor}()
         b = randn(size(L,1))
         @test L*b isa Vector{Float64}
-        @test (similar(b) .= Mul(L,b)) ≈ L*b  ≈ Matrix(L)*b
+        @test lmul(L,b) ≈ L*b  ≈ Matrix(L)*b
     end
 
     @testset "Block by BlockIndex" begin
@@ -45,7 +45,7 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
         c = similar(b, size(V,1))
 
         @test blockbandwidths(V) == (1,1)
-        @test (c .= Mul(V,b)) ≈ (Matrix(V)*b)
+        @test (c .= MulAdd(V,b)) ≈ (Matrix(V)*b)
 
         V = view(A, Block.(2:4), Block(3))
 
@@ -58,17 +58,17 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
         @test MemoryLayout(typeof(V2)) == BandedColumnMajor()
 
         b = rand(size(V,2))
-        @test (similar(b, size(V,1)) .= Mul(V, b)) ≈ V*b
+        @test (similar(b, size(V,1)) .= MulAdd(V, b)) ≈ V*b
     end
 
     @testset "triangular BandedBlockBandedMatrix ldiv" begin
         A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
-            A.data .= randn.()
-            A
+        A.data .= randn.()
+        A = A+10I
 
         U = UpperTriangular(A)
         b = randn(size(U,1))
-        @test copyto!(similar(b), Ldiv(U,b)) ≈ (Matrix(U) \ b)
+        @test copyto!(similar(b), Ldiv(U,b)) ≈ Matrix(U) \ b
         @test all((similar(b) .= Ldiv(U, b)) .=== copyto!(similar(b), Ldiv(U,b)))
 
         U = UnitUpperTriangular(A)
@@ -81,7 +81,6 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
         @test copyto!(similar(b), Ldiv(L,b)) ≈ (Matrix(L) \ b)
         @test all((similar(b) .= Ldiv(L, b)) .=== copyto!(similar(b), Ldiv(L,b)))
     end
-
 
     @testset "Rectangular blocks BlockBandedMatrix linear algebra" begin
         l , u = 0,1

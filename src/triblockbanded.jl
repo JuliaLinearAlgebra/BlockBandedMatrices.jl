@@ -45,7 +45,7 @@ _triangular_matrix(::Val{'U'}, ::Val{'U'}, A) = UnitUpperTriangular(A)
 _triangular_matrix(::Val{'L'}, ::Val{'U'}, A) = UnitLowerTriangular(A)
 
 
-function _matchingblocks_triangular_mul!(::Val{'U'}, UNIT, A, dest)
+function _matchingblocks_triangular_mul!(::Val{'U'}, UNIT, A::AbstractMatrix{T}, dest) where T
     # impose block structure
     b = PseudoBlockArray(dest, BlockSizes((cumulsizes(blocksizes(A),1),)))
 
@@ -55,16 +55,16 @@ function _matchingblocks_triangular_mul!(::Val{'U'}, UNIT, A, dest)
     for K = 1:N
         b_2 = view(b, Block(K))
         Ũ = _triangular_matrix(Val('U'), UNIT, view(A, Block(K,K)))
-        b_2 .= Mul(Ũ, b_2)
+        materialize!(Lmul(Ũ, b_2))
         JR = Block(K+1):blockrowstop(A,K)
         if !isempty(JR)
-            b_2 .= applied(+, applied(*, view(A, Block(K), JR), view(b,JR)), b_2)
+            muladd!(one(T), view(A, Block(K), JR), view(b,JR), one(T), b_2)
         end
     end
     dest
 end
 
-function _matchingblocks_triangular_mul!(::Val{'L'}, UNIT, A, dest)
+function _matchingblocks_triangular_mul!(::Val{'L'}, UNIT, A::AbstractMatrix{T}, dest) where T
     # impose block structure
     b = PseudoBlockArray(dest, BlockSizes((cumulsizes(blocksizes(A),1),)))
 
@@ -74,10 +74,10 @@ function _matchingblocks_triangular_mul!(::Val{'L'}, UNIT, A, dest)
     for K = N:-1:1
         b_2 = view(b, Block(K))
         L̃ = _triangular_matrix(Val('L'), UNIT, view(A, Block(K,K)))
-        b_2 .= Mul(L̃, b_2)
+        materialize!(Lmul(L̃, b_2))
         JR = blockrowstart(A,K):Block(K-1)
         if !isempty(JR)
-            b_2 .= applied(+, applied(*, view(A, Block(K), JR), view(b,JR)), b_2)
+            muladd!(one(T), view(A, Block(K), JR), view(b,JR), one(T), b_2)
         end
     end
 
@@ -119,7 +119,7 @@ for UNIT in ('U', 'N')
             for K = N:-1:1
                 b_2 = view(b, Block(K))
                 Ũ = _triangular_matrix(Val('U'), Val($UNIT), view(A, Block(K,K)))
-                apply!(\, Ũ, b_2)
+                materialize!(Ldiv(Ũ, b_2))
 
                 if K ≥ 2
                     KR = blockcolstart(A, K):Block(K-1)
@@ -150,7 +150,7 @@ for UNIT in ('U', 'N')
             for K = 1:N
                 b_2 = view(b, Block(K))
                 L̃ = _triangular_matrix(Val('L'), Val($UNIT), view(A, Block(K,K)))
-                b_2 .= Ldiv(L̃, b_2)
+                materialize!(Ldiv(L̃, b_2))
 
                 if K < N
                     KR = Block(K+1):blockcolstop(A, K)
