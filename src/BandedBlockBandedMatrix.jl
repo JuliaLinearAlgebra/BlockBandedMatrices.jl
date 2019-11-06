@@ -1,8 +1,8 @@
 
 
-struct BandedBlockBandedSizes <: AbstractBlockSizes{2}
-    block_sizes::DefaultBlockSizes{2}
-    data_block_sizes::DefaultBlockSizes{2}
+struct BandedBlockBandedSizes{BS,DBS} <: AbstractBlockSizes{2}
+    block_sizes::BS
+    data_block_sizes::DBS
     l::Int
     u::Int
     λ::Int
@@ -59,7 +59,7 @@ function check_data_sizes(data::AbstractBlockMatrix, B::BandedBlockBandedSizes)
             throw(ArgumentError("Data matrix must have row block sizes equal to number of subblock bands"))
         end
     end
-    if c_cols ≠ B.block_sizes.cumul_sizes[2]
+    if c_cols !== B.block_sizes.cumul_sizes[2] && c_cols ≠ B.block_sizes.cumul_sizes[2]
         throw(ArgumentError("Data matrix must have same column blocks as matrix"))
     end
 end
