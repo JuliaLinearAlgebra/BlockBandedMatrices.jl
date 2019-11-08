@@ -1,7 +1,7 @@
 using Pkg
 
 Pkg.activate(homedir() * "/Documents/Coding/gpublockbanded")
-using BandedMatrices, BlockBandedMatrices, SharedArrays, LazyArrays, BlockArrays, FillArrays
+using BandedMatrices, BlockBandedMatrices, SharedArrays, ArrayLayouts, BlockArrays, FillArrays
 import BlockBandedMatrices: _BandedBlockBandedMatrix, BandedBlockBandedSizes, BlockSizes, blockcolrange
 import BandedMatrices: AbstractBandedMatrix, bandwidths, BandedStyle
 import Base: getindex, size

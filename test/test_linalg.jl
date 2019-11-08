@@ -1,11 +1,8 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, LazyArrays, LinearAlgebra, Test
-    import BandedMatrices: BandError, bandeddata
-    import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!,
-                                blockcolstop, blockrowstop, BlockSizes, blocksizes,
-                                BlockSkylineSizes
-    import LazyArrays: ColumnMajor
-
-
+using BlockArrays, BandedMatrices, BlockBandedMatrices, ArrayLayouts, LinearAlgebra, Test
+import BandedMatrices: BandError, bandeddata
+import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!,
+                            blockcolstop, blockrowstop, BlockSizes, blocksizes,
+                            BlockSkylineSizes
 
 @testset "lmul!/rmul!" begin
     C = BandedBlockBandedMatrix{Float64}(undef, (1:2,1:2), (1,1), (1,1))
@@ -23,7 +20,7 @@ end
     N = M = 4
     cols = rows = 1:N
     A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
-        A.data .= 1:length(A.data)
+    A.data .= 1:length(A.data)
 
     V = view(A, Block(N,N))
 
@@ -33,26 +30,14 @@ end
     @test unsafe_load(pointer(V) + stride(V,2)*sizeof(Float64)) == 53
 
     x = randn(size(A,2))
-        @test A*x == (similar(x) .= Mul(A,x)) ≈ Matrix(A)*x
+    @test A*x == (similar(x) .= MulAdd(A,x)) ≈ Matrix(A)*x
 
     z = randn(size(A,2)) + im*randn(size(A,2))
-    A*z == (similar(z) .= Mul(A,z)) ≈ Matrix(A)*z
-
-    Matrix(A)*z
-    z[1]
-    view(A,Block(1,1)) * z[1] + view(A,Block(1,2))*z[2:3]
-
-    A*z
+    @test A*z == (similar(z) .= MulAdd(A,z)) ≈ Matrix(A)*z
 
     X = randn(size(A))
-        @test A*X == (similar(X) .= Mul(A,X)) ≈ Matrix(A)*X
-        @test X*A == (similar(X) .= Mul(X,A)) ≈  Matrix(X)*A
-
-
-    Z = randn(size(A)) + im*randn(size(A))
-
-    A*Z
-
+    @test A*X == (similar(X) .= MulAdd(A,X)) ≈ Matrix(A)*X
+    @test X*A == (similar(X) .= MulAdd(X,A)) ≈  Matrix(X)*A
 
     v = fill(1.0,4)
     U = UpperTriangular(view(A, Block(N,N)))
@@ -87,12 +72,12 @@ end
     @test unsafe_load(Base.unsafe_convert(Ptr{Float64}, bandeddata(V))) == 13.0
 
     C = BandedMatrix{Float64}(undef, size(V), 2 .*bandwidths(V))
-    C .= Mul(V,V)
+    C .= MulAdd(V,V)
     @test all(C .=== BandedMatrix(V)*BandedMatrix(V))
-    @test all((similar(C) .= 2.0 .* Mul(V,V) .+ C) .=== BandedMatrices.gbmm!('N', 'N', 2.0, V, V, 1.0, deepcopy(C)))
+    @test all(muladd!(2.0, V,V, 1.0, copy(C)) .=== BandedMatrices.gbmm!('N', 'N', 2.0, V, V, 1.0, deepcopy(C)))
 
     C = BandedBlockBandedMatrix{Float64}(undef, (rows,cols), (2l,2u), (2λ,2μ))
-    C .= Mul(A,A)
+    C .= MulAdd(A,A)
 
     @test Matrix(A) == [A[k,j] for k=1:size(A,1), j=1:size(A,2)]
     @test Matrix(C) ≈ Matrix(A)*Matrix(A)

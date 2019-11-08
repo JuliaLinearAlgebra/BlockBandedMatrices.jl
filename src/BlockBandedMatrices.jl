@@ -1,6 +1,6 @@
 
 module BlockBandedMatrices
-using BlockArrays, BandedMatrices, LazyArrays, FillArrays, SparseArrays, MatrixFactorizations
+using BlockArrays, BandedMatrices, ArrayLayouts, FillArrays, SparseArrays, MatrixFactorizations
 using LinearAlgebra
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
@@ -22,11 +22,11 @@ import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, check
 import MatrixFactorizations: ql, ql!, QLPackedQ
 import SparseArrays: sparse
 
-import LazyArrays: AbstractStridedLayout, ColumnMajor, @lazymul, MatMulMatAdd, MatMulVecAdd, BlasMatLmulVec,
+import ArrayLayouts: @lazymul, MatMulMatAdd, MatMulVecAdd, BlasMatLmulVec,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatLdivVec,
-                    triangulardata, subarraylayout, @lazyldiv, @lazylmul,
+                    triangulardata, sublayout, @lazyldiv, @lazylmul,
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
-                    DiagonalLayout, apply!, materialize!, MulAdd, mulapplystyle, MulAddStyle
+                    DiagonalLayout, materialize!, MulAdd, mul
 
 import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
                         Block, BlockSlice, getblock, unblock, setblock!, globalrange,

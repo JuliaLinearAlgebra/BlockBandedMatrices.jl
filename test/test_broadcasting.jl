@@ -1,5 +1,4 @@
-using BandedMatrices, BlockBandedMatrices, LinearAlgebra, LazyArrays, Test
-    import LazyArrays: MemoryLayout
+using BandedMatrices, BlockBandedMatrices, LinearAlgebra, ArrayLayouts, Test
 
 @testset "general" begin
     N = 10

@@ -1,6 +1,5 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, LazyArrays, LinearAlgebra, Test
+using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, ArrayLayouts, LinearAlgebra, Test
 import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle, BlockBandedStyle
-import LazyArrays: Mul, MulAdd
 import Base.Broadcast: materialize!
 
 @testset "BlockBandedMatrix" begin
@@ -147,7 +146,7 @@ import Base.Broadcast: materialize!
         @test sum(A) == 20
         @test sum(B) == 20
         C = BlockBandedMatrix{Float64}(undef, ([2,2], [2,2,2]), (0,3))
-        @test all(copyto!(C, Mul(A,B)) .=== materialize!(MulAdd(1.0,A,B,0.0,similar(C))) .===
+        @test all(mul!(C,A,B) .=== materialize!(MulAdd(1.0,A,B,0.0,similar(C))) .===
                     A*B)
         AB = A*B
         @test AB isa BlockBandedMatrix

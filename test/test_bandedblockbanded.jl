@@ -1,4 +1,4 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays, Test, LazyArrays , LinearAlgebra
+using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays, Test, ArrayLayouts , LinearAlgebra
 import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowrange, colrange, rowrange, isbandedblockbanded, bandeddata
 
 @testset "BandedBlockBandedMatrix" begin
@@ -304,7 +304,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
 
         x = randn(size(B,2))
         y = similar(x, size(B,1))
-        @test all((similar(y) .= Mul(B, x)) .=== (similar(y) .= Mul(V,x)))
+        @test all((similar(y) .= MulAdd(B, x)) .=== (similar(y) .= MulAdd(V,x)))
     end
 
     @testset "BLAS arithmetic" begin
