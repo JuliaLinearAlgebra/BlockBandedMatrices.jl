@@ -1,4 +1,4 @@
-using BandedMatrices, BlockBandedMatrices, LazyArrays, BlockArrays, FillArrays, CuArrays, GPUArrays, LinearAlgebra
+using BandedMatrices, BlockBandedMatrices, ArrayLayouts, BlockArrays, FillArrays, CuArrays, GPUArrays, LinearAlgebra
 import BlockBandedMatrices: _BandedBlockBandedMatrix
 import BandedMatrices: _BandedMatrix
 
@@ -47,7 +47,7 @@ b = BlockVector{T, CuArray{T,1}}(undef, Fill(N,N))
 c = BlockVector{T, CuArray{T,1}}(Zeros{T}(N^2), Fill(N,N))
 
 
-function mul!(c, A::BandedBlockBandedMatrix{<:Any,<:BlockMatrix{<:Any,<:CuArray}}, b)
+function mul!(c, A::BandedBlockBandedMatrix{T,<:BlockMatrix{<:Any,<:CuArray}}, b) where T
     fill!(c, 0)
 
     l, u = blockbandwidths(A)
@@ -56,7 +56,7 @@ function mul!(c, A::BandedBlockBandedMatrix{<:Any,<:BlockMatrix{<:Any,<:CuArray}
 
     for J = 1:N, K = max(1,J-l):min(N,J+u)
         B = _BandedMatrix(A.data.blocks[K-J+u+1,J],N,λ,μ)
-        c.blocks[K] .= Mul(B, b.blocks[J]) .+ c.blocks[K]
+        muladd!(one(T), B, b.blocks[J], one(T), c.blocks[K])
     end
     c
 end
@@ -71,7 +71,7 @@ function mul!(c, A::BandedBlockBandedMatrix{<:Any,<:BlockMatrix{<:Any,<:CuArray}
 
     for J = 1:N, K = max(1,J-l):min(N,J+u)
         B = _BandedMatrix(A.data.blocks[K-J+u+1,J],N,λ,μ)
-        LazyArrays.materialize!(MulAdd(1f0, B, b.blocks[J], 1f0, c.blocks[K]))
+        ArrayLayouts.materialize!(MulAdd(1f0, B, b.blocks[J], 1f0, c.blocks[K]))
     end
     c
 end
@@ -87,7 +87,7 @@ function mul2!(c, A::BandedBlockBandedMatrix{<:Any,<:BlockMatrix{<:Any,<:CuArray
         for J = 1-b:M
             K = J + b
             B = _BandedMatrix(A.data.blocks[b+u+1,J],N,λ,μ)
-            LazyArrays.materialize!(MulAdd(1f0, B, x.blocks[J], 1f0, c.blocks[K]))
+            ArrayLayouts.materialize!(MulAdd(1f0, B, x.blocks[J], 1f0, c.blocks[K]))
         end
     end
 
@@ -95,7 +95,7 @@ function mul2!(c, A::BandedBlockBandedMatrix{<:Any,<:BlockMatrix{<:Any,<:CuArray
         for J = 1:M-b
             K = J + b
             B = _BandedMatrix(A.data.blocks[b+u+1,J],N,λ,μ)
-            LazyArrays.materialize!(MulAdd(1f0, B, x.blocks[J], 1f0, c.blocks[K]))
+            ArrayLayouts.materialize!(MulAdd(1f0, B, x.blocks[J], 1f0, c.blocks[K]))
         end
     end
 

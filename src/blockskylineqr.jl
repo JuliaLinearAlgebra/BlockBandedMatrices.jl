@@ -107,7 +107,7 @@ for Typ in (:StridedVector, :StridedMatrix, :AbstractVector, :AbstractMatrix)
         M,N = nblocks(A.factors)
         MN = min(M,N)
         V = view(A.factors,Block.(1:MN), Block.(1:MN))
-        apply!(\, UpperTriangular(V), view(B,1:size(V,1),:))
+        materialize!(Ldiv(UpperTriangular(V), view(B,1:size(V,1),:)))
         B
     end
 end
@@ -116,12 +116,12 @@ end
 
 function ldiv!(A::QL{<:Any,<:BlockSkylineMatrix}, B::AbstractVector)
     lmul!(adjoint(A.Q), B)
-    apply!(\, LowerTriangular(A.factors), B)
+    materialize!(Ldiv(LowerTriangular(A.factors), B))
 end
 
 function ldiv!(A::QL{<:Any,<:BlockSkylineMatrix}, B::AbstractMatrix)
     lmul!(adjoint(A.Q), B)
-    apply!(\, LowerTriangular(A.factors), B)
+    materialize!(Ldiv(LowerTriangular(A.factors), B))
 end
 
 \(A::AbstractBlockBandedMatrix, b::AbstractVecOrMat) = qr(A)\b  # use QR because LU would be a _mess_ to implement

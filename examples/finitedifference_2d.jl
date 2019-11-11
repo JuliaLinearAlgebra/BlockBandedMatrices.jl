@@ -3,7 +3,7 @@
 #
 ###########
 
-using BlockBandedMatrices, BandedMatrices, LazyArrays, FillArrays
+using BlockBandedMatrices, BandedMatrices, ArrayLayouts, FillArrays
 
 
 function finitedifference_2d(n)

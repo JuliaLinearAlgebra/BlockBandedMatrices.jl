@@ -7,7 +7,7 @@ using LinearAlgebra: BLAS
 import LinearAlgebra
 using BandedMatrices: _BandedMatrix, BandedMatrix
 using SharedArrays
-using LazyArrays
+using ArrayLayouts
 using Distributed: procs, remotecall_wait
 import Distributed
 
