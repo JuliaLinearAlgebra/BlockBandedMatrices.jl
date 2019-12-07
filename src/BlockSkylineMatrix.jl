@@ -28,15 +28,15 @@ end
 
 bb_blockstarts(b_size, l::Integer, u::Integer) = bb_blockstarts(b_size, Fill(l, nblocks(b_size,2)), Fill(u, nblocks(b_size,2)))
 
-function bb_blockstrides(b_size, l::AbstractVector{Int}, u::AbstractVector{Int})
-    N, M = nblocks(b_size)
+function bb_blockstrides(b_axes, l::AbstractVector{Int}, u::AbstractVector{Int})
+    N, M = blocksize.(b_axes,1)
     L,U = maximum(l), maximum(u)
     checkbandwidths(N, M, l, u)
     b_strides = Vector{Int}(undef, M)
     for J=1:M
         KR = max(1,J-u[J]):min(J+l[J],N)
         if !isempty(KR)
-            b_strides[J] = cumulsizes(b_size,1,KR[end]+1)-cumulsizes(b_size,1,KR[1])
+            b_strides[J] = length(b_axes[1][KR])
         else
             b_strides[J] = 0
         end
@@ -44,28 +44,22 @@ function bb_blockstrides(b_size, l::AbstractVector{Int}, u::AbstractVector{Int})
     b_strides
 end
 
-bb_blockstrides(b_size, l::Integer, u::Integer) = bb_blockstrides(b_size, Fill(l, nblocks(b_size,1)), Fill(u, nblocks(b_size,2)))
+bb_blockstrides(b_axes, l::Integer, u::Integer) = bb_blockstrides(b_axes, Fill(l, blocksize(b_axes,1)), Fill(u, blocksize(b_axes,2)))
 
-struct BlockSkylineSizes{BS<:AbstractBlockSizes{2}, LL<:AbstractVector{Int}, UU<:AbstractVector{Int}, BStarts, BStrides} <: AbstractBlockSizes{2}
-    block_sizes::BS
+struct BlockSkylineSizes{BS<:NTuple{2,AbstractUnitRange{Int}}, LL<:AbstractVector{Int}, UU<:AbstractVector{Int}, BStarts, BStrides}
+    axes::BS
     block_starts::BStarts # gives index where the blocks start, usually a BandedMatrix{Int}
     block_strides::BStrides # gives stride to next block for J-th column, usually a Vector{Int}
     l::LL
     u::UU
 end
 
-BlockSkylineSizes(b_size::BlockSizes{2}, l::AbstractVector{Int}, u::AbstractVector{Int}) =
-    BlockSkylineSizes(b_size, bb_blockstarts(b_size, l, u), bb_blockstrides(b_size, l, u), l, u)
+BlockSkylineSizes(b_axes::NTuple{2,AbstractUnitRange{Int}}, l::AbstractVector{Int}, u::AbstractVector{Int}) =
+    BlockSkylineSizes(b_axes, bb_blockstarts(b_axes, l, u), bb_blockstrides(b_axes, l, u), l, u)
 
 BlockSkylineSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l::AbstractVector{Int}, u::AbstractVector{Int}) =
-    BlockSkylineSizes(BlockSizes(rows,cols), l, u)
+    BlockSkylineSizes((CumsumBlockRange(rows),CumsumBlockRange(cols)), l, u)
 
-const BlockBandedSizes = BlockSkylineSizes{DefaultBlockSizes{2}, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, 
-                                            BandedMatrix{Int,Matrix{Int},OneTo{Int}}, Vector{Int}}
-
-
-BlockBandedSizes(b_size::BlockSizes{2}, l::Int, u::Int) =
-    BlockSkylineSizes(b_size, Fill(l, nblocks(b_size,2)), Fill(u, nblocks(b_size,2)))
 BlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l::Int, u::Int) =
     BlockSkylineSizes(rows, cols, Fill(l, length(cols)), Fill(u, length(cols)))
 
@@ -101,13 +95,17 @@ function bb_numentries(B::BlockSkylineSizes)
     numentries
 end
 
+const BlockBandedSizes = BlockSkylineSizes{<:Any, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, 
+                                            BandedMatrix{Int,Matrix{Int},OneTo{Int}}, Vector{Int}}
+
+
 
 function _BandedBlockMatrix end
 
 
 #  A block matrix where only the bands are nonzero
 #   isomorphic to BandedMatrix{Matrix{T}}
-struct BlockSkylineMatrix{T, DATA<:AbstractVector{T}, BS<:AbstractBlockSizes{2}} <: AbstractBlockBandedMatrix{T}
+struct BlockSkylineMatrix{T, DATA<:AbstractVector{T}, BS<:BlockSkylineSizes} <: AbstractBlockBandedMatrix{T}
     data::DATA
     block_sizes::BS
 
@@ -116,13 +114,13 @@ struct BlockSkylineMatrix{T, DATA<:AbstractVector{T}, BS<:AbstractBlockSizes{2}}
     end
 end
 
-const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, BlockBandedSizes}
+const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, <:BlockBandedSizes}
 
 # Auxiliary outer constructors
 @inline _BlockBandedMatrix(data::AbstractVector, bs::BlockBandedSizes) =
     _BlockSkylineMatrix(data, bs)
 
-@inline _BlockBandedMatrix(data::AbstractVector, (kr,jr)::NTuple{2, AbstractVector{Int}}, (l,u)::NTuple{2, Int}) =
+@inline _BlockBandedMatrix(data::AbstractVector, kr::AbstractVector{Int}, jr::AbstractVector{Int}, (l,u)::NTuple{2, Int}) =
     _BlockBandedMatrix(data, BlockBandedSizes(kr,jr, l,u))
 
 @inline BlockSkylineMatrix{T}(::UndefInitializer, block_sizes::BlockSkylineSizes) where T =
@@ -130,12 +128,6 @@ const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, BlockBandedSizes}
 
 @inline BlockBandedMatrix{T}(::UndefInitializer, block_sizes::BlockBandedSizes) where T =
     _BlockSkylineMatrix(Vector{T}(undef, bb_numentries(block_sizes)), block_sizes)
-
-@inline BlockBandedMatrix{T}(::UndefInitializer, block_sizes::BlockSizes, (l,u)::NTuple{2, Int}) where T =
-    BlockSkylineMatrix{T}(undef, BlockBandedSizes(block_sizes,l,u))
-
-@inline BlockSkylineMatrix{T}(::UndefInitializer, block_sizes::BlockSizes, (l,u)::NTuple{2, AbstractVector{Int}}) where T =
-    BlockSkylineMatrix{T}(undef, BlockSkylineSizes(block_sizes,l,u))
 
 """
     BlockSkylineMatrix{T,LL,UU}(undef, (rows, cols), (l::LL, u::UU))
@@ -149,11 +141,11 @@ lengths `rows` and `cols`, respectively, for ragged bands.
 """
 BlockSkylineMatrix
 
-@inline BlockBandedMatrix{T}(::UndefInitializer, dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, Int}) where T =
-    BlockSkylineMatrix{T}(undef, BlockBandedSizes(dims..., lu...))
+@inline BlockBandedMatrix{T}(::UndefInitializer, rdims::AbstractVector{Int}, cdims::AbstractVector{Int}, lu::NTuple{2, Int}) where T =
+    BlockSkylineMatrix{T}(undef, BlockBandedSizes(rdims, cdims, lu...))
 
-@inline BlockSkylineMatrix{T}(::UndefInitializer, dims::NTuple{2, AbstractVector{Int}}, lu::NTuple{2, AbstractVector{Int}}) where T =
-    BlockSkylineMatrix{T}(undef, BlockSkylineSizes(dims..., lu...))
+@inline BlockSkylineMatrix{T}(::UndefInitializer,rdims::AbstractVector{Int}, cdims::AbstractVector{Int}, lu::NTuple{2, AbstractVector{Int}}) where T =
+    BlockSkylineMatrix{T}(undef, BlockSkylineSizes(rdims, cdims, lu...))
 
 function BlockSkylineMatrix{T}(A::AbstractMatrix, block_sizes::BlockSkylineSizes) where T
     ret = BlockSkylineMatrix(Zeros{T}(size(A)), block_sizes)
@@ -224,7 +216,7 @@ BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
                         dims::NTuple{2, AbstractVector{Int}},
                         lu::NTuple{2,Int}) = BlockBandedMatrix{eltype(A)}(A, dims, lu)
 
-BlockBandedMatrix(A::BlockBandedMatrix, lu::NTuple{2,Int}) = BlockBandedMatrix(A, BlockBandedSizes(blocksizes(A).block_sizes, lu...))
+BlockBandedMatrix(A::BlockBandedMatrix, lu::NTuple{2,Int}) = BlockBandedMatrix(A, BlockBandedSizes(axes(A), lu...))
 
 function convert(::Type{BlockSkylineMatrix}, A::AbstractMatrix)
     @assert isblockbanded(A)
@@ -249,6 +241,8 @@ BlockBandedMatrix(A::AbstractMatrix) = convert(BlockBandedMatrix, A)
 similar(A::BlockSkylineMatrix, T::Type=eltype(A), bs::BlockSkylineSizes=blocksizes(A)) =
     BlockSkylineMatrix{T}(undef, bs)
 
+axes(A::BlockSkylineMatrix) = A.block_sizes.axes    
+
 ################################
 # BlockSkylineMatrix Interface #
 ################################
@@ -263,9 +257,6 @@ BroadcastStyle(::Type{<:BlockBandedMatrix}) = BlockBandedStyle()
 ################################
 # AbstractBlockArray Interface #
 ################################
-
-@inline blocksizes(block_array::BlockSkylineMatrix) = block_array.block_sizes
-
 
 zeroblock(A::BlockSkylineMatrix, K::Int, J::Int) =
     Matrix(Zeros{eltype(A)}(blocksize(A, (K, J))))
@@ -297,29 +288,29 @@ end
 # end
 
 Base.size(arr::BlockSkylineMatrix) =
-    @inbounds return (cumulsizes(arr.block_sizes.block_sizes,1)[end] - 1, cumulsizes(arr.block_sizes.block_sizes,2)[end] - 1)
+    @inbounds return map(length,axes(arr))
 
 
 @inline function getindex(A::BlockSkylineMatrix, i::Int, j::Int)
     @boundscheck checkbounds(A, i, j)
-    bi = global2blockindex(A.block_sizes, (i, j))
-    @inbounds v = view(A, Block(bi.I))[bi.α...]
+    bi = findblockindex.(axes(A), (i,j))
+    @inbounds v = view(A, block.(bi)...)[blockindex.(bi)...]
     return v
 end
 
 @inline function setindex!(A::BlockSkylineMatrix{T}, v, i::Int, j::Int) where T
     @boundscheck checkbounds(A, i, j)
-    bi = global2blockindex(A.block_sizes, (i, j))
-    V = view(A, Block(bi.I))
-    @inbounds V[bi.α...] = convert(T, v)::T
+    bi = findblockindex.(axes(A), (i,j))
+    V = view(A, block.(bi)...)
+    @inbounds V[blockindex.(bi)...] = convert(T, v)::T
     return v
 end
 
 ## structured matrix methods ##
 function Base.replace_in_print_matrix(A::BlockSkylineMatrix, i::Integer, j::Integer, s::AbstractString)
-    bi = global2blockindex(A.block_sizes, (i, j))
-    I,J = bi.I
-    -A.block_sizes.l[J] ≤ J-I ≤ A.block_sizes.u[J] ? s : Base.replace_with_centered_mark(s)
+    bi = findblockindex.(axes(A), (i,j))
+    I,J = block.(bi)
+    -A.block_sizes.l[J] ≤ Int(J-I) ≤ A.block_sizes.u[J] ? s : Base.replace_with_centered_mark(s)
 end
 
 ############

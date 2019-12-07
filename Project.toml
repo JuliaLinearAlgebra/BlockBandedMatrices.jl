@@ -19,7 +19,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 BandedMatrices = "0.14"
-BlockArrays = "0.10"
+BlockArrays = "0.11"
 FillArrays = "0.8"
 ArrayLayouts = "0.1"
 MatrixFactorizations = "0.2"
