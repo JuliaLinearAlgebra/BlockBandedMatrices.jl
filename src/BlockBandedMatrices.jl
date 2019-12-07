@@ -27,7 +27,7 @@ import ArrayLayouts: @lazymul, MatMulMatAdd, MatMulVecAdd, BlasMatLmulVec,
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
                     DiagonalLayout, materialize!, MulAdd, mul
 
-import BlockArrays: blocksize, blockcheckbounds, CumsumBlockRange, blockisequal,
+import BlockArrays: blocksize, blockcheckbounds, CumsumBlockRange, blockisequal, DefaultBlockAxis,
                         Block, BlockSlice, getblock, unblock, setblock!, block, blockindex,
                         _unblock, BlockIndexRange, sizes_from_blocks
 
