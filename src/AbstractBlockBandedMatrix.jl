@@ -88,24 +88,24 @@ const BlockSlice1 = BlockSlice{Block{1,Int}}
 #  RaggedMatrix interface
 ######################################
 
+@inline colstart(A::AbstractBlockBandedMatrix, i::Integer) =
+    first(axes(A,1)[blockcolstart(A,findblock(axes(A,2),i))])
 
-
-@inline function colstart(A::AbstractBlockBandedMatrix, i::Integer)
-    bs = A.block_sizes.block_sizes
-    bs.cumul_sizes[1][Int(blockcolstart(A, _find_block(bs, 2, i)[1]))]
-end
 @inline function colstop(A::AbstractBlockBandedMatrix, i::Integer)
-    bs = A.block_sizes.block_sizes
-    bs.cumul_sizes[1][Int(blockcolstop(A, _find_block(bs, 2, i)[1]))+1]-1
+    CS = blockcolstop(A,findblock(axes(A,2),i))
+    CS == Block(0) && return 0
+    last(axes(A,1)[CS])
 end
-@inline function rowstart(A::AbstractBlockBandedMatrix, i::Integer)
-    bs = A.block_sizes.block_sizes
-    bs.cumul_sizes[2][Int(blockrowstart(A, _find_block(bs, 1, i)[1]))]
-end
+
+@inline rowstart(A::AbstractBlockBandedMatrix, i::Integer) =
+    first(axes(A,2)[blockrowstart(A,findblock(axes(A,1),i))])
+
 @inline function rowstop(A::AbstractBlockBandedMatrix, i::Integer)
-    bs = A.block_sizes.block_sizes
-    bs.cumul_sizes[2][Int(blockrowstop(A, _find_block(bs, 1, i)[1]))+1]-1
+    CS = blockrowstop(A,findblock(axes(A,1),i))
+    CS == Block(0) && return 0
+    last(axes(A,2)[CS])    
 end
+
 
 # default implementation loops over all indices, including zeros
 function fill!(A::AbstractBlockBandedMatrix, val::Any)

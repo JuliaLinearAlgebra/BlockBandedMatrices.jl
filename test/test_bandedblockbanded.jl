@@ -8,34 +8,34 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         N = M = 4
         cols = rows = 1:N
 
-        @test Matrix(BandedBlockBandedMatrix(Zeros(sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ))) ==
-            Array(BandedBlockBandedMatrix(Zeros(sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ))) ==
+        @test Matrix(BandedBlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows,cols, (l,u), (λ,μ))) ==
+            Array(BandedBlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows,cols, (l,u), (λ,μ))) ==
             zeros(Float64, 10, 10)
 
-        @test Matrix(BandedBlockBandedMatrix{Int}(Zeros(sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ))) ==
+        @test Matrix(BandedBlockBandedMatrix{Int}(Zeros(sum(rows),sum(cols)), rows,cols, (l,u), (λ,μ))) ==
             zeros(Int, 10, 10)
 
-        @test Matrix(BandedBlockBandedMatrix(Eye(sum(rows)), (rows,cols), (l,u), (λ,μ))) ==
+        @test Matrix(BandedBlockBandedMatrix(Eye(sum(rows)), rows,cols, (l,u), (λ,μ))) ==
             Matrix{Float64}(I, 10, 10)
 
-        @test Matrix(BandedBlockBandedMatrix{Int}(Eye(sum(rows)), (rows,cols), (l,u), (λ,μ))) ==
+        @test Matrix(BandedBlockBandedMatrix{Int}(Eye(sum(rows)), rows,cols, (l,u), (λ,μ))) ==
             Matrix{Int}(I, 10, 10)
 
-        @test Matrix(BandedBlockBandedMatrix(I, (rows,cols), (l,u), (λ,μ))) ==
+        @test Matrix(BandedBlockBandedMatrix(I, rows,cols, (l,u), (λ,μ))) ==
             Matrix{Float64}(I, 10, 10)
 
-        @test Matrix(BandedBlockBandedMatrix{Int}(I, (rows,cols), (l,u), (λ,μ))) ==
+        @test Matrix(BandedBlockBandedMatrix{Int}(I, rows,cols, (l,u), (λ,μ))) ==
             Matrix{Int}(I, 10, 10)
 
         A = [1 2 3 4 5; 6 7 8 9 10; 11 12 13 14 15; 16 17 18 19 20; 21 22 23 24 25]
-        B = BandedBlockBandedMatrix(A, ([2,3], [2,3]), (0,1), (1,1))
+        B = BandedBlockBandedMatrix(A, [2,3], [2,3], (0,1), (1,1))
         @test Matrix(B) ==
             [1 2 3 4 0; 6 7 8 9 10; 0 0 13 14 0; 0 0 18 19 20; 0 0 0 24 25]
 
         l,u,λ,μ = 0,0,4,0
         cols = 1:2:3
         rows = 2*cols
-        A = BandedBlockBandedMatrix(fill(1.0,sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ))
+        A = BandedBlockBandedMatrix(fill(1.0,sum(rows),sum(cols)), rows,cols, (l,u), (λ,μ))
         B = [1.0 0.0 0.0 0.0;
              1.0 0.0 0.0 0.0;
              0.0 1.0 0.0 0.0;
@@ -55,7 +55,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         N = M = 4
         cols = rows = 1:N
         data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
-        A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
         @test Matrix(BlockBandedMatrix(A)) == Matrix(A)
 
         @test blockbandwidths(A) == (l,u)
@@ -87,7 +87,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         N = M = 4
         cols = rows = 1:N
         data = reshape(Vector(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
-        A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
 
         @test A.l == l == blockbandwidth(A,1)
         @test A.u == u == blockbandwidth(A,2)
@@ -124,7 +124,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         cols = 1:6
 
         data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
-        A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
         @test_throws BandError A[1,1] = 5
 
         @test A[1,2] == 4
@@ -158,10 +158,8 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         cols = 1:6
 
         data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
-        A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
         @test_throws BandError A[1,1] = 5
-
-
 
         @test blockcolrange(A, 1) == Block.(1:0)
         @test blockcolrange(A, 2) == Block.(1:1)
@@ -179,7 +177,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         N = M = 4
         cols = rows = 1:N
         data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
-        A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
 
         @test A[Block(1), Block(1)] isa BandedMatrix
         @test A[Block(1), Block(1)] == A[Block(1,1)] == BlockArrays.getblock(A, 1, 1) == BandedMatrix(view(A, Block(1,1)))
@@ -196,7 +194,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         @test A[Block(3,1)] == view(A, Block(3),Block(1)) == zeros(3,1)
         @test A[Block(3,1)] ≈ view(A, Block(3),Block(1)) ≈ zeros(3,1)
         @test_throws BandError view(A, Block(3),Block(1))[1,1] = 4
-        @test_throws BoundsError view(A, Block(5,1))
+        @test_throws BlockBoundsError view(A, Block(5,1))
     end
 
     @testset "indexing" begin
@@ -205,7 +203,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         N = M = 10
         cols = rows = 1:N
         data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1),sum(cols)))
-        A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
 
         A[1,1] = 5
         @test A[1,1] == 5
@@ -224,7 +222,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         N = M = 10
         cols = rows = 1:N
         data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
-        A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
 
         # test blocks
         V = view(A, Block(1,1))
@@ -266,7 +264,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         N = M = 4
         cols = rows = 1:N
         data = reshape(Vector(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
-        A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
 
         @test_throws BandError A[1,4] = 5
         @test_throws BandError view(A, Block(1,3))[2] = 5
@@ -277,7 +275,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         cols = 1:6
 
         data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
-        A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
         @test_throws BandError A[1,1] = 5
 
         @test A[1,3] == 3
@@ -292,7 +290,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         N = M = 10
         cols = rows = 1:N
         data = reshape(collect(1.0:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
-        A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
         V = view(A, Block.(2:3), Block.(3:4))
         @test isbandedblockbanded(V)
 
@@ -313,7 +311,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         N = M = 10
         cols = rows = fill(1000,N)
         data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
-        A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
 
         V = view(A, Block(N,N))
 
@@ -340,13 +338,13 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
 
     @testset "Float32"  begin
         A = BandedBlockBandedMatrix{Float32}(Zeros{Float32}(10,10),
-                                    (fill(1,10), fill(1,10)), (1,1), (1,1))
+                                    fill(1,10), fill(1,10), (1,1), (1,1))
 
         @test eltype(A) == Float32
 
 
         A = BandedBlockBandedMatrix(Zeros{Float32}(10,10),
-                                    (fill(1,10), fill(1,10)), (1,1), (1,1))
+                                    fill(1,10), fill(1,10), (1,1), (1,1))
 
         @test eltype(A) == Float32
     end
@@ -357,7 +355,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         N = M = 10
         cols = rows = 1:N
         data = randn((λ+μ+1)*(l+u+1), sum(cols))
-        A = _BandedBlockBandedMatrix(data, (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
 
         V = view(A,Block(2,3))
         @test_throws BandError fill!(V, 2.0)
@@ -366,7 +364,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
 
 
         dataA = randn((λ+μ+1)*(l+u+1), sum(cols))
-        A = _BandedBlockBandedMatrix(copy(dataA), (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(copy(dataA), rows,cols, (l,u), (λ,μ))
 
         K,J = 2,1
         V = view(A,Block(K),Block(J))
@@ -385,17 +383,17 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         @test Matrix(A) == zeros(size(A))
 
         dataA = randn((λ+μ+1)*(l+u+1), sum(cols))
-        A = _BandedBlockBandedMatrix(copy(dataA), (rows,cols), (l,u), (λ,μ))
+        A = _BandedBlockBandedMatrix(copy(dataA), rows,cols, (l,u), (λ,μ))
 
         dataB = randn((λ+μ+3)*(l+u+3), sum(cols))
-        B = _BandedBlockBandedMatrix(copy(dataB), (rows,cols), (l+1,u+1), (λ+1,μ+1))
+        B = _BandedBlockBandedMatrix(copy(dataB), rows,cols, (l+1,u+1), (λ+1,μ+1))
 
 
-        B = _BandedBlockBandedMatrix(copy(dataB), (rows,cols), (l+1,u+1), (λ+1,μ+1))
+        B = _BandedBlockBandedMatrix(copy(dataB), rows,cols, (l+1,u+1), (λ+1,μ+1))
         copyto!(view(B, Block(N,N)), view(A, Block(N,N)))
         @test B[Block(N,N)] == A[Block(N,N)]
 
-        B = _BandedBlockBandedMatrix(copy(dataB), (rows,cols), (l+1,u+1), (λ+1,μ+1))
+        B = _BandedBlockBandedMatrix(copy(dataB), rows,cols, (l+1,u+1), (λ+1,μ+1))
         copyto!(B, A)
         @test norm(B[Block(3,1)]) == 0
         @test  B ≈ A
@@ -404,21 +402,21 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
 
 
     @testset "Zero bands" begin
-        B = BandedBlockBandedMatrix{Float64}(undef, (1:5,1:5), (-1,-1), (-1,-1))
+        B = BandedBlockBandedMatrix{Float64}(undef, 1:5,1:5, (-1,-1), (-1,-1))
         @test Matrix(B) == zeros(size(B))
 
-        B = BandedBlockBandedMatrix{Float64}(undef, (1:5,1:5), (-1,-1), (1,-1))
+        B = BandedBlockBandedMatrix{Float64}(undef, 1:5,1:5, (-1,-1), (1,-1))
         @test Matrix(B) == zeros(size(B))
 
-        B = BandedBlockBandedMatrix{Float64}(undef, (1:5,1:5), (1,-1), (-1,-1))
+        B = BandedBlockBandedMatrix{Float64}(undef, 1:5,1:5, (1,-1), (-1,-1))
         @test Matrix(B) == zeros(size(B))
     end
 
     @testset "BandedBlockBanded with BlockMatrix" begin
         WithBlockMatrix{T} = BandedBlockBandedMatrix{T, BlockMatrix{T, Matrix{Matrix{T}}}}
-        args = ([1, 2, 3], [2, 2, 1]), (1, 1), (1, 1)
+        args = [1, 2, 3], [2, 2, 1], (1, 1), (1, 1)
         A = WithBlockMatrix{Int64}(undef, args...)
-        B = BandedBlockBandedMatrix{Int64}(undef, A.block_sizes)
+        B = BandedBlockBandedMatrix{Int64}(undef, axes(A), blockbandwidths(A), subblockbandwidths(A))
 
         @test eltype(A) === eltype(B) === Int64
         @test typeof(A.data) <: BlockArray
@@ -426,7 +424,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         @test size(A) == size(B)
         @test bandrange(A) == bandrange(B)
         @test blockbandwidths(A) == blockbandwidths(B)
-        @test nblocks(A) == nblocks(B)
+        @test blocksize(A) == blocksize(B)
 
         A = WithBlockMatrix{Int64}(Zeros{Int64}(sum.(args[1])...), args...)
         B = BandedBlockBandedMatrix{Int64}(Zeros{Int64}(sum.(args[1])...), args...)
@@ -443,7 +441,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
     end
 
     @testset "Sparse dimensions" begin
-        A = BandedBlockBandedMatrix{Float64}(undef, (1:5,1:5), (-1,1), (-1,1))
+        A = BandedBlockBandedMatrix{Float64}(undef, 1:5,1:5, (-1,1), (-1,1))
         @test size(sparse(A)) == size(A) == (15,15)
     end
 end

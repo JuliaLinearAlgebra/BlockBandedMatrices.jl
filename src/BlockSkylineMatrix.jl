@@ -227,10 +227,10 @@ BlockBandedMatrix(A::BlockBandedMatrix, lu::NTuple{2,Int}) = BlockBandedMatrix(A
 
 function convert(::Type{BlockSkylineMatrix}, A::AbstractMatrix)
     @assert isblockbanded(A)
-    block_sizes = convert(BlockSkylineSizes, A.block_sizes)
+    block_sizes = BlockSkylineSizes(axes(A), colblockbandwidths(A)...)
 
     ret = BlockSkylineMatrix{eltype(A)}(undef, block_sizes)
-    for J = Block.(1:nblocks(ret, 2)), K = blockcolrange(ret, Int(J))
+    for J = blockaxes(ret,2), K = blockcolrange(ret, J)
         view(ret, K, J) .= view(A, K, J)
     end
     ret
