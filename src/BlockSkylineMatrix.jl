@@ -72,17 +72,16 @@ colblockbandwidths(bs::BlockSkylineSizes) = (bs.l, bs.u)
 blockstart(block_sizes::BlockSkylineSizes, K, J) = block_sizes.block_starts[K,J]
 blockstride(block_sizes::BlockSkylineSizes, J) = block_sizes.block_strides[J]
 
-blockstart(A::AbstractMatrix, K, J) = blockstart(blocksizes(A),K,J)
-blockstride(A::AbstractMatrix, J) = blockstride(blocksizes(A),J)
+blockstart(A::AbstractMatrix, K, J) = blockstart(A.block_sizes,K,J)
+blockstride(A::AbstractMatrix, J) = blockstride(A.block_sizes,J)
 
 blockbandwidths(bs::BlockSkylineSizes) = maximum.(colblockbandwidths(bs))
 blockbandwidth(bs::BlockSkylineSizes, i::Int) = blockbandwidths(bs)[i]
 
+size(bs::BlockSkylineSizes) = map(length,bs.axes)
 
 ==(A::BlockSkylineSizes, B::BlockSkylineSizes) = A.block_sizes == B.block_sizes && A.block_starts == B.block_starts &&
     A.l == B.l && A.u == B.u
-
-cumulsizes(B::BlockSkylineSizes) = cumulsizes(B.block_sizes)
 
 colrange(B::BlockSkylineSizes, J::Integer) = max(1, J-B.u[J]):min(blocklength(B.axes[1]), J+B.l[J])
 
@@ -160,7 +159,7 @@ end
 
 function BlockSkylineMatrix{T}(A::AbstractBlockBandedMatrix, block_sizes::BlockSkylineSizes) where T
     ret = BlockSkylineMatrix(Zeros{T}(size(A)), block_sizes)
-    block_sizes == blocksizes(A) || throw(ArgumentError())
+    block_sizes == A.block_sizes || throw(ArgumentError())
     for J = Block.(1:nblocks(ret, 2)), K = blockcolrange(ret, Int(J))
         view(ret, K, J) .= view(A, K, J)
     end
@@ -240,7 +239,7 @@ end
 BlockSkylineMatrix(A::AbstractMatrix) = convert(BlockSkylineMatrix, A)
 BlockBandedMatrix(A::AbstractMatrix) = convert(BlockBandedMatrix, A)
 
-similar(A::BlockSkylineMatrix, T::Type=eltype(A), bs::BlockSkylineSizes=blocksizes(A)) =
+similar(A::BlockSkylineMatrix, T::Type=eltype(A), bs::BlockSkylineSizes=A.block_sizes) =
     BlockSkylineMatrix{T}(undef, bs)
 
 axes(A::BlockSkylineMatrix) = A.block_sizes.axes    
@@ -311,8 +310,8 @@ end
 ## structured matrix methods ##
 function Base.replace_in_print_matrix(A::BlockSkylineMatrix, i::Integer, j::Integer, s::AbstractString)
     bi = findblockindex.(axes(A), (i,j))
-    I,J = block.(bi)
-    -A.block_sizes.l[J] ≤ Int(J-I) ≤ A.block_sizes.u[J] ? s : Base.replace_with_centered_mark(s)
+    I,J = Int.(block.(bi))
+    -A.block_sizes.l[J] ≤ J-I ≤ A.block_sizes.u[J] ? s : Base.replace_with_centered_mark(s)
 end
 
 ############
@@ -387,7 +386,7 @@ end
 #   with StridedMatrix.
 ##################
 
-const BlockBandedBlock{T,LL,UU} = SubArray{T,2,BlockSkylineMatrix{T,LL,UU},Tuple{BlockSlice1,BlockSlice1},false}
+const BlockBandedBlock{T} = SubArray{T,2,<:BlockSkylineMatrix,<:Tuple{<:BlockSlice1,<:BlockSlice1},false}
 
 
 

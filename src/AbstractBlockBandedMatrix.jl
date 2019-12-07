@@ -9,7 +9,7 @@ abstract type AbstractBlockBandedMatrix{T} <: AbstractBlockMatrix{T} end
 
 Returns a tuple containing the upper and lower blockbandwidth of `A`.
 """
-blockbandwidths(A::AbstractMatrix) = (nblocks(A,1)-1 , nblocks(A,2)-1)
+blockbandwidths(A::AbstractMatrix) = (blocksize(A,1)-1 , blocksize(A,2)-1)
 
 """
     blockbandwidth(A,i)
@@ -46,8 +46,8 @@ end
 @inline blockrowlength(A::AbstractVecOrMat, i) = max(Int(blockrowstop(A, i)) - Int(blockrowstart(A, i)) + 1, 0)
 
 # this gives the block bandwidth in each block column/row
-@inline colblockbandwidths(A::AbstractMatrix) = Fill.(blockbandwidths(A), nblocks(A,2))
-@inline rowblockbandwidths(A::AbstractMatrix) = Fill.(blockbandwidths(A), nblocks(A,1))
+@inline colblockbandwidths(A::AbstractMatrix) = Fill.(blockbandwidths(A), blocksize(A,2))
+@inline rowblockbandwidths(A::AbstractMatrix) = Fill.(blockbandwidths(A), blocksize(A,1))
 
 @inline colblockbandwidth(bs, i::Int) = colblockbandwidths(bs)[i]
 @inline rowblockbandwidth(bs, i::Int) = rowblockbandwidths(bs)[i]

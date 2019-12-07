@@ -1,4 +1,3 @@
-
 module BlockBandedMatrices
 using BlockArrays, BandedMatrices, ArrayLayouts, FillArrays, SparseArrays, MatrixFactorizations
 using LinearAlgebra
@@ -28,9 +27,9 @@ import ArrayLayouts: @lazymul, MatMulMatAdd, MatMulVecAdd, BlasMatLmulVec,
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
                     DiagonalLayout, materialize!, MulAdd, mul
 
-import BlockArrays: blocksize, blockcheckbounds, CumsumBlockRange,
+import BlockArrays: blocksize, blockcheckbounds, CumsumBlockRange, blockisequal,
                         Block, BlockSlice, getblock, unblock, setblock!, block, blockindex,
-                        _unblock, BlockIndexRange, blocksizes, sizes_from_blocks
+                        _unblock, BlockIndexRange, sizes_from_blocks
 
 import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrange,
                         inbands_setindex!, inbands_getindex, banded_setindex!,

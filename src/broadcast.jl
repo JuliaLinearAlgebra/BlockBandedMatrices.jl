@@ -65,20 +65,14 @@ similar(bc::Broadcasted{<:AbstractBlockBandedStyle}, ::Type{T}) where T =
 # copyto!
 ##
 
-function checkblocks(A, B)
-    Arows, Acols = cumulsizes(A)
-    Brows, Bcols = cumulsizes(B)
-    if Acols ≠ Bcols || Arows ≠ Brows
-        throw(DimensionMismatch("*"))
-    end
-end
+checkblocks(A, B) = blockisequal(axes(A), axes(B)) || throw(DimensionMismatch("*"))
 
 function _blockbanded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
     @boundscheck checkblocks(dest, src)
 
     dl, du = colblockbandwidths(dest)
     sl, su = colblockbandwidths(src)
-    M,N = nblocks(src)
+    M,N = blocksize(src)
     # Source matrix must fit within bands of destination matrix
     all(dl .≥ min.(sl,Ref(M-1))) && all(du .≥ min.(su,Ref(N-1))) || throw(BandError(dest))
 
@@ -100,7 +94,7 @@ function blockbanded_copyto!(dest::AbstractMatrix, src::AbstractMatrix)
     if isblockbanded(dest)
         _blockbanded_copyto!(dest, src)
     else
-        _blockbanded_copyto!(PseudoBlockArray(dest, blocksizes(src).block_sizes), src)
+        _blockbanded_copyto!(PseudoBlockArray(dest, axes(src)), src)
     end
     dest
 end
