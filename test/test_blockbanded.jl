@@ -10,23 +10,23 @@ import Base.Broadcast: materialize!
         N = M = 4
         cols = rows = 1:N
 
-        @test Matrix(BlockBandedMatrix(Zeros(sum(rows),sum(cols)), (rows, cols), (l,u))) ==
-            Array(BlockBandedMatrix(Zeros(sum(rows),sum(cols)), (rows, cols), (l,u))) == 
+        @test Matrix(BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (l,u))) ==
+            Array(BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (l,u))) == 
             zeros(Float64, 10, 10)
 
-        @test Matrix(BlockBandedMatrix{Int}(Zeros(sum(rows),sum(cols)), (rows,cols), (l,u))) ==
+        @test Matrix(BlockBandedMatrix{Int}(Zeros(sum(rows),sum(cols)), rows,cols, (l,u))) ==
             zeros(Int, 10, 10)
 
-        @test Matrix(BlockBandedMatrix(Eye(sum(rows)), (rows,cols), (l,u))) ==
+        @test Matrix(BlockBandedMatrix(Eye(sum(rows)), rows,cols, (l,u))) ==
             Matrix{Float64}(I, 10, 10)
 
-        @test Matrix(BlockBandedMatrix{Int}(Eye(sum(rows)), (rows,cols), (l,u))) ==
+        @test Matrix(BlockBandedMatrix{Int}(Eye(sum(rows)), rows,cols, (l,u))) ==
             Matrix{Int}(I, 10, 10)
 
-        @test Matrix(BlockBandedMatrix(I, (rows,cols), (l,u))) ==
+        @test Matrix(BlockBandedMatrix(I, rows,cols, (l,u))) ==
             Matrix{Float64}(I, 10, 10)
 
-        @test Matrix(BlockBandedMatrix{Int}(I, (rows,cols), (l,u))) ==
+        @test Matrix(BlockBandedMatrix{Int}(I, rows,cols, (l,u))) ==
             Matrix{Int}(I, 10, 10)
     end
 
@@ -34,7 +34,7 @@ import Base.Broadcast: materialize!
         l , u = 1,1
         N = M = 4
         cols = rows = 1:N
-        A = BlockBandedMatrix{Int}(undef, (rows,cols), (l,u))
+        A = BlockBandedMatrix{Int}(undef, rows,cols, (l,u))
             A.data .= 1:length(A.data)
 
         @test A[1,1] == 1

@@ -28,10 +28,9 @@ import ArrayLayouts: @lazymul, MatMulMatAdd, MatMulVecAdd, BlasMatLmulVec,
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
                     DiagonalLayout, materialize!, MulAdd, mul
 
-import BlockArrays: BlockSizes, nblocks, blocksize, blockcheckbounds, global2blockindex,
-                        Block, BlockSlice, getblock, unblock, setblock!, globalrange,
-                        _unblock, _find_block, BlockIndexRange, blocksizes, cumulsizes,
-                        AbstractBlockSizes, sizes_from_blocks, DefaultBlockSizes
+import BlockArrays: blocksize, blockcheckbounds, CumsumBlockRange,
+                        Block, BlockSlice, getblock, unblock, setblock!, block, blockindex,
+                        _unblock, BlockIndexRange, blocksizes, sizes_from_blocks
 
 import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrange,
                         inbands_setindex!, inbands_getindex, banded_setindex!,

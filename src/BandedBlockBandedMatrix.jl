@@ -34,7 +34,7 @@ struct BandedBlockBandedMatrix{T, BLOCKS, RAXIS<:AbstractUnitRange{Int}} <: Abst
                                              raxis::AbstractUnitRange{Int},
                                              lu::NTuple{2,Int}, λμ::NTuple{2,Int})
       @boundscheck check_data_sizes(data, raxis, lu, λμ)
-      new{eltype(data), typeof(data)}(data, raxis, lu..., λμ...)
+      new{eltype(data), typeof(data), typeof(raxis)}(data, raxis, lu..., λμ...)
     end
 end
 
@@ -79,8 +79,8 @@ function convert(::Type{<:BandedBlockBandedMatrix}, B::BandedMatrix)
     end
 end
 
-BandedBlockBandedMatrix{T, B}(Z::Zeros, axes::NTuple{2,AbstractUnitRange{Int}},
-                                lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T, B}
+function BandedBlockBandedMatrix{T, B}(Z::Zeros, axes::NTuple{2,AbstractUnitRange{Int}},
+                                       lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T, B}
    if size(Z) ≠ map(length,axes)
        throw(DimensionMismatch())
    end
@@ -139,8 +139,11 @@ end
 BandedBlockBandedMatrix(A::AbstractMatrix) =
     BandedBlockBandedMatrix(A, axes(A), blockbandwidths(A), subblockbandwidths(A))
 
-similar(A::BandedBlockBandedMatrix, T::Type=eltype(A), axes::NTuple{2,AbstractUnitRange{Int}}) =
+similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
       BandedBlockBandedMatrix{T}(undef, axes)
+
+similar(A::BandedBlockBandedMatrix{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
+      BandedBlockBandedMatrix{T}(undef, axes)      
 
 
 function sparse(A::BandedBlockBandedMatrix)

@@ -3,8 +3,8 @@ checkbandwidths(N, M, l::AbstractVector{Int}, u::AbstractVector{Int}) =
     throw(DimensionMismatch("For a matrix of $(N)×$(M) blocks, $(M) lower and upper column bandwidths are required"))
 
 #### Routines for BandedSizes
-function bb_blockstarts(b_size, l::AbstractVector{Int}, u::AbstractVector{Int})
-    N,M = nblocks(b_size)
+function bb_blockstarts(axes, l::AbstractVector{Int}, u::AbstractVector{Int})
+    N,M = blocksize.(axes,1)
     L,U = maximum(l), maximum(u)
     b_start = BandedMatrix{Int}(undef, (N, M), (L, U))
     -L > U && return b_start
@@ -13,12 +13,12 @@ function bb_blockstarts(b_size, l::AbstractVector{Int}, u::AbstractVector{Int})
 
     ind_shift = 0
     for J = 1:M
-        KR = max(1,J-u[J]):min(J+l[J],N)
+        KR = Block.(max(1,J-u[J]):min(J+l[J],N))
         if !isempty(KR)
-            b_start[KR,J] .= ind_shift .+ view(cumulsizes(b_size,1),KR) .- cumulsizes(b_size,1)[KR[1]] .+ 1
+            b_start[Int.(KR),J] .= ind_shift .+ first.(getindex.(Ref(axes[1]),KR)) .- first(axes[1][KR[1]]) .+ 1
 
-            num_rows = cumulsizes(b_size,1,KR[end]+1)-cumulsizes(b_size,1,KR[1])
-            num_cols = blocksize(b_size, 2, J)
+            num_rows = length(axes[1][KR])
+            num_cols = length(axes[2][Block(J)])
             ind_shift += num_rows*num_cols
         end
     end
@@ -34,7 +34,7 @@ function bb_blockstrides(b_axes, l::AbstractVector{Int}, u::AbstractVector{Int})
     checkbandwidths(N, M, l, u)
     b_strides = Vector{Int}(undef, M)
     for J=1:M
-        KR = max(1,J-u[J]):min(J+l[J],N)
+        KR = Block.(max(1,J-u[J]):min(J+l[J],N))
         if !isempty(KR)
             b_strides[J] = length(b_axes[1][KR])
         else
@@ -53,6 +53,10 @@ struct BlockSkylineSizes{BS<:NTuple{2,AbstractUnitRange{Int}}, LL<:AbstractVecto
     l::LL
     u::UU
 end
+
+const BlockBandedSizes = BlockSkylineSizes{<:Any, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, 
+                                            BandedMatrix{Int,Matrix{Int},OneTo{Int}}, Vector{Int}}
+
 
 BlockSkylineSizes(b_axes::NTuple{2,AbstractUnitRange{Int}}, l::AbstractVector{Int}, u::AbstractVector{Int}) =
     BlockSkylineSizes(b_axes, bb_blockstarts(b_axes, l, u), bb_blockstrides(b_axes, l, u), l, u)
@@ -80,23 +84,21 @@ blockbandwidth(bs::BlockSkylineSizes, i::Int) = blockbandwidths(bs)[i]
 
 cumulsizes(B::BlockSkylineSizes) = cumulsizes(B.block_sizes)
 
-colrange(B::BlockSkylineSizes, J::Integer) = max(1, J-B.u[J]):min(nblocks(B.block_sizes,1), J+B.l[J])
+colrange(B::BlockSkylineSizes, J::Integer) = max(1, J-B.u[J]):min(blocklength(B.axes[1]), J+B.l[J])
 
 function bb_numentries(B::BlockSkylineSizes)
-    b_size = B.block_sizes
+    axes = B.axes
     numentries = 0
-    N = nblocks(b_size,1)
-    for J = 1:nblocks(b_size,2),
-        KR = colrange(B, J)
-        num_rows = cumulsizes(b_size,1,KR[end]+1) - cumulsizes(b_size,1,KR[1])
-        num_cols = blocksize(b_size, 2, J)
+    N = blocklength(axes[1])
+    for J = blockaxes(axes[2],1)
+        KR = colrange(B, Int(J))
+        num_rows = length(axes[1][Block.(KR)])
+        num_cols = length(axes[2][J])
         numentries += num_rows*num_cols
     end
     numentries
 end
 
-const BlockBandedSizes = BlockSkylineSizes{<:Any, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, 
-                                            BandedMatrix{Int,Matrix{Int},OneTo{Int}}, Vector{Int}}
 
 
 
@@ -109,7 +111,7 @@ struct BlockSkylineMatrix{T, DATA<:AbstractVector{T}, BS<:BlockSkylineSizes} <: 
     data::DATA
     block_sizes::BS
 
-    global function _BlockSkylineMatrix(data::DATA, block_sizes::BS) where {T,DATA<:AbstractVector{T}, BS<:AbstractBlockSizes{2}}
+    global function _BlockSkylineMatrix(data::DATA, block_sizes::BS) where {T,DATA<:AbstractVector{T}, BS<:BlockSkylineSizes}
         new{T,DATA,BS}(data, block_sizes)
     end
 end
@@ -173,7 +175,7 @@ BlockBandedMatrix{T}(A::AbstractMatrix, block_sizes::BlockBandedSizes) where T =
 ##
 
 function BlockSkylineMatrix{T}(Z::Zeros, block_sizes::BlockSkylineSizes) where T
-    if size(Z) ≠ size(block_sizes)
+    if size(Z) ≠ map(length,block_sizes.axes)
         throw(DimensionMismatch("Size of input $(size(Z)) must be consistent with $(size(block_sizes))"))
     end
     _BlockSkylineMatrix(zeros(T, bb_numentries(block_sizes)), block_sizes)
@@ -202,19 +204,19 @@ BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 
 
 BlockSkylineMatrix{T}(A::Union{AbstractMatrix,UniformScaling},
-                           dims::NTuple{2,AbstractVector{Int}}, lu::NTuple{2,AbstractVector{Int}}) where T =
-                               BlockSkylineMatrix{T}(A, BlockSkylineSizes(dims..., lu...))
+                           rdims::AbstractVector{Int}, cdims::AbstractVector{Int}, lu::NTuple{2,AbstractVector{Int}}) where T =
+                               BlockSkylineMatrix{T}(A, BlockSkylineSizes(rdims, cdims, lu...))
 
 BlockBandedMatrix{T}(A::Union{AbstractMatrix,UniformScaling},
-                           dims::NTuple{2,AbstractVector{Int}}, lu::NTuple{2,Int}) where T =
-                               BlockSkylineMatrix{T}(A, BlockBandedSizes(dims..., lu...))
+                           rdims::AbstractVector{Int}, cdims::AbstractVector{Int}, lu::NTuple{2,Int}) where T =
+                               BlockSkylineMatrix{T}(A, BlockBandedSizes(rdims, cdims, lu...))
 
 BlockSkylineMatrix(A::Union{AbstractMatrix,UniformScaling},
-                        dims::NTuple{2, AbstractVector{Int}},
-                        lu::NTuple{2,AbstractVector{Int}}) = BlockSkylineMatrix{eltype(A)}(A, dims, lu)
+                        rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
+                        lu::NTuple{2,AbstractVector{Int}}) = BlockSkylineMatrix{eltype(A)}(A, rdims, cdims, lu)
 BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
-                        dims::NTuple{2, AbstractVector{Int}},
-                        lu::NTuple{2,Int}) = BlockBandedMatrix{eltype(A)}(A, dims, lu)
+                        rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
+                        lu::NTuple{2,Int}) = BlockBandedMatrix{eltype(A)}(A, rdims, cdims, lu)
 
 BlockBandedMatrix(A::BlockBandedMatrix, lu::NTuple{2,Int}) = BlockBandedMatrix(A, BlockBandedSizes(axes(A), lu...))
 

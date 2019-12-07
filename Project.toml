@@ -1,6 +1,6 @@
 name = "BlockBandedMatrices"
 uuid = "ffab5731-97b5-5995-9138-79e8c1846df0"
-version = "0.6"
+version = "0.7"
 
 [deps]
 BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
