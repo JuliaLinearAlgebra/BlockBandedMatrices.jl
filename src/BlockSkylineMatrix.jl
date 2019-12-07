@@ -142,16 +142,22 @@ lengths `rows` and `cols`, respectively, for ragged bands.
 """
 BlockSkylineMatrix
 
+@inline BlockBandedMatrix{T}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2, Int}) where T =
+    BlockSkylineMatrix{T}(undef, BlockBandedSizes(axes, lu...))
+
+@inline BlockSkylineMatrix{T}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2, AbstractVector{Int}}) where T =
+    BlockSkylineMatrix{T}(undef, BlockSkylineSizes(axes, lu...))
+
 @inline BlockBandedMatrix{T}(::UndefInitializer, rdims::AbstractVector{Int}, cdims::AbstractVector{Int}, lu::NTuple{2, Int}) where T =
     BlockSkylineMatrix{T}(undef, BlockBandedSizes(rdims, cdims, lu...))
 
-@inline BlockSkylineMatrix{T}(::UndefInitializer,rdims::AbstractVector{Int}, cdims::AbstractVector{Int}, lu::NTuple{2, AbstractVector{Int}}) where T =
+@inline BlockSkylineMatrix{T}(::UndefInitializer, rdims::AbstractVector{Int}, cdims::AbstractVector{Int}, lu::NTuple{2, AbstractVector{Int}}) where T =
     BlockSkylineMatrix{T}(undef, BlockSkylineSizes(rdims, cdims, lu...))
 
 function BlockSkylineMatrix{T}(A::AbstractMatrix, block_sizes::BlockSkylineSizes) where T
     ret = BlockSkylineMatrix(Zeros{T}(size(A)), block_sizes)
-    for J = Block.(1:nblocks(ret, 2)), K = blockcolrange(ret, Int(J))
-        kr, jr = globalrange(block_sizes, (Int(K), Int(J)))
+    for J = Block.(1:blocksize(ret, 2)), K = blockcolrange(ret, Int(J))
+        kr, jr = getindex.(block_sizes.axes, (K, J))
         view(ret, K, J) .= view(A, kr, jr)
     end
     ret
@@ -160,7 +166,7 @@ end
 function BlockSkylineMatrix{T}(A::AbstractBlockBandedMatrix, block_sizes::BlockSkylineSizes) where T
     ret = BlockSkylineMatrix(Zeros{T}(size(A)), block_sizes)
     block_sizes == A.block_sizes || throw(ArgumentError())
-    for J = Block.(1:nblocks(ret, 2)), K = blockcolrange(ret, Int(J))
+    for J = Block.(1:blocksize(ret, 2)), K = blockcolrange(ret, Int(J))
         view(ret, K, J) .= view(A, K, J)
     end
     ret
@@ -260,7 +266,7 @@ BroadcastStyle(::Type{<:BlockBandedMatrix}) = BlockBandedStyle()
 ################################
 
 zeroblock(A::BlockSkylineMatrix, K::Int, J::Int) =
-    Matrix(Zeros{eltype(A)}(blocksize(A, (K, J))))
+    Matrix(Zeros{eltype(A)}(length.(getindex.(axes(A),(Block(K),Block(J))))))
 
 @inline function getblock(A::BlockSkylineMatrix, K::Int, J::Int)
     @boundscheck blockcheckbounds(A, K, J)

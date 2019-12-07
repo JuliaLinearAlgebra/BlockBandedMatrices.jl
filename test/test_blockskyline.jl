@@ -12,7 +12,7 @@ Random.seed!(0)
 
         m = sum(rows)
 
-        A = BlockSkylineMatrix(Zeros(m,m), (rows,rows), (l,u))
+        A = BlockSkylineMatrix(Zeros(m,m), rows,rows, (l,u))
         @test @inferred(size(A)) == (sum(rows),sum(rows))
 
         @test Array(A) == Matrix(A)
@@ -35,11 +35,11 @@ Random.seed!(0)
         rows = [3, 1, 2, 1, 2, 1, 2, 1, 2, 1, 3]
         l,u = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1], [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1]
 
-        M = BlockSkylineMatrix{Float64}(undef, (rows,rows), (l,u))
+        M = BlockSkylineMatrix{Float64}(undef, rows,rows, (l,u))
         M.data .= 1
 
         d = Diagonal(1.0:size(M,2))
-        D = BandedBlockBandedMatrix(d, (rows,rows), (0,0), (0,0))
+        D = BandedBlockBandedMatrix(d, rows,rows, (0,0), (0,0))
 
         MD = M*D
         @test MD isa BlockSkylineMatrix
@@ -56,7 +56,7 @@ Random.seed!(0)
         @test all(MMu[2:4] .≥ [1,2,3])
         @test MMu[5:11] == [3,4,3,4,3,4,3]
 
-        N = BlockBandedMatrix{Float64}(undef, (rows,rows), (1,1))
+        N = BlockBandedMatrix{Float64}(undef, rows,rows, (1,1))
         N.data .= 1
         NN = N*N
         # We don't want a BlockBandedMatrix^2 to become a general
@@ -65,7 +65,7 @@ Random.seed!(0)
         @test NN == Matrix(N)^2
 
         rows = [9, 4, 1, 10, 6]
-        O = BlockSkylineMatrix{Int64}(undef, (rows,rows), ([-2, 2, 0, 2, -1],[-1, 2, 1, 0, -1]))
+        O = BlockSkylineMatrix{Int64}(undef, rows,rows, ([-2, 2, 0, 2, -1],[-1, 2, 1, 0, -1]))
         O.data .= 1
         OO = O*O
         @test OO isa BlockSkylineMatrix
@@ -76,7 +76,7 @@ Random.seed!(0)
         rows = [3, 1, 2, 1, 2, 1, 2, 1, 2, 1, 3]
         l,u = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1], [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1]
 
-        M = BlockSkylineMatrix{Float64}(undef, (rows,rows), (l,u))
+        M = BlockSkylineMatrix{Float64}(undef, rows,rows, (l,u))
         M.data .= 1
 
         @test BroadcastStyle(BlockSkylineMatrix) == BlockSkylineStyle()
@@ -84,11 +84,11 @@ Random.seed!(0)
 
         # A is a BlockSkylineMatrix with varying bandwidths
         rows = [3,4,5]
-        A = BlockSkylineMatrix{Float64}(undef, (rows,rows), ([1,0,1],[0,1,0]))
+        A = BlockSkylineMatrix{Float64}(undef, rows,rows, ([1,0,1],[0,1,0]))
         A.data .= 1
 
         # B is diagonal
-        B = BandedBlockBandedMatrix{Float64}(undef, (rows, rows), (0,0), (0,0))
+        B = BandedBlockBandedMatrix{Float64}(undef, rows, rows, (0,0), (0,0))
         B.data .= -1
 
         # AB should have the same structure as A
@@ -97,7 +97,7 @@ Random.seed!(0)
         @test blocksizes(AB) == blocksizes(A)
 
         # C has larger bandwidths than A
-        C = BandedBlockBandedMatrix{Float64}(undef, (rows, rows), (1,1), (1,1))
+        C = BandedBlockBandedMatrix{Float64}(undef, rows, rows, (1,1), (1,1))
         C.data .= -1
 
         # Thus, AC should be a BlockSkylineMatrix with C's bandwidths.

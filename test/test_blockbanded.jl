@@ -59,7 +59,7 @@ import Base.Broadcast: materialize!
 
         @test view(A, Block(3),Block(1)) ≈ [0,0,0]
         @test_throws BandError view(A, Block(3),Block(1))[1,1] = 4
-        @test_throws BoundsError view(A, Block(5,1))
+        @test_throws BlockBoundsError view(A, Block(5,1))
 
 
         # test blocks
@@ -84,7 +84,7 @@ import Base.Broadcast: materialize!
         @test A[Block(3,4)] == Matrix(Ones{Int}(3,4))
 
         ## Bug in setindex!
-        ret = BlockBandedMatrix(Zeros{Float64}((4,6)), ([2,2], [2,2,2]), (0,2))
+        ret = BlockBandedMatrix(Zeros{Float64}((4,6)), [2,2], [2,2,2], (0,2))
 
 
         V = view(ret, Block(1), Block(2))
@@ -96,7 +96,7 @@ import Base.Broadcast: materialize!
         l , u = 1,1
         N = M = 10
         cols = rows = 1:N
-        A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
+        A = BlockBandedMatrix{Float64}(undef, rows,cols, (l,u))
             A.data .= 1:length(A.data)
 
         A[1,1] = 5
@@ -112,7 +112,7 @@ import Base.Broadcast: materialize!
         N = M = 5
         cols = rows = 1:N
 
-        A = BlockBandedMatrix{Int}(undef, (rows,cols), (l,u))
+        A = BlockBandedMatrix{Int}(undef, rows,cols, (l,u))
         A.data .= 1:length(A.data)
 
         @test A[1,2] == 7
@@ -124,7 +124,7 @@ import Base.Broadcast: materialize!
         l , u = 1,1
         N = M = 10
         cols = rows = fill(100,N)
-        A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
+        A = BlockBandedMatrix{Float64}(undef, rows,cols, (l,u))
             A.data .= 1:length(A.data)
 
         V = view(A, Block(N,N))
@@ -141,11 +141,11 @@ import Base.Broadcast: materialize!
         @time BLAS.axpy!(2.0, V, V)
         @test A[Block(N,N)] ≈ 3AN
 
-        A = BlockBandedMatrix(Ones{Float64}((4,6)), ([2,2], [2,2,2]), (0,2))
-        B = BlockBandedMatrix(Ones{Float64}((6,6)), ([2,2,2], [2,2,2]), (0,1))
+        A = BlockBandedMatrix(Ones{Float64}((4,6)), [2,2], [2,2,2], (0,2))
+        B = BlockBandedMatrix(Ones{Float64}((6,6)), [2,2,2], [2,2,2], (0,1))
         @test sum(A) == 20
         @test sum(B) == 20
-        C = BlockBandedMatrix{Float64}(undef, ([2,2], [2,2,2]), (0,3))
+        C = BlockBandedMatrix{Float64}(undef, [2,2], [2,2,2], (0,3))
         @test all(mul!(C,A,B) .=== materialize!(MulAdd(1.0,A,B,0.0,similar(C))) .===
                     A*B)
         AB = A*B
@@ -157,7 +157,7 @@ import Base.Broadcast: materialize!
         l , u = 1,1
         N = M = 10
         cols = rows = 1:N
-        A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
+        A = BlockBandedMatrix{Float64}(undef, rows,cols, (l,u))
             A.data .= randn(length(A.data))
 
         fill!(view(A, Block(2,1)), 2.0)

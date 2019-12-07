@@ -32,12 +32,12 @@ function materialize!(M::MatMulVecAdd{<:AbstractBlockBandedLayout,<:AbstractStri
     end
 
     # impose block structure
-    y = PseudoBlockArray(y_in, BlockSizes((cumulsizes(blocksizes(A),1),)))
-    x = PseudoBlockArray(x_in, BlockSizes((cumulsizes(blocksizes(A),2),)))
+    y = PseudoBlockArray(y_in, (axes(A,1),))
+    x = PseudoBlockArray(x_in, (axes(A,2),))
 
     _fill_lmul!(β, y)
 
-    for J = Block.(1:nblocks(A,2))
+    for J = Block.(1:blocksize(A,2))
         for K = blockcolrange(A,J)
             muladd!(α, view(A,K,J), view(x,J), one(α), view(y,K))
         end
@@ -48,7 +48,7 @@ end
 function materialize!(M::MatMulMatAdd{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout})
     α, A, X, β, Y = M.α, M.A, M.B, M.β, M.C
     _fill_lmul!(β, Y)
-    for J=Block(1):Block(nblocks(X,2)), N=blockcolrange(X,J), K=blockcolrange(A,N)
+    for J=Block(1):Block(blocksize(X,2)), N=blockcolrange(X,J), K=blockcolrange(A,N)
         muladd!(α, view(A,K,N), view(X,N,J), one(α), view(Y,K,J))
     end
     Y
@@ -59,7 +59,7 @@ function materialize!(M::MatMulMatAdd{<:AbstractBlockBandedLayout,<:AbstractColu
     _fill_lmul!(β, Y_in)
     X = PseudoBlockArray(X_in, BlockSizes((cumulsizes(blocksizes(A),2),[1,size(X_in,2)+1])))
     Y = PseudoBlockArray(Y_in, BlockSizes((cumulsizes(blocksizes(A),1), [1,size(Y_in,2)+1])))
-    for N=Block.(1:nblocks(X,1)), K=blockcolrange(A,N)
+    for N=Block.(1:blocksize(X,1)), K=blockcolrange(A,N)
         muladd!(α, view(A,K,N), view(X,N,Block(1)), one(α), view(Y,K,Block(1)))
     end
     Y_in
@@ -70,7 +70,7 @@ function materialize!(M::MatMulMatAdd{<:AbstractColumnMajor,<:AbstractBlockBande
     _fill_lmul!(β, Y_in)
     A = PseudoBlockArray(A_in, BlockSizes(([1,size(A_in,1)+1],cumulsizes(blocksizes(X),1))))
     Y = PseudoBlockArray(Y_in, BlockSizes(([1,size(Y_in,1)+1],cumulsizes(blocksizes(X),2))))
-    for J=Block(1):Block(nblocks(X,2)), N=blockcolrange(X,J)
+    for J=Block(1):Block(blocksize(X,2)), N=blockcolrange(X,J)
         muladd!(α, view(A,Block(1),N), view(X,N,J), one(α), view(Y,Block(1),J))
     end
     Y_in
@@ -114,15 +114,13 @@ end
 
 function add_bandwidths(A::BlockBandedMatrix,B::BlockBandedMatrix)
     l,u = blockbandwidths(A) .+ blockbandwidths(B)
-    Fill(l,nblocks(B,2)), Fill(u,nblocks(B,2))
+    Fill(l,blocksize(B,2)), Fill(u,blocksize(B,2))
 end
 
 function similar(M::MulAdd{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T
     A,B = M.A, M.B
 
-    Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
-    Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
-    if Acols ≠ Brows
+    if !blockisequal(axes(A,2), axes(B,1))
         # diagonal matrices can be converted
         if isdiag(B) && size(A,2) == size(B,1) == size(B,2)
             B = BlockBandedMatrix(B.data, BlockSizes((Acols,Acols)), 0, 0, 0, 0)
@@ -133,17 +131,14 @@ function similar(M::MulAdd{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayo
         end
     end
     n,m = size(A,1), size(B,2)
-
     l,u = add_bandwidths(A,B)
-    BlockSkylineMatrix{T}(undef, BlockSkylineSizes(BlockSizes((Arows,Bcols)), l, u))
+    BlockSkylineMatrix{T}(undef, (axes(A,1),axes(B,2)), (l,u))
 end
 
 function similar(M::MulAdd{BandedBlockBandedColumnMajor,BandedBlockBandedColumnMajor}, ::Type{T}) where T
     A,B = M.A, M.B
 
-    Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
-    Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
-    if Acols ≠ Brows
+    if !blockisequal(axes(A,2), axes(B,1))
         # diagonal matrices can be converted
         if isdiag(B) && size(A,2) == size(B,1) == size(B,2)
             # TODO: fix
@@ -156,9 +151,7 @@ function similar(M::MulAdd{BandedBlockBandedColumnMajor,BandedBlockBandedColumnM
     end
     n,m = size(A,1), size(B,2)
 
-    bs = BandedBlockBandedSizes(BlockSizes((Arows,Bcols)), A.l+B.l, A.u+B.u, A.λ+B.λ, A.μ+B.μ)
-
-    BandedBlockBandedMatrix{T}(undef, bs)
+    BandedBlockBandedMatrix{T}(undef, (axes(A,1),axes(B,2)), (A.l+B.l, A.u+B.u), (A.λ+B.λ, A.μ+B.μ))
 end
 
 similar(M::MulAdd{<:DiagonalLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T = similar(M.B,T)
