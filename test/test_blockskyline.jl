@@ -1,6 +1,5 @@
-using ArrayLayouts, BlockBandedMatrices, LinearAlgebra, Random, Test
-import BlockBandedMatrices: colblockbandwidths,
-    BroadcastStyle, BlockSkylineStyle, blocksizes
+using ArrayLayouts, BlockBandedMatrices, BlockArrays, LinearAlgebra, Random, Test
+import BlockBandedMatrices: colblockbandwidths, BroadcastStyle, BlockSkylineStyle, blockisequal
 
 Random.seed!(0)
 
@@ -80,7 +79,7 @@ Random.seed!(0)
         M.data .= 1
 
         @test BroadcastStyle(BlockSkylineMatrix) == BlockSkylineStyle()
-        @test blocksizes(M + M) == blocksizes(M)
+        @test blocksize(M + M) == blocksize(M)
 
         # A is a BlockSkylineMatrix with varying bandwidths
         rows = [3,4,5]
@@ -94,7 +93,7 @@ Random.seed!(0)
         # AB should have the same structure as A
         AB = A+B
         @test Matrix(AB) == Matrix(A) + Matrix(B)
-        @test blocksizes(AB) == blocksizes(A)
+        @test blockisequal(axes(AB), axes(A))
 
         # C has larger bandwidths than A
         C = BandedBlockBandedMatrix{Float64}(undef, rows, rows, (1,1), (1,1))
@@ -103,6 +102,6 @@ Random.seed!(0)
         # Thus, AC should be a BlockSkylineMatrix with C's bandwidths.
         AC = A+C
         @test Matrix(AC) == Matrix(A) + Matrix(C)
-        @test blocksizes(AC) == blocksizes(C)
+        @test blockisequal(axes(AC),axes(C))
     end
 end

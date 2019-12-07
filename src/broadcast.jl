@@ -121,7 +121,7 @@ end
 function blockbanded_fill!(B::AbstractMatrix{T}, x) where T
     x == zero(T) || throw(BandError(B))
 
-    M,N = nblocks(B)
+    M,N = blocksize(B)
     for J = 1:N, K = blockcolrange(B,J)
         fill!(view(B,K,Block(J)), x)
     end
@@ -132,7 +132,7 @@ end
 function blockbanded_rmul!(B::AbstractMatrix{T}, x::Number) where T
     x == zero(T) || throw(BandError(B))
 
-    M,N = nblocks(B)
+    M,N = blocksize(B)
     for J = 1:N, K = blockcolrange(B,J)
         rmul!(view(B,K,Block(J)), x)
     end
@@ -142,7 +142,7 @@ end
 function blockbanded_lmul!(x::Number, B::AbstractMatrix{T}) where T
     x == zero(T) || throw(BandError(B))
 
-    M,N = nblocks(B)
+    M,N = blocksize(B)
     for J = 1:N, K = blockcolrange(B,J)
         lmul!(x, view(B,K,Block(J)))
     end
@@ -226,28 +226,27 @@ similar(bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(\), <:Tuple{<:
 function blockbanded_axpy!(a, X::AbstractMatrix, Y::AbstractMatrix)
     size(X) == size(Y) || throw(DimensionMismatch())
 
-    for J=Block(1):Block(nblocks(X,2)), K=blockcolrange(X,J)
+    for J=Block(1):Block(blocksize(X,2)), K=blockcolrange(X,J)
         view(Y,K,J) .= a .* view(X,K,J) .+ view(Y,K,J)
     end
     Y
 end
 
-function _combine_blocksizes(A, B)
-    A_size = blocksizes(A).block_sizes
-    A_size == blocksizes(B).block_sizes || throw(DimensionMismatch())
-    A_size
+function _combine_blockaxes(A, B)
+    blockisequal(axes(A), axes(B)) || throw(DimensionMismatch())
+    axes(A)
 end
 
-_combine_blocksizes(::Diagonal, B) = blocksizes(B)
-_combine_blocksizes(A, ::Diagonal) = blocksizes(A)
+_combine_blockaxes(::Diagonal, B) = axes(B)
+_combine_blockaxes(A, ::Diagonal) = axes(A)
 
-function _combined_blocksizes(A, B)
-    blocksizes(A) == blocksizes(B) || throw(DimensionMismatch("Block sizes do not agree"))
+function _combined_blockaxes(A, B)
+    blockisequal(axes(A), axes(B)) || throw(DimensionMismatch("Block sizes do not agree"))
     (A,B)
 end
 
-_combined_blocksizes(A::Diagonal, B) = PseudoBlockArray(A, blocksizes(B).block_sizes), B
-_combined_blocksizes(A, B::Diagonal) = A, PseudoBlockArray(B, blocksizes(A).block_sizes)
+_combined_blockaxes(A::Diagonal, B) = PseudoBlockArray(A, axes(B)), B
+_combined_blockaxes(A, B::Diagonal) = A, PseudoBlockArray(B, axes(A))
 
 
 
@@ -257,14 +256,14 @@ for op in (:+, :-)
             A,B = bc.args
             Al,Au = colblockbandwidths(A)
             Bl,Bu = colblockbandwidths(B)
-            BlockSkylineMatrix{T}(undef, _combine_blocksizes(A,B), (max.(Al,Bl), max.(Au,Bu)))
+            BlockSkylineMatrix{T}(undef, _combine_blockaxes(A,B), (max.(Al,Bl), max.(Au,Bu)))
         end
 
         function similar(bc::Broadcasted{<:BlockBandedStyle, <:Any, typeof($op), <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}, ::Type{T}) where T
             A,B = bc.args
             Al,Au = blockbandwidths(A)
             Bl,Bu = blockbandwidths(B)
-            BlockBandedMatrix{T}(undef, _combine_blocksizes(A,B), (max(Al,Bl), max(Au,Bu)))
+            BlockBandedMatrix{T}(undef, _combine_blockaxes(A,B), (max(Al,Bl), max(Au,Bu)))
         end
 
         function similar(bc::Broadcasted{<:BandedBlockBandedStyle, <:Any, typeof($op), <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}, ::Type{T}) where T
@@ -274,7 +273,7 @@ for op in (:+, :-)
             Aλ,Aμ = subblockbandwidths(A)
             Bλ,Bμ = subblockbandwidths(B)
 
-            BandedBlockBandedMatrix{T}(undef, _combine_blocksizes(A,B), (max(Al,Bl), max(Au,Bu)), (max(Aλ,Bλ), max(Aμ,Bμ)))
+            BandedBlockBandedMatrix{T}(undef, _combine_blockaxes(A,B), (max(Al,Bl), max(Au,Bu)), (max(Aλ,Bλ), max(Aμ,Bμ)))
         end
     end
 end
@@ -282,13 +281,13 @@ end
 for op in (:+, :-)
     @eval function copyto!(C::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof($op),
                                                                 <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
-        A,B = _combined_blocksizes(bc.args...)
+        A,B = _combined_blockaxes(bc.args...)
         A_l,A_u = blockbandwidths(A)
         B_l,B_u = blockbandwidths(B)
         C_l,C_u = blockbandwidths(C)
 
         size(A) == size(B) == size(C) || throw(DimensionMismatch())
-        N,M = nblocks(C)
+        N,M = blocksize(C)
 
         for J̃ = 1:M
             J = Block(J̃)
@@ -336,7 +335,7 @@ function similar(bc::Broadcasted{BlockBandedStyle, <:Any, typeof(+),
     α,A = αA.args
     Al,Au = blockbandwidths(A)
     Bl,Bu = blockbandwidths(B)
-    BlockBandedMatrix{T}(undef, _combine_blocksizes(A,B), (max(Al,Bl), max(Au,Bu)))
+    BlockBandedMatrix{T}(undef, _combine_blockaxes(A,B), (max(Al,Bl), max(Au,Bu)))
 end
 
 function similar(bc::Broadcasted{BandedBlockBandedStyle, <:Any, typeof(+),
@@ -349,7 +348,7 @@ function similar(bc::Broadcasted{BandedBlockBandedStyle, <:Any, typeof(+),
     Aλ,Aμ = subblockbandwidths(A)
     Bλ,Bμ = subblockbandwidths(B)
 
-    BandedBlockBandedMatrix{T}(undef, _combine_blocksizes(A,B), (max(Al,Bl), max(Au,Bu)), (max(Aλ,Bλ), max(Aμ,Bμ)))
+    BandedBlockBandedMatrix{T}(undef, _combine_blockaxes(A,B), (max(Al,Bl), max(Au,Bu)), (max(Aλ,Bλ), max(Aμ,Bμ)))
 end
 
 
