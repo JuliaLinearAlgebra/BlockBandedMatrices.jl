@@ -64,6 +64,10 @@ BlockSkylineSizes(b_axes::NTuple{2,AbstractUnitRange{Int}}, l::AbstractVector{In
 BlockSkylineSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l::AbstractVector{Int}, u::AbstractVector{Int}) =
     BlockSkylineSizes((CumsumBlockRange(rows),CumsumBlockRange(cols)), l, u)
 
+BlockBandedSizes(b_axes::NTuple{2,AbstractUnitRange{Int}}, l::Int, u::Int) =
+    BlockSkylineSizes(b_axes, Fill(l, blocklength(b_axes[1])), Fill(u, blocklength(b_axes[2])))
+
+
 BlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l::Int, u::Int) =
     BlockSkylineSizes(rows, cols, Fill(l, length(cols)), Fill(u, length(cols)))
 

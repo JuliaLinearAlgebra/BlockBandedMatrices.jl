@@ -8,8 +8,7 @@ BroadcastStyle(::BandedBlockBandedStyle, ::StructuredMatrixStyle{<:Diagonal}) =
 
 
 function blockbandwidths(P::PseudoBlockMatrix{<:Any,<:Diagonal})
-    bs = blocksizes(P)
-    cumulsizes(bs)[1] == cumulsizes(bs)[2] || throw(DimensionMismatch())
+    blockisequal(axes(P,1),axes(P,2)) || throw(DimensionMismatch())
     (0,0)
 end
 
@@ -17,7 +16,7 @@ bandeddata(P::PseudoBlockMatrix) = bandeddata(P.blocks)
 bandwidths(P::PseudoBlockMatrix) = bandwidths(P.blocks)
 
 BroadcastStyle(::Type{<:SubArray{<:Any,2,<:PseudoBlockMatrix{<:Any,<:Diagonal},
-                                NTuple{2,BlockSlice1}}}) = BandedStyle()
+                                <:Tuple{<:BlockSlice1,<:BlockSlice1}}}) = BandedStyle()
 
 
 
@@ -49,7 +48,7 @@ function sizes_from_blocks(A::Tridiagonal, _)
     #     size(A.dl[k],1) == sz[1][k+1] || throw(ArgumentError("block sizes of lower diagonal inconsisent with diagonal"))
     #     size(A.dl[k],2) == sz[2][k] || throw(ArgumentError("block sizes of lower diagonal inconsisent with diagonal"))
     # end
-    BlockSizes(size.(A.d, 1), size.(A.d,2))
+    (size.(A.d, 1), size.(A.d,2))
 end
 
 blockbandwidths(A::BlockArray) = bandwidths(A.blocks)
@@ -57,15 +56,11 @@ isblockbanded(A::BlockArray) = isbanded(A.blocks)
 
 @inline function getblock(block_arr::BlockTridiagonal{T,VT}, K::Int, J::Int) where {T,VT<:AbstractMatrix}
     @boundscheck blockcheckbounds(block_arr, K, J)
-    abs(J-K) ≥ 2 && return convert(VT, Zeros{T}(blocksize(block_arr,(K,J))))
+    abs(J-K) ≥ 2 && return convert(VT, Zeros{T}(length.(getindex.(axes(block_arr),(Block(K),Block(J))))...))
     block_arr.blocks[K,J]
 end
 
-function checksquareblocks(A)
-    m,n = cumulsizes(blocksizes(A))
-    m == n || throw(DimensionMismatch("blocks are not square: block dimensions are $(blocksizes(A))"))
-    m
-end
+checksquareblocks(A) = blockisequal(axes(A)...) || throw(DimensionMismatch("blocks are not square: block dimensions are $(axes(A))"))
 
 for op in (:-, :+)
     @eval begin
@@ -81,15 +76,15 @@ for op in (:-, :+)
 end
 
 function replace_in_print_matrix(A::BlockDiagonal, i::Integer, j::Integer, s::AbstractString)
-    bi = global2blockindex(A.block_sizes, (i, j))
-    I,J = bi.I
-    i,j = bi.α
-    J-I == 0 ? s : Base.replace_with_centered_mark(s)
+    bi = findblockindex.(axes(A), (i,j))
+    I,J = block.(bi)
+    i,j = blockindex.(bi)
+    Int(J-I) == 0 ? s : Base.replace_with_centered_mark(s)
 end
 
 function replace_in_print_matrix(A::BlockTridiagonal, i::Integer, j::Integer, s::AbstractString)
-    bi = global2blockindex(A.block_sizes, (i, j))
-    I,J = bi.I
-    i,j = bi.α
-    -1 ≤ J-I ≤ 1 ? s : Base.replace_with_centered_mark(s)
+    bi = findblockindex.(axes(A), (i,j))
+    I,J = block.(bi)
+    i,j = blockindex.(bi)
+    -1 ≤ Int(J-I) ≤ 1 ? s : Base.replace_with_centered_mark(s)
 end

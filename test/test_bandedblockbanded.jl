@@ -426,14 +426,14 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         @test blockbandwidths(A) == blockbandwidths(B)
         @test blocksize(A) == blocksize(B)
 
-        A = WithBlockMatrix{Int64}(Zeros{Int64}(sum.(args[1])...), args...)
-        B = BandedBlockBandedMatrix{Int64}(Zeros{Int64}(sum.(args[1])...), args...)
+        A = WithBlockMatrix{Int64}(Zeros{Int64}(sum(args[1]),sum(args[2])), args...)
+        B = BandedBlockBandedMatrix{Int64}(Zeros{Int64}(sum(args[1]),sum(args[2])), args...)
         @test typeof(A.data) <: BlockArray
         @test typeof(B.data) <: PseudoBlockArray
         @test A == B
 
-        A = WithBlockMatrix{Int64}(Ones{Int64}(sum.(args[1])...), args...)
-        B = BandedBlockBandedMatrix{Int64}(Ones{Int64}(sum.(args[1])...), args...)
+        A = WithBlockMatrix{Int64}(Ones{Int64}(sum(args[1]),sum(args[2])), args...)
+        B = BandedBlockBandedMatrix{Int64}(Ones{Int64}(sum(args[1]),sum(args[2])), args...)
         @test typeof(A.data) <: BlockArray
         @test typeof(B.data) <: PseudoBlockArray
         @test A == B

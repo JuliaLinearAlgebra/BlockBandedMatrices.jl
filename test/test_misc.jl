@@ -1,13 +1,11 @@
 using ArrayLayouts, BlockBandedMatrices, BandedMatrices, BlockArrays, LinearAlgebra, Test
 import Base: getindex, size
 import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle, bandeddata, BandedColumns
-import BlockArrays: blocksizes, BlockSizes
 
 
 @testset "Diagonal interface" begin
     n = 10
     D = Diagonal(randn(n^2))
-    @test blocksizes(D) == BlockSizes([n^2], [n^2])
     @test blockbandwidths(D) == subblockbandwidths(D) == (0,0)
 
     PD = PseudoBlockArray(D, Fill(n,n), Fill(n,n))

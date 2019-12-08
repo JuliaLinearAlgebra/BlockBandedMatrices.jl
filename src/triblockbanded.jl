@@ -10,8 +10,7 @@
 @lazyldiv UnitLowerTriangular{T, DefaultBandedBlockBandedMatrix{T}} where T
 
 
-@inline hasmatchingblocks(A) =
-    cumulsizes(blocksizes(A),1) == cumulsizes(blocksizes(A),2)
+@inline hasmatchingblocks(A) = blockisequal(axes(A)...)
 
 
 #TODO: non-matchin g blocks

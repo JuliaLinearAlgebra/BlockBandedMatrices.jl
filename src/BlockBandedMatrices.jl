@@ -29,7 +29,7 @@ import ArrayLayouts: @lazymul, MatMulMatAdd, MatMulVecAdd, BlasMatLmulVec,
 
 import BlockArrays: blocksize, blockcheckbounds, CumsumBlockRange, blockisequal, DefaultBlockAxis,
                         Block, BlockSlice, getblock, unblock, setblock!, block, blockindex,
-                        _unblock, BlockIndexRange, sizes_from_blocks
+                        _unblock, _cumsum, BlockIndexRange, sizes_from_blocks
 
 import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrange,
                         inbands_setindex!, inbands_getindex, banded_setindex!,

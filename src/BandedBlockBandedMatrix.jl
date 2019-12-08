@@ -1,7 +1,7 @@
 
 
 function check_data_sizes(data::AbstractBlockMatrix, raxis, (l,u), (λ,μ))
-    if blocksize(data,1) ≠ l + u + 1 && !(blocksize(data,1) == 0 && -l > u)
+    if blocksize(data,1) ≠ l + u + 1 && !(blocksize(data,1) == 0 && (-l > u || -λ > μ))
         throw(ArgumentError("Data matrix must have number of row blocks equal to number of block bands"))
     end
     for K = blockaxes(data,1)
@@ -52,6 +52,7 @@ _BandedBlockBandedMatrix(data::AbstractBlockMatrix,rblocksizes::AbstractVector{I
 _BandedBlockBandedMatrix(data::AbstractMatrix,rblocksizes::AbstractVector{Int}, cblocksizes::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
     _BandedBlockBandedMatrix(data, (CumsumBlockRange(rblocksizes),CumsumBlockRange(cblocksizes)), lu, λμ)
 
+_cumsum(b::Fill) = iszero(FillArrays.getindex_value(b)) ? (1:1:0) : cumsum(b)
 _bbb_data_axes(caxes, lu, λμ) = (CumsumBlockRange(Fill(max(0,sum(λμ)+1),max(0,sum(lu)+1))),caxes)
 
 BandedBlockBandedMatrix{T,B,R}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B,R<:AbstractUnitRange{Int}} =
@@ -184,7 +185,16 @@ BandedBlockBandedMatrix(A::AbstractMatrix, rdims::AbstractVector{Int}, cdims::Ab
     BandedBlockBandedMatrix(A, (CumsumBlockRange(rdims), CumsumBlockRange(cdims)), lu, λμ)
 
 similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
-      BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
+    BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
+
+@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{CumsumBlockRange,AbstractUnitRange{Int}}) where T =
+    BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
+@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{AbstractUnitRange{Int},CumsumBlockRange}) where T =
+    BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))    
+@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{CumsumBlockRange,CumsumBlockRange}) where T =
+    BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
+
+
 
 similar(A::BandedBlockBandedMatrix{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
       BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))   
@@ -252,7 +262,6 @@ isdiag(A::BandedBlockBandedMatrix) = A.λ == A.μ == A.l == A.u
 # AbstractBlockArray Interface #
 ################################
 
-@inline blocksizes(block_array::BandedBlockBandedMatrix) = block_array.block_sizes
 
 zeroblock(A::BandedBlockBandedMatrix, K::Int, J::Int) =
     BandedMatrix(Zeros{eltype(A)}(length.(getindex.(axes(A),(Block(K),Block(J))))), (A.λ, A.μ))
@@ -472,5 +481,5 @@ BLAS.axpy!(a::T, A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{T}) w
 
 lmul!(x::Number, A::BandedBlockBandedMatrix) = (lmul!(x, A.data); A)
 rmul!(A::BandedBlockBandedMatrix, x::Number) = (rmul!(A.data, x); A)
-*(x::Number, A::BandedBlockBandedMatrix) = _BandedBlockBandedMatrix(x*A.data, A.block_sizes)
-*(A::BandedBlockBandedMatrix, x::Number) = _BandedBlockBandedMatrix(A.data*x, A.block_sizes)
+*(x::Number, A::BandedBlockBandedMatrix) = _BandedBlockBandedMatrix(x*A.data, axes(A,1), blockbandwidths(A), subblockbandwidths(A))
+*(A::BandedBlockBandedMatrix, x::Number) = _BandedBlockBandedMatrix(A.data*x, axes(A,1), blockbandwidths(A), subblockbandwidths(A))

@@ -57,8 +57,8 @@ end
 function materialize!(M::MatMulMatAdd{<:AbstractBlockBandedLayout,<:AbstractColumnMajor,<:AbstractColumnMajor})
     α, A, X_in, β, Y_in = M.α, M.A, M.B, M.β, M.C
     _fill_lmul!(β, Y_in)
-    X = PseudoBlockArray(X_in, BlockSizes((cumulsizes(blocksizes(A),2),[1,size(X_in,2)+1])))
-    Y = PseudoBlockArray(Y_in, BlockSizes((cumulsizes(blocksizes(A),1), [1,size(Y_in,2)+1])))
+    X = PseudoBlockArray(X_in, (axes(A,2), axes(X_in,2)))
+    Y = PseudoBlockArray(Y_in, (axes(A,1), axes(Y_in,2)))
     for N=Block.(1:blocksize(X,1)), K=blockcolrange(A,N)
         muladd!(α, view(A,K,N), view(X,N,Block(1)), one(α), view(Y,K,Block(1)))
     end
@@ -68,8 +68,8 @@ end
 function materialize!(M::MatMulMatAdd{<:AbstractColumnMajor,<:AbstractBlockBandedLayout,<:AbstractColumnMajor})
     α, A_in, X, β, Y_in = M.α, M.A, M.B, M.β, M.C
     _fill_lmul!(β, Y_in)
-    A = PseudoBlockArray(A_in, BlockSizes(([1,size(A_in,1)+1],cumulsizes(blocksizes(X),1))))
-    Y = PseudoBlockArray(Y_in, BlockSizes(([1,size(Y_in,1)+1],cumulsizes(blocksizes(X),2))))
+    A = PseudoBlockArray(A_in, (axes(A_in,1),axes(X,1)))
+    Y = PseudoBlockArray(Y_in, (axes(Y_in,1),axes(X,2)))
     for J=Block(1):Block(blocksize(X,2)), N=blockcolrange(X,J)
         muladd!(α, view(A,Block(1),N), view(X,N,J), one(α), view(Y,Block(1),J))
     end
@@ -158,21 +158,6 @@ similar(M::MulAdd{<:DiagonalLayout,<:AbstractBlockBandedLayout}, ::Type{T}) wher
 similar(M::MulAdd{<:AbstractBlockBandedLayout,<:DiagonalLayout}, ::Type{T}) where T = similar(M.A,T)
 
 
-
-function blocksizes(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockRange1}) where {LL,UU}
-    A = parent(V)
-    Bs = A.block_sizes.block_sizes
-
-    KR = parentindices(V)[1].block.indices[1]
-    JR = parentindices(V)[2].block.indices[1]
-    shift = Int(KR[1])-Int(JR[1])
-
-    Bs.cumul_sizes[1]
-    @assert KR[1] == JR[1] == 1
-    BlockSkylineSizes(BlockSizes((Bs.cumul_sizes[1][KR[1]:KR[end]+1] .- Bs.cumul_sizes[1][KR[1]] .+ 1,
-                                       Bs.cumul_sizes[2][JR[1]:JR[end]+1] .- Bs.cumul_sizes[2][JR[1]] .+ 1)),
-                           colblockbandwidth(A,1)[1:Int(JR[end])] .- shift, colblockbandwidth(A,2)[1:Int(JR[end])] .+ shift)
-end
 
 function blockbandwidths(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockRange1}) where {LL,UU}
     A = parent(V)
