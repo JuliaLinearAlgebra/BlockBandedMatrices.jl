@@ -41,31 +41,31 @@ end
 const DefaultBandedBlockBandedMatrix{T} = BandedBlockBandedMatrix{T, PseudoBlockMatrix{T, Matrix{T}, NTuple{2,DefaultBlockAxis}}, DefaultBlockAxis}
 
 _BandedBlockBandedMatrix(data::AbstractBlockMatrix,rblocksizes::AbstractVector{Int}, cblocksizes::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
-    _BandedBlockBandedMatrix(data, (CumsumBlockRange(rblocksizes),CumsumBlockRange(cblocksizes)), lu, λμ)
+    _BandedBlockBandedMatrix(data, (blockedrange(rblocksizes),blockedrange(cblocksizes)), lu, λμ)
                                             
 @inline _BandedBlockBandedMatrix(data::AbstractMatrix, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) = 
     _BandedBlockBandedMatrix(PseudoBlockArray(data),  raxis, lu, λμ)
 
 @inline _BandedBlockBandedMatrix(data::AbstractMatrix, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) = 
-    _BandedBlockBandedMatrix(PseudoBlockArray(data,(CumsumBlockRange(Fill(sum(λμ)+1,sum(lu)+1)),axes[2])), axes[1], lu, λμ)    
+    _BandedBlockBandedMatrix(PseudoBlockArray(data,(blockedrange(Fill(sum(λμ)+1,sum(lu)+1)),axes[2])), axes[1], lu, λμ)    
 
 _BandedBlockBandedMatrix(data::AbstractMatrix,rblocksizes::AbstractVector{Int}, cblocksizes::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
-    _BandedBlockBandedMatrix(data, (CumsumBlockRange(rblocksizes),CumsumBlockRange(cblocksizes)), lu, λμ)
+    _BandedBlockBandedMatrix(data, (blockedrange(rblocksizes),blockedrange(cblocksizes)), lu, λμ)
 
 _cumsum(b::Fill) = iszero(FillArrays.getindex_value(b)) ? (1:1:0) : cumsum(b)
-_bbb_data_axes(caxes, lu, λμ) = (CumsumBlockRange(Fill(max(0,sum(λμ)+1),max(0,sum(lu)+1))),caxes)
+_bbb_data_axes(caxes, lu, λμ) = (blockedrange(Fill(max(0,sum(λμ)+1),max(0,sum(lu)+1))),caxes)
 
 BandedBlockBandedMatrix{T,B,R}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B,R<:AbstractUnitRange{Int}} =
     _BandedBlockBandedMatrix(B(undef, _bbb_data_axes(axes[2],lu,λμ)), axes[1], lu, λμ)
 
 BandedBlockBandedMatrix{T,B,R}(::UndefInitializer, rblocksizes::AbstractVector{Int}, cblocksizes::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B,R<:AbstractUnitRange{Int}} =
-    BandedBlockBandedMatrix{T,B,R}(undef, (CumsumBlockRange(rblocksizes),CumsumBlockRange(cblocksizes)), lu, λμ)
+    BandedBlockBandedMatrix{T,B,R}(undef, (blockedrange(rblocksizes),blockedrange(cblocksizes)), lu, λμ)
 
 BandedBlockBandedMatrix{T,B}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B} =
     BandedBlockBandedMatrix{T,B,typeof(axes[1])}(undef,axes,lu,λμ)
 
 BandedBlockBandedMatrix{T,B}(::UndefInitializer, rblocksizes::AbstractVector{Int}, cblocksizes::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B} =
-    BandedBlockBandedMatrix{T,B}(undef, (CumsumBlockRange(rblocksizes),CumsumBlockRange(cblocksizes)), lu, λμ)
+    BandedBlockBandedMatrix{T,B}(undef, (blockedrange(rblocksizes),blockedrange(cblocksizes)), lu, λμ)
 
 
 """
@@ -130,17 +130,17 @@ BandedBlockBandedMatrix{T}(m::Union{AbstractMatrix, UniformScaling},
 BandedBlockBandedMatrix{T,B,R}(m::Union{AbstractMatrix, UniformScaling},
                             rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
                            lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B,R<:AbstractUnitRange{Int}} =
-  BandedBlockBandedMatrix{T,B,R}(m, (CumsumBlockRange(rdims),CumsumBlockRange(cdims)), lu, λμ)  
+  BandedBlockBandedMatrix{T,B,R}(m, (blockedrange(rdims),blockedrange(cdims)), lu, λμ)  
 
 BandedBlockBandedMatrix{T,B}(m::Union{AbstractMatrix, UniformScaling},
                             rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
                            lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B} =
-  BandedBlockBandedMatrix{T,B}(m, (CumsumBlockRange(rdims),CumsumBlockRange(cdims)), lu, λμ)  
+  BandedBlockBandedMatrix{T,B}(m, (blockedrange(rdims),blockedrange(cdims)), lu, λμ)  
 
 BandedBlockBandedMatrix{T}(m::Union{AbstractMatrix, UniformScaling},
                             rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
                            lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
-  BandedBlockBandedMatrix{T}(m, (CumsumBlockRange(rdims),CumsumBlockRange(cdims)), lu, λμ)  
+  BandedBlockBandedMatrix{T}(m, (blockedrange(rdims),blockedrange(cdims)), lu, λμ)  
 
 
 BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
@@ -150,7 +150,7 @@ BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
                         rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
                         lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
-    BandedBlockBandedMatrix(A, (CumsumBlockRange(rdims),CumsumBlockRange(cdims)), lu, λμ)    
+    BandedBlockBandedMatrix(A, (blockedrange(rdims),blockedrange(cdims)), lu, λμ)    
   
   
 function BandedBlockBandedMatrix{T,Blocks,RR}(A::AbstractMatrix, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,Blocks,RR<:AbstractUnitRange{Int}}
@@ -182,7 +182,7 @@ BandedBlockBandedMatrix(A::AbstractMatrix) =
     BandedBlockBandedMatrix(A, axes(A), blockbandwidths(A), subblockbandwidths(A))
 
 BandedBlockBandedMatrix(A::AbstractMatrix, rdims::AbstractVector{Int}, cdims::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
-    BandedBlockBandedMatrix(A, (CumsumBlockRange(rdims), CumsumBlockRange(cdims)), lu, λμ)
+    BandedBlockBandedMatrix(A, (blockedrange(rdims), blockedrange(cdims)), lu, λμ)
 
 similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
     BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))

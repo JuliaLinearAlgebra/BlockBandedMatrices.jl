@@ -50,7 +50,7 @@ import BlockArrays: CumsumBlockRange, blockisequal
 
         @test MemoryLayout(typeof(V)) == BandedBlockBandedColumnMajor()
         @test blockbandwidths(V) == (2,0)
-        @test blockisequal(axes(V), (CumsumBlockRange(2:4), Base.OneTo(3)))
+        @test blockisequal(axes(V), (blockedrange(2:4), Base.OneTo(3)))
 
         @test blocksize(V) == (3,1)
         V2 = view(V, Block(1), Block(1))
@@ -135,7 +135,7 @@ import BlockArrays: CumsumBlockRange, blockisequal
         @test blockrowstop(V,1) == Block(2)
         @test blockcolstop(V,1) == Block(2)
 
-        @test blockisequal(axes(V), CumsumBlockRange.((1:3, 1:3)))
+        @test blockisequal(axes(V), blockedrange.((1:3, 1:3)))
 
         b = randn(size(V,1))
         r = UpperTriangular(Matrix(V)) \ b
