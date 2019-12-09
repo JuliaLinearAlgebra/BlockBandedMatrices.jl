@@ -3,7 +3,7 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
 @testset "BlockBandedMatrix QR/QL" begin
     @testset "Square QR" begin
         N = 5
-        A = BlockBandedMatrix{Float64}(undef, (1:N,1:N), (2,1))
+        A = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (2,1))
         A.data .= randn.()
 
         F = qr(A)
@@ -24,7 +24,7 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
 
     @testset "Thin QR" begin
         N = 5
-        A = BlockBandedMatrix{Float64}(undef, (1:N+1,1:N), (2,1))
+        A = BlockBandedMatrix{Float64}(undef, 1:N+1,1:N, (2,1))
         A.data .= randn.()
 
         F = qr(A)
@@ -47,7 +47,7 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
 
     @testset "Wide QR" begin
         N = 5
-        A = BlockBandedMatrix{Float64}(undef, (1:N,1:N+1), (2,1))
+        A = BlockBandedMatrix{Float64}(undef, 1:N,1:N+1, (2,1))
         A.data .= randn.()
 
         F = qr(A)
@@ -70,7 +70,7 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
 
     @testset "Square QL" begin
         N = 5
-        A = BlockBandedMatrix{Float64}(undef, (1:N,1:N), (2,1))
+        A = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (2,1))
         A.data .= randn.()
 
         F = ql(A)
@@ -92,7 +92,7 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
 
     @testset "Thin QL" begin
         N = 5
-        A = BlockBandedMatrix{Float64}(undef, (1:N+1,1:N), (2,1))
+        A = BlockBandedMatrix{Float64}(undef, 1:N+1,1:N, (2,1))
         A.data .= randn.()
 
         # F = ql(A)
@@ -114,7 +114,7 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
 
     @testset "Wide QL" begin
         N = 5
-        A = BlockBandedMatrix{Float64}(undef, (1:N,1:N+1), (2,1))
+        A = BlockBandedMatrix{Float64}(undef, 1:N,1:N+1, (2,1))
         A.data .= randn.()
 
         @test_throws ArgumentError ql(A)
@@ -122,9 +122,9 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
 
     @testset "Complex QR/QL" begin
         @testset "Simple" begin
-            A=BlockBandedMatrix{Float64}(I, ([1,1],[1,1]), (0,0))
+            A=BlockBandedMatrix{Float64}(I, [1,1],[1,1], (0,0))
             Af=qr(A)
-            B=BlockBandedMatrix{ComplexF64}(I, ([1,1],[1,1]), (0,0))
+            B=BlockBandedMatrix{ComplexF64}(I, [1,1],[1,1], (0,0))
             Bf=qr(B)
             @test Af.factors == Bf.factors
             @test Af.τ == Bf.τ
@@ -133,7 +133,7 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
         @testset "Off-diagonals" begin
             for qrl in [qr,ql]
                 for T in [Float64, ComplexF64]
-                    A = BlockBandedMatrix{T}(undef, ([3,2,1,3],[3,2,1,3]), (1,1))
+                    A = BlockBandedMatrix{T}(undef, [3,2,1,3],[3,2,1,3], (1,1))
                     A.data .= rand(T, size(A.data))
                     Af = qrl(A)
                     @test Af.factors isa BlockBandedMatrix

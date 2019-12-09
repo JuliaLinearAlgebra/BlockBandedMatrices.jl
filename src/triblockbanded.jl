@@ -46,10 +46,9 @@ _triangular_matrix(::Val{'L'}, ::Val{'U'}, A) = UnitLowerTriangular(A)
 
 function _matchingblocks_triangular_mul!(::Val{'U'}, UNIT, A::AbstractMatrix{T}, dest) where T
     # impose block structure
-    b = PseudoBlockArray(dest, BlockSizes((cumulsizes(blocksizes(A),1),)))
+    b = PseudoBlockArray(dest, (axes(A,1),))
 
-    Bs = blocksizes(A)
-    N = nblocks(Bs,1)
+    N = blocksize(A,1)
 
     for K = 1:N
         b_2 = view(b, Block(K))
@@ -65,10 +64,9 @@ end
 
 function _matchingblocks_triangular_mul!(::Val{'L'}, UNIT, A::AbstractMatrix{T}, dest) where T
     # impose block structure
-    b = PseudoBlockArray(dest, BlockSizes((cumulsizes(blocksizes(A),1),)))
+    b = PseudoBlockArray(dest, (axes(A,1),))
 
-    Bs = blocksizes(A)
-    N = nblocks(Bs,1)
+    N = blocksize(A,1)
 
     for K = N:-1:1
         b_2 = view(b, Block(K))
@@ -110,10 +108,9 @@ for UNIT in ('U', 'N')
             @boundscheck size(A,1) == size(dest,1) || throw(BoundsError())
 
             # impose block structure
-            b = PseudoBlockArray(dest, BlockSizes((cumulsizes(blocksizes(A),1),)))
+            b = PseudoBlockArray(dest, (axes(A,1),))
 
-            Bs = blocksizes(A)
-            N = nblocks(Bs,1)
+            N = blocksize(A,1)
 
             for K = N:-1:1
                 b_2 = view(b, Block(K))
@@ -141,10 +138,9 @@ for UNIT in ('U', 'N')
             @boundscheck size(A,1) == size(dest,1) || throw(BoundsError())
 
             # impose block structure
-            b = PseudoBlockArray(dest, BlockSizes((cumulsizes(blocksizes(A),1),)))
+            b = PseudoBlockArray(dest, (axes(A,1),))
 
-            Bs = blocksizes(A)
-            N = nblocks(Bs,1)
+            N = blocksize(A,1)
 
             for K = 1:N
                 b_2 = view(b, Block(K))

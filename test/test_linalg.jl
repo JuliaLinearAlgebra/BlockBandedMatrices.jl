@@ -1,7 +1,7 @@
 using BlockArrays, BandedMatrices, BlockBandedMatrices, ArrayLayouts, LinearAlgebra, Test
 import BandedMatrices: BandError, bandeddata
 import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!,
-                            blockcolstop, blockrowstop, blocksizes, BlockSkylineSizes
+                            blockcolstop, blockrowstop, BlockSkylineSizes
 
 @testset "lmul!/rmul!" begin
     C = BandedBlockBandedMatrix{Float64}(undef, 1:2,1:2, (1,1), (1,1))

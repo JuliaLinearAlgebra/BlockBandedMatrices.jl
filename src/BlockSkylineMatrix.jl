@@ -65,7 +65,7 @@ BlockSkylineSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l::Abstr
     BlockSkylineSizes((CumsumBlockRange(rows),CumsumBlockRange(cols)), l, u)
 
 BlockBandedSizes(b_axes::NTuple{2,AbstractUnitRange{Int}}, l::Int, u::Int) =
-    BlockSkylineSizes(b_axes, Fill(l, blocklength(b_axes[1])), Fill(u, blocklength(b_axes[2])))
+    BlockSkylineSizes(b_axes, Fill(l, blocklength(b_axes[2])), Fill(u, blocklength(b_axes[2])))
 
 
 BlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l::Int, u::Int) =
@@ -84,7 +84,7 @@ blockbandwidth(bs::BlockSkylineSizes, i::Int) = blockbandwidths(bs)[i]
 
 size(bs::BlockSkylineSizes) = map(length,bs.axes)
 
-==(A::BlockSkylineSizes, B::BlockSkylineSizes) = A.block_sizes == B.block_sizes && A.block_starts == B.block_starts &&
+==(A::BlockSkylineSizes, B::BlockSkylineSizes) = blockisequal(A.axes,B.axes) && A.block_starts == B.block_starts &&
     A.l == B.l && A.u == B.u
 
 colrange(B::BlockSkylineSizes, J::Integer) = max(1, J-B.u[J]):min(blocklength(B.axes[1]), J+B.l[J])
@@ -169,8 +169,8 @@ end
 
 function BlockSkylineMatrix{T}(A::AbstractBlockBandedMatrix, block_sizes::BlockSkylineSizes) where T
     ret = BlockSkylineMatrix(Zeros{T}(size(A)), block_sizes)
-    block_sizes == A.block_sizes || throw(ArgumentError())
-    for J = Block.(1:blocksize(ret, 2)), K = blockcolrange(ret, Int(J))
+    blockisequal(axes(A), block_sizes.axes) || throw(ArgumentError())
+    for J = blockaxes(ret,2), K = blockcolrange(ret, Int(J))
         view(ret, K, J) .= view(A, K, J)
     end
     ret

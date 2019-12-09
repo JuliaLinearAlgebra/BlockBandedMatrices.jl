@@ -1,7 +1,7 @@
 using BlockBandedMatrices
 
 @testset "Adj/Trans" begin
-    A = BandedBlockBandedMatrix(randn(ComplexF64,10,14), (1:4,2:5), (1,2), (2,1))
+    A = BandedBlockBandedMatrix(randn(ComplexF64,10,14), 1:4,2:5, (1,2), (2,1))
 
     @test A'[Block(1,1)] == A[Block(1,1)]'
     @test A'[Block(2,3)] == A[Block(3,2)]'

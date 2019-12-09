@@ -161,7 +161,6 @@ similar(M::MulAdd{<:AbstractBlockBandedLayout,<:DiagonalLayout}, ::Type{T}) wher
 
 function blockbandwidths(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockRange1}) where {LL,UU}
     A = parent(V)
-    Bs = A.block_sizes.block_sizes
 
     KR = parentindices(V)[1].block.indices[1]
     JR = parentindices(V)[2].block.indices[1]
