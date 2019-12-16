@@ -54,7 +54,7 @@ struct BlockSkylineSizes{BS<:NTuple{2,AbstractUnitRange{Int}}, LL<:AbstractVecto
     u::UU
 end
 
-const BlockBandedSizes = BlockSkylineSizes{<:Any, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, 
+const BlockBandedSizes = BlockSkylineSizes{NTuple{2,CumsumBlockRange{Vector{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, 
                                             BandedMatrix{Int,Matrix{Int},OneTo{Int}}, Vector{Int}}
 
 
@@ -119,7 +119,7 @@ struct BlockSkylineMatrix{T, DATA<:AbstractVector{T}, BS<:BlockSkylineSizes} <: 
     end
 end
 
-const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, <:BlockBandedSizes}
+const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, BlockBandedSizes}
 
 # Auxiliary outer constructors
 @inline _BlockBandedMatrix(data::AbstractVector, bs::BlockBandedSizes) =

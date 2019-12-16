@@ -1,6 +1,6 @@
 
 
-function check_data_sizes(data::AbstractBlockMatrix, raxis, (l,u), (λ,μ))
+function check_data_sizes(data::AbstractMatrix, raxis, (l,u), (λ,μ))
     if blocksize(data,1) ≠ l + u + 1 && !(blocksize(data,1) == 0 && (-l > u || -λ > μ))
         throw(ArgumentError("Data matrix must have number of row blocks equal to number of block bands"))
     end
@@ -30,7 +30,7 @@ struct BandedBlockBandedMatrix{T, BLOCKS, RAXIS<:AbstractUnitRange{Int}} <: Abst
     λ::Int  # sub lower bandwidth
     μ::Int  # sub upper bandwidth
 
-    global function _BandedBlockBandedMatrix(data::AbstractBlockMatrix,
+    global function _BandedBlockBandedMatrix(data::AbstractMatrix,
                                              raxis::AbstractUnitRange{Int},
                                              lu::NTuple{2,Int}, λμ::NTuple{2,Int})
       @boundscheck check_data_sizes(data, raxis, lu, λμ)
@@ -39,12 +39,6 @@ struct BandedBlockBandedMatrix{T, BLOCKS, RAXIS<:AbstractUnitRange{Int}} <: Abst
 end
 
 const DefaultBandedBlockBandedMatrix{T} = BandedBlockBandedMatrix{T, PseudoBlockMatrix{T, Matrix{T}, NTuple{2,DefaultBlockAxis}}, DefaultBlockAxis}
-
-_BandedBlockBandedMatrix(data::AbstractBlockMatrix,rblocksizes::AbstractVector{Int}, cblocksizes::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
-    _BandedBlockBandedMatrix(data, (blockedrange(rblocksizes),blockedrange(cblocksizes)), lu, λμ)
-                                            
-@inline _BandedBlockBandedMatrix(data::AbstractMatrix, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) = 
-    _BandedBlockBandedMatrix(PseudoBlockArray(data),  raxis, lu, λμ)
 
 @inline _BandedBlockBandedMatrix(data::AbstractMatrix, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) = 
     _BandedBlockBandedMatrix(PseudoBlockArray(data,(blockedrange(Fill(sum(λμ)+1,sum(lu)+1)),axes[2])), axes[1], lu, λμ)    
