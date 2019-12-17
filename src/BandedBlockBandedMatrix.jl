@@ -181,11 +181,11 @@ BandedBlockBandedMatrix(A::AbstractMatrix, rdims::AbstractVector{Int}, cdims::Ab
 similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
     BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
 
-@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{CumsumBlockRange,AbstractUnitRange{Int}}) where T =
+@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{BlockedUnitRange,AbstractUnitRange{Int}}) where T =
     BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
-@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{AbstractUnitRange{Int},CumsumBlockRange}) where T =
+@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{AbstractUnitRange{Int},BlockedUnitRange}) where T =
     BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))    
-@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{CumsumBlockRange,CumsumBlockRange}) where T =
+@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{BlockedUnitRange,BlockedUnitRange}) where T =
     BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
 
 

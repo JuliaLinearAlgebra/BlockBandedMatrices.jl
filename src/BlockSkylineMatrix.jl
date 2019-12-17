@@ -54,7 +54,7 @@ struct BlockSkylineSizes{BS<:NTuple{2,AbstractUnitRange{Int}}, LL<:AbstractVecto
     u::UU
 end
 
-const BlockBandedSizes = BlockSkylineSizes{NTuple{2,CumsumBlockRange{Vector{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, 
+const BlockBandedSizes = BlockSkylineSizes{NTuple{2,BlockedUnitRange{Vector{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, 
                                             BandedMatrix{Int,Matrix{Int},OneTo{Int}}, Vector{Int}}
 
 

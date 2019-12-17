@@ -1,7 +1,7 @@
 using BlockBandedMatrices, BandedMatrices, BlockArrays, ArrayLayouts, LinearAlgebra, Test
 import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedColumnMajor,
                         BandedColumnMajor, tribandeddata, BlockSkylineSizes, blockrowstop, blockcolstop, ColumnMajor
-import BlockArrays: CumsumBlockRange, blockisequal
+import BlockArrays: BlockedUnitRange, blockisequal
 
 @testset "triangular" begin
     @testset "triangular BandedBlockBandedMatrix mul" begin
