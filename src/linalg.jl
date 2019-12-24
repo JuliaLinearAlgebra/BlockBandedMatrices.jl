@@ -3,10 +3,10 @@ const Block1 = Block{1,Int}
 const BlockRange1 = BlockRange{1,Tuple{UnitRange{Int}}}
 const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int}}}
 const SubBlockSkylineMatrix{T,LL,UU,R1,R2} =
-    SubArray{T,2,BlockSkylineMatrix{T,LL,UU},Tuple{BlockSlice{R1},BlockSlice{R2}}}
+    SubArray{T,2,BlockSkylineMatrix{T,LL,UU},<:Tuple{<:BlockSlice{R1},<:BlockSlice{R2}}}
 
 const SubBandedBlockBandedMatrix{T,R1,R2} =
-    SubArray{T,2,<:BandedBlockBandedMatrix{T},Tuple{BlockSlice{R1},BlockSlice{R2}}}
+    SubArray{T,2,<:BandedBlockBandedMatrix{T},<:Tuple{<:BlockSlice{R1},<:BlockSlice{R2}}}
 
 
 
@@ -32,12 +32,12 @@ function materialize!(M::MatMulVecAdd{<:AbstractBlockBandedLayout,<:AbstractStri
     end
 
     # impose block structure
-    y = PseudoBlockArray(y_in, BlockSizes((cumulsizes(blocksizes(A),1),)))
-    x = PseudoBlockArray(x_in, BlockSizes((cumulsizes(blocksizes(A),2),)))
+    y = PseudoBlockArray(y_in, (axes(A,1),))
+    x = PseudoBlockArray(x_in, (axes(A,2),))
 
     _fill_lmul!(β, y)
 
-    for J = Block.(1:nblocks(A,2))
+    for J = Block.(1:blocksize(A,2))
         for K = blockcolrange(A,J)
             muladd!(α, view(A,K,J), view(x,J), one(α), view(y,K))
         end
@@ -48,7 +48,7 @@ end
 function materialize!(M::MatMulMatAdd{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout})
     α, A, X, β, Y = M.α, M.A, M.B, M.β, M.C
     _fill_lmul!(β, Y)
-    for J=Block(1):Block(nblocks(X,2)), N=blockcolrange(X,J), K=blockcolrange(A,N)
+    for J=Block(1):Block(blocksize(X,2)), N=blockcolrange(X,J), K=blockcolrange(A,N)
         muladd!(α, view(A,K,N), view(X,N,J), one(α), view(Y,K,J))
     end
     Y
@@ -57,9 +57,9 @@ end
 function materialize!(M::MatMulMatAdd{<:AbstractBlockBandedLayout,<:AbstractColumnMajor,<:AbstractColumnMajor})
     α, A, X_in, β, Y_in = M.α, M.A, M.B, M.β, M.C
     _fill_lmul!(β, Y_in)
-    X = PseudoBlockArray(X_in, BlockSizes((cumulsizes(blocksizes(A),2),[1,size(X_in,2)+1])))
-    Y = PseudoBlockArray(Y_in, BlockSizes((cumulsizes(blocksizes(A),1), [1,size(Y_in,2)+1])))
-    for N=Block.(1:nblocks(X,1)), K=blockcolrange(A,N)
+    X = PseudoBlockArray(X_in, (axes(A,2), axes(X_in,2)))
+    Y = PseudoBlockArray(Y_in, (axes(A,1), axes(Y_in,2)))
+    for N=Block.(1:blocksize(X,1)), K=blockcolrange(A,N)
         muladd!(α, view(A,K,N), view(X,N,Block(1)), one(α), view(Y,K,Block(1)))
     end
     Y_in
@@ -68,9 +68,9 @@ end
 function materialize!(M::MatMulMatAdd{<:AbstractColumnMajor,<:AbstractBlockBandedLayout,<:AbstractColumnMajor})
     α, A_in, X, β, Y_in = M.α, M.A, M.B, M.β, M.C
     _fill_lmul!(β, Y_in)
-    A = PseudoBlockArray(A_in, BlockSizes(([1,size(A_in,1)+1],cumulsizes(blocksizes(X),1))))
-    Y = PseudoBlockArray(Y_in, BlockSizes(([1,size(Y_in,1)+1],cumulsizes(blocksizes(X),2))))
-    for J=Block(1):Block(nblocks(X,2)), N=blockcolrange(X,J)
+    A = PseudoBlockArray(A_in, (axes(A_in,1),axes(X,1)))
+    Y = PseudoBlockArray(Y_in, (axes(Y_in,1),axes(X,2)))
+    for J=Block(1):Block(blocksize(X,2)), N=blockcolrange(X,J)
         muladd!(α, view(A,Block(1),N), view(X,N,J), one(α), view(Y,Block(1),J))
     end
     Y_in
@@ -114,15 +114,13 @@ end
 
 function add_bandwidths(A::BlockBandedMatrix,B::BlockBandedMatrix)
     l,u = blockbandwidths(A) .+ blockbandwidths(B)
-    Fill(l,nblocks(B,2)), Fill(u,nblocks(B,2))
+    Fill(l,blocksize(B,2)), Fill(u,blocksize(B,2))
 end
 
 function similar(M::MulAdd{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T
     A,B = M.A, M.B
 
-    Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
-    Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
-    if Acols ≠ Brows
+    if !blockisequal(axes(A,2), axes(B,1))
         # diagonal matrices can be converted
         if isdiag(B) && size(A,2) == size(B,1) == size(B,2)
             B = BlockBandedMatrix(B.data, BlockSizes((Acols,Acols)), 0, 0, 0, 0)
@@ -133,17 +131,14 @@ function similar(M::MulAdd{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayo
         end
     end
     n,m = size(A,1), size(B,2)
-
     l,u = add_bandwidths(A,B)
-    BlockSkylineMatrix{T}(undef, BlockSkylineSizes(BlockSizes((Arows,Bcols)), l, u))
+    BlockSkylineMatrix{T}(undef, (axes(A,1),axes(B,2)), (l,u))
 end
 
 function similar(M::MulAdd{BandedBlockBandedColumnMajor,BandedBlockBandedColumnMajor}, ::Type{T}) where T
     A,B = M.A, M.B
 
-    Arows, Acols = A.block_sizes.block_sizes.cumul_sizes
-    Brows, Bcols = B.block_sizes.block_sizes.cumul_sizes
-    if Acols ≠ Brows
+    if !blockisequal(axes(A,2), axes(B,1))
         # diagonal matrices can be converted
         if isdiag(B) && size(A,2) == size(B,1) == size(B,2)
             # TODO: fix
@@ -156,9 +151,7 @@ function similar(M::MulAdd{BandedBlockBandedColumnMajor,BandedBlockBandedColumnM
     end
     n,m = size(A,1), size(B,2)
 
-    bs = BandedBlockBandedSizes(BlockSizes((Arows,Bcols)), A.l+B.l, A.u+B.u, A.λ+B.λ, A.μ+B.μ)
-
-    BandedBlockBandedMatrix{T}(undef, bs)
+    BandedBlockBandedMatrix{T}(undef, (axes(A,1),axes(B,2)), (A.l+B.l, A.u+B.u), (A.λ+B.λ, A.μ+B.μ))
 end
 
 similar(M::MulAdd{<:DiagonalLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T = similar(M.B,T)
@@ -166,24 +159,8 @@ similar(M::MulAdd{<:AbstractBlockBandedLayout,<:DiagonalLayout}, ::Type{T}) wher
 
 
 
-function blocksizes(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockRange1}) where {LL,UU}
-    A = parent(V)
-    Bs = A.block_sizes.block_sizes
-
-    KR = parentindices(V)[1].block.indices[1]
-    JR = parentindices(V)[2].block.indices[1]
-    shift = Int(KR[1])-Int(JR[1])
-
-    Bs.cumul_sizes[1]
-    @assert KR[1] == JR[1] == 1
-    BlockSkylineSizes(BlockSizes((Bs.cumul_sizes[1][KR[1]:KR[end]+1] .- Bs.cumul_sizes[1][KR[1]] .+ 1,
-                                       Bs.cumul_sizes[2][JR[1]:JR[end]+1] .- Bs.cumul_sizes[2][JR[1]] .+ 1)),
-                           colblockbandwidth(A,1)[1:Int(JR[end])] .- shift, colblockbandwidth(A,2)[1:Int(JR[end])] .+ shift)
-end
-
 function blockbandwidths(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockRange1}) where {LL,UU}
     A = parent(V)
-    Bs = A.block_sizes.block_sizes
 
     KR = parentindices(V)[1].block.indices[1]
     JR = parentindices(V)[2].block.indices[1]
@@ -198,17 +175,17 @@ end
 ####
 
 
-sublayout(::BlockBandedColumnMajor, ::Type{Tuple{BlockSlice{BlockRange1}, BlockSlice{BlockRange1}}}) = BlockBandedColumnMajor()
-sublayout(::BlockBandedColumnMajor, ::Type{Tuple{BlockSlice{BlockRange1}, BlockSlice{Block1}}}) = ColumnMajor()
-sublayout(::BlockBandedColumnMajor, ::Type{Tuple{BlockSlice{BlockRange1}, BlockSlice{BlockIndexRange1}}}) = ColumnMajor()
-sublayout(::BlockBandedColumnMajor, ::Type{Tuple{BlockSlice{BlockIndexRange1}, BlockSlice{BlockIndexRange1}}}) = ColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{BlockRange1}}}) = BlockBandedColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{Block1}}}) = ColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{BlockIndexRange1}}}) = ColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockIndexRange1}, <:BlockSlice{BlockIndexRange1}}}) = ColumnMajor()
 
-sublayout(::BandedBlockBandedColumnMajor, ::Type{Tuple{BlockSlice{Block1}, BlockSlice{Block1}}}) = BandedColumnMajor()
-sublayout(::BandedBlockBandedColumnMajor, ::Type{Tuple{BlockSlice{BlockRange1}, BlockSlice{BlockRange1}}}) = BandedBlockBandedColumnMajor()
-sublayout(::BandedBlockBandedColumnMajor, ::Type{Tuple{BlockSlice{Block1}, BlockSlice{BlockRange1}}}) = BandedBlockBandedColumnMajor()
-sublayout(::BandedBlockBandedColumnMajor, ::Type{Tuple{BlockSlice{BlockRange1}, BlockSlice{Block1}}}) = BandedBlockBandedColumnMajor()
-sublayout(::BandedBlockBandedColumnMajor, ::Type{Tuple{BlockSlice{BlockRange1}, BlockSlice{BlockIndexRange1}}}) = BandedBlockBandedColumnMajor()
-sublayout(::BandedBlockBandedColumnMajor, ::Type{Tuple{BlockSlice{BlockIndexRange1}, BlockSlice{BlockIndexRange1}}}) = BandedBlockBandedColumnMajor()
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{Block1}, <:BlockSlice{Block1}}}) = BandedColumnMajor()
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{BlockRange1}}}) = BandedBlockBandedColumnMajor()
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{Block1}, <:BlockSlice{BlockRange1}}}) = BandedBlockBandedColumnMajor()
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{Block1}}}) = BandedBlockBandedColumnMajor()
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{BlockIndexRange1}}}) = BandedBlockBandedColumnMajor()
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockIndexRange1}, <:BlockSlice{BlockIndexRange1}}}) = BandedBlockBandedColumnMajor()
 
 isbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(typeof(A)) == BandedColumnMajor()
 isbandedblockbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(typeof(A)) == BandedBlockBandedColumnMajor()
@@ -218,7 +195,6 @@ subblockbandwidths(V::SubBandedBlockBandedMatrix) = subblockbandwidths(parent(V)
 
 function blockbandwidths(V::SubBandedBlockBandedMatrix{<:Any,BlockRange1,Block1})
     A = parent(V)
-    Bs = A.block_sizes.block_sizes
 
     KR = parentindices(V)[1].block.indices[1]
     J = parentindices(V)[2].block
@@ -228,7 +204,6 @@ end
 
 function blockbandwidths(V::SubBandedBlockBandedMatrix{<:Any,Block1,BlockRange1})
     A = parent(V)
-    Bs = A.block_sizes.block_sizes
 
     K = parentindices(V)[1].block
     JR = parentindices(V)[2].block.indices[1]
@@ -239,7 +214,6 @@ end
 
 function blockbandwidths(V::SubBandedBlockBandedMatrix{<:Any,BlockRange1,BlockRange1})
     A = parent(V)
-    Bs = A.block_sizes.block_sizes
 
     KR = parentindices(V)[1].block.indices[1]
     JR = parentindices(V)[2].block.indices[1]

@@ -1,13 +1,12 @@
 using BlockBandedMatrices, BandedMatrices, BlockArrays, ArrayLayouts, LinearAlgebra, Test
 import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedColumnMajor,
-                        BandedColumnMajor, tribandeddata, blocksizes, cumulsizes, nblocks,
-                        BlockSkylineSizes, blockrowstop, blockcolstop, BlockSizes,
-                        ColumnMajor, BlockBandedSizes
+                        BandedColumnMajor, tribandeddata, BlockSkylineSizes, blockrowstop, blockcolstop, ColumnMajor
+import BlockArrays: BlockedUnitRange, blockisequal
 
 @testset "triangular" begin
     @testset "triangular BandedBlockBandedMatrix mul" begin
-        A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
-            A.data .= randn.()
+        A = BandedBlockBandedMatrix{Float64}(undef, 1:10,1:10, (1,1), (1,1))
+        A.data .= randn.()
 
         U = UpperTriangular(A)
         @test MemoryLayout(typeof(U)) == TriangularLayout{'U','N',BandedBlockBandedColumnMajor}()
@@ -37,8 +36,8 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
     end
 
     @testset "Block by BlockIndex" begin
-        A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
-            A.data .= randn.()
+        A = BandedBlockBandedMatrix{Float64}(undef, 1:10,1:10, (1,1), (1,1))
+        A.data .= randn.()
         V = view(A, Block(3), Block.(3:5))
         @test MemoryLayout(typeof(V)) == BandedBlockBandedColumnMajor()
         b = randn(size(V,2))
@@ -51,9 +50,9 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
 
         @test MemoryLayout(typeof(V)) == BandedBlockBandedColumnMajor()
         @test blockbandwidths(V) == (2,0)
-        @test cumulsizes(blocksizes(V)) == ([1,3,6,10], [1,4])
+        @test blockisequal(axes(V), (blockedrange(2:4), Base.OneTo(3)))
 
-        @test nblocks(V) == (3,1)
+        @test blocksize(V) == (3,1)
         V2 = view(V, Block(1), Block(1))
         @test MemoryLayout(typeof(V2)) == BandedColumnMajor()
 
@@ -62,7 +61,7 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
     end
 
     @testset "triangular BandedBlockBandedMatrix ldiv" begin
-        A = BandedBlockBandedMatrix{Float64}(undef, (1:10,1:10), (1,1), (1,1))
+        A = BandedBlockBandedMatrix{Float64}(undef, 1:10,1:10, (1,1), (1,1))
         A.data .= randn.()
         A = A+10I
 
@@ -87,14 +86,13 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
         rows = [3,4,5]
         cols = [2,3,4,3]
 
-        A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
-            A.data .= randn(length(A.data))
+        A = BlockBandedMatrix{Float64}(undef, rows,cols, (l,u))
+        A.data .= randn(length(A.data))
 
         b = randn(size(A,1))
 
         V = view(A, Block.(1:3), Block.(1:4))
-        @test blocksizes(V) isa BlockSkylineSizes
-        @test blocksizes(V) == blocksizes(A)
+        @test blockisequal(axes(V), axes(A))
 
 
         @test all(Matrix(V) .=== Matrix(A))
@@ -113,11 +111,11 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
         @test UpperTriangular(V) \ b ≈ UpperTriangular(Matrix(V)) \ b ≈ UpperTriangular(A[1:11,1:11]) \ b
 
         # bug from SingularIntegralEquations, fixed by k_old check in _squaredblocks_newbandwidth
-        A = BlockBandedMatrix{Float64}(undef, ([5; fill(4,470)], [7; fill(4,368)]), (102,269))
-            A.data .= randn(length(A.data))
-            for k = 1:min(size(A,1), size(A,2))
-                A[k,k] += 10
-            end
+        A = BlockBandedMatrix{Float64}(undef, [5; fill(4,470)], [7; fill(4,368)], (102,269))
+        A.data .= randn(length(A.data))
+        for k = 1:min(size(A,1), size(A,2))
+            A[k,k] += 10
+        end
 
         V = view(A, 1:400,1:400)
         b = randn(400)
@@ -129,15 +127,15 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
         l , u = 1,1
         N = M = 5
         cols = rows = 1:N
-        A = BlockBandedMatrix{Float64}(undef, (rows,cols), (l,u))
-            A.data .= randn(length(A.data))
+        A = BlockBandedMatrix{Float64}(undef, rows,cols, (l,u))
+        A.data .= randn(length(A.data))
 
         V = view(A, Block.(1:3), Block.(1:3))
 
         @test blockrowstop(V,1) == Block(2)
         @test blockcolstop(V,1) == Block(2)
 
-        @test blocksizes(V) == BlockBandedSizes(BlockSizes(1:3, 1:3), l,u)
+        @test blockisequal(axes(V), blockedrange.((1:3, 1:3)))
 
         b = randn(size(V,1))
         r = UpperTriangular(Matrix(V)) \ b
@@ -200,6 +198,6 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedCol
         b = randn(size(V,1))
 
         @test all(Matrix(V) .=== Matrix(V2))
-        UpperTriangular(V2) \ b ≈ UpperTriangular(V) \ b
+        @test UpperTriangular(V2) \ b ≈ UpperTriangular(V) \ b
     end
 end

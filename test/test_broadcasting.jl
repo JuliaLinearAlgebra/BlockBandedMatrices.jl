@@ -1,31 +1,31 @@
-using BandedMatrices, BlockBandedMatrices, LinearAlgebra, ArrayLayouts, Test
+using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayouts, Test
 
 @testset "general" begin
     N = 10
-    A = BlockBandedMatrix{Float64}(undef, (1:N,1:N), (1,1))
-        A.data .= randn.()
-        n = size(A,1)
+    A = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1))
+    A.data .= randn.()
+    n = size(A,1)
     B = Matrix{Float64}(undef, n,n)
     B .= exp.(A)
     @test B == exp.(Matrix(A)) == exp.(A)
-    @test exp.(A) isa Matrix
-    @test A .+ 1 isa Matrix
+    @test exp.(A) isa BlockMatrix
+    @test A .+ 1 isa BlockMatrix
 
-    A = BandedBlockBandedMatrix{Float64}(undef, (1:N,1:N), (1,1), (1,1))
+    A = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1), (1,1))
         A.data .= randn.()
         n = size(A,1)
     B = Matrix{Float64}(undef, n,n)
     B .= exp.(A)
     @test B == exp.(Matrix(A)) == exp.(A)
-    @test exp.(A) isa Matrix
-    @test A .+ 1 isa Matrix
+    @test exp.(A) isa BlockMatrix
+    @test A .+ 1 isa BlockMatrix
 end
 
 @testset "lmul!/rmul!" begin
     N = 10
-    A = BlockBandedMatrix{Float64}(undef, (1:N,1:N), (1,1))
+    A = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1))
         A.data .= randn.()
-    B = BlockBandedMatrix{Float64}(undef, (1:N,1:N), (2,2))
+    B = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (2,2))
     B .= (-).(A)
     @test similar(A) isa typeof(A)
     @test similar(A,Float64) isa typeof(A)
@@ -70,9 +70,9 @@ end
     @test 2.0 .\ A isa typeof(A)
     @test blockbandwidths(2\A) == blockbandwidths(2.0 .\ A) == blockbandwidths(A)
 
-    A = BandedBlockBandedMatrix{Float64}(undef, (1:N,1:N), (1,1),(1,1))
+    A = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1),(1,1))
         A.data .= randn.()
-    B = BandedBlockBandedMatrix{Float64}(undef, (1:N,1:N), (2,2),(2,2))
+    B = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (2,2),(2,2))
     B .= (-).(A)
     @test similar(A) isa typeof(A)
     @test similar(A,Float64) isa typeof(A)
@@ -124,11 +124,11 @@ end
 
 @testset "axpy!" begin
     N = 10
-    A = BlockBandedMatrix{Float64}(undef, (1:N,1:N), (1,1))
+    A = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1))
         A.data .= randn.()
-    B = BlockBandedMatrix{Float64}(undef, (1:N,1:N), (2,2))
+    B = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (2,2))
         B.data .= randn.()
-    C = BlockBandedMatrix{Float64}(undef, (1:N,1:N), (3,3))
+    C = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (3,3))
     @time C .= A .+ B
     @test C == A + B == A .+ B
 
@@ -147,11 +147,11 @@ end
     @test B == C
 
     N = 10
-    A = BandedBlockBandedMatrix{Float64}(undef, (1:N,1:N), (1,1), (1,1))
+    A = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1), (1,1))
         A.data .= randn.()
-    B = BandedBlockBandedMatrix{Float64}(undef, (1:N,1:N), (2,2), (2,2))
+    B = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (2,2), (2,2))
         B.data .= randn.()
-    C = BandedBlockBandedMatrix{Float64}(undef, (1:N,1:N), (3,3), (3,3))
+    C = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (3,3), (3,3))
     @time C .= A .+ B
     @test C == A + B == A .+ B
 

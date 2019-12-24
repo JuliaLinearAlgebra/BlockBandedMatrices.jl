@@ -18,9 +18,9 @@ apply_ql!(A, τ, B) = _apply_ql!(MemoryLayout(typeof(A)), MemoryLayout(typeof(τ
 
 function qr!(A::BlockBandedMatrix{T}) where T
     l,u = blockbandwidths(A)
-    M,N = nblocks(A)
-    bs = M < N ? BlockSizes((cumulsizes(blocksizes(A),1),)) : BlockSizes((cumulsizes(blocksizes(A),2),))
-    τ = PseudoBlockVector{T}(undef, bs)
+    M,N = blocksize(A)
+    ax1 = M < N ? axes(A,1) : axes(A,2)
+    τ = PseudoBlockVector{T}(undef, (ax1,))
     for K = 1:min(N,M)
         KR = Block.(K:min(K+l,M))
         V = view(A,KR,Block(K))
@@ -35,14 +35,14 @@ end
 
 function ql!(A::BlockBandedMatrix{T}) where T
     l,u = blockbandwidths(A)
-    M,N = nblocks(A)
+    M,N = blocksize(A)
 
-    bs = if M < N
+    ax2 = if M < N
         throw(ArgumentError("Wide block-QL not implented"))
     else
-        BlockSizes((cumulsizes(blocksizes(A),2),))
+        axes(A,2)
     end
-    τ = PseudoBlockVector{T}(undef, bs)
+    τ = PseudoBlockVector{T}(undef, (ax2,))
     
     for K = N:-1:max(N - M + 1,1)
         μ = M+K-N
@@ -67,11 +67,11 @@ function lmul!(adjQ::Adjoint{<:Any,<:QRPackedQ{<:Any,<:BlockSkylineMatrix}}, Bin
     Q = parent(adjQ)
     A = Q.factors
     l,u = blockbandwidths(A)
-    N,M = nblocks(A)
+    N,M = blocksize(A)
     # impose block structure
-    bs = BlockSizes((cumulsizes(blocksizes(A),1),))
-    τ  = PseudoBlockArray(Q.τ, bs)
-    B = PseudoBlockArray(Bin, bs)
+    ax1 = (axes(A,1),)
+    τ  = PseudoBlockArray(Q.τ, ax1)
+    B = PseudoBlockArray(Bin, ax1)
     for K = 1:min(N,M)
         KR = Block.(K:min(K+l,N))
         V = view(A,KR,Block(K))
@@ -85,11 +85,11 @@ function lmul!(adjQ::Adjoint{<:Any,<:QLPackedQ{<:Any,<:BlockSkylineMatrix}}, Bin
     Q = parent(adjQ)
     A = Q.factors
     l,u = blockbandwidths(A)
-    N,M = nblocks(A)
+    N,M = blocksize(A)
     # impose block structure
-    bs = BlockSizes((cumulsizes(blocksizes(A),1),))
-    τ  = PseudoBlockArray(Q.τ, bs)
-    B = PseudoBlockArray(Bin, bs)
+    ax1 = (axes(A,1),)
+    τ  = PseudoBlockArray(Q.τ, ax1)
+    B = PseudoBlockArray(Bin, ax1)
     for K = N:-1:1
         KR = Block.(max(1,K-u):K)
         V = view(A,KR,Block(K))
@@ -104,7 +104,7 @@ end
 for Typ in (:StridedVector, :StridedMatrix, :AbstractVector, :AbstractMatrix)
     @eval function ldiv!(A::QR{<:Any,<:BlockSkylineMatrix}, B::$Typ)
         lmul!(adjoint(A.Q), B)
-        M,N = nblocks(A.factors)
+        M,N = blocksize(A.factors)
         MN = min(M,N)
         V = view(A.factors,Block.(1:MN), Block.(1:MN))
         materialize!(Ldiv(UpperTriangular(V), view(B,1:size(V,1),:)))
