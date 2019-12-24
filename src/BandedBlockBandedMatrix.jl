@@ -221,7 +221,9 @@ end
 ################################
 
 MemoryLayout(::Type{<:BandedBlockBandedMatrix}) = BandedBlockBandedColumnMajor()
-BroadcastStyle(::Type{<:BandedBlockBandedMatrix}) = BandedBlockBandedStyle()
+bandedblockbandedbroadcaststyle(_) = BandedBlockBandedStyle()
+BroadcastStyle(::Type{<:BandedBlockBandedMatrix{<:Any,BLOCKS}}) where BLOCKS = 
+    bandedblockbandedbroadcaststyle(BroadcastStyle(BLOCKS))
 
 isbandedblockbanded(_) = false
 isbandedblockbanded(::BandedBlockBandedMatrix) = true
