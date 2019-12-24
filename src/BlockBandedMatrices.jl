@@ -25,7 +25,7 @@ import ArrayLayouts: @lazymul, MatMulMatAdd, MatMulVecAdd, BlasMatLmulVec,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatLdivVec,
                     triangulardata, sublayout, @lazyldiv, @lazylmul,
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
-                    DiagonalLayout, materialize!, MulAdd, mul
+                    DiagonalLayout, materialize!, MulAdd, mul, colsupport, rowsupport
 
 import BlockArrays: blocksize, blockcheckbounds, BlockedUnitRange, blockisequal, DefaultBlockAxis,
                         Block, BlockSlice, getblock, unblock, setblock!, block, blockindex,

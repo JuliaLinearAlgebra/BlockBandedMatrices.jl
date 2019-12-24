@@ -1,24 +1,3 @@
-####
-# Matrix memory layout traits
-#
-# if MemoryLayout(A) returns BandedColumnMajor, you must override
-# pointer and leadingdimension
-# in addition to the banded matrix interface
-####
-
-abstract type AbstractBlockBandedLayout <: MemoryLayout end
-
-struct BandedBlockBandedColumnMajor <: AbstractBlockBandedLayout end
-struct BandedBlockBandedRowMajor <: AbstractBlockBandedLayout end
-struct BlockBandedColumnMajor <: AbstractBlockBandedLayout end
-struct BlockBandedRowMajor <: AbstractBlockBandedLayout end
-
-
-transposelayout(::BandedBlockBandedColumnMajor) = BandedBlockBandedRowMajor()
-transposelayout(::BandedBlockBandedRowMajor) = BandedBlockBandedColumnMajor()
-transposelayout(::BlockBandedColumnMajor) = BlockBandedRowMajor()
-transposelayout(::BlockBandedRowMajor) = BlockBandedColumnMajor()
-conjlayout(::Type{<:Complex}, M::AbstractBlockBandedLayout) = ConjLayout(M)
 
 # Here we override broadcasting for banded matrices.
 # The design is to to exploit the broadcast machinery so that

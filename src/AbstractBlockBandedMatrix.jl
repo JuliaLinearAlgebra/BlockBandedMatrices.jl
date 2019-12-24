@@ -1,3 +1,31 @@
+####
+# Matrix memory layout traits
+#
+# if MemoryLayout(A) returns BandedColumnMajor, you must override
+# pointer and leadingdimension
+# in addition to the banded matrix interface
+####
+
+abstract type AbstractBlockBandedLayout <: MemoryLayout end
+
+struct BandedBlockBandedColumns{LAY} <: AbstractBlockBandedLayout end
+struct BandedBlockBandedRows{LAY} <: AbstractBlockBandedLayout end
+struct BlockBandedColumns{LAY} <: AbstractBlockBandedLayout end
+struct BlockBandedRows{LAY} <: AbstractBlockBandedLayout end
+
+const BandedBlockBandedColumnMajor = BandedBlockBandedColumns{ColumnMajor}
+const BandedBlockBandedRowMajor = BandedBlockBandedColumns{RowMajor}
+const BlockBandedColumnMajor = BlockBandedColumns{ColumnMajor}
+const BlockBandedRowMajor = BlockBandedColumns{RowMajor}
+
+transposelayout(::BandedBlockBandedColumnMajor) = BandedBlockBandedRowMajor()
+transposelayout(::BandedBlockBandedRowMajor) = BandedBlockBandedColumnMajor()
+transposelayout(::BlockBandedColumnMajor) = BlockBandedRowMajor()
+transposelayout(::BlockBandedRowMajor) = BlockBandedColumnMajor()
+conjlayout(::Type{<:Complex}, M::AbstractBlockBandedLayout) = ConjLayout(M)
+
+
+
 # AbstractBandedMatrix must implement
 
 # A BlockBandedMatrix is a BlockMatrix, but is not a BandedMatrix
@@ -105,6 +133,16 @@ end
     CS == Block(0) && return 0
     last(axes(A,2)[CS])    
 end
+
+@inline blockbanded_colsupport(A, j::Integer) = colrange(A, j)
+@inline blockbanded_rowsupport(A, j::Integer) = rowrange(A, j)
+
+@inline blockbanded_rowsupport(A, j) = isempty(j) ? (1:0) : rowstart(A,minimum(j)):rowstop(A,maximum(j))
+@inline blockbanded_colsupport(A, j) = isempty(j) ? (1:0) : colstart(A,minimum(j)):colstop(A,maximum(j))
+
+@inline colsupport(::AbstractBlockBandedLayout, A, j) = blockbanded_colsupport(A, j)
+@inline rowsupport(::AbstractBlockBandedLayout, A, j) = blockbanded_rowsupport(A, j)
+
 
 
 # default implementation loops over all indices, including zeros

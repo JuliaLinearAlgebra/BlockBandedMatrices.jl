@@ -220,7 +220,11 @@ end
 # BandedBlockBandedMatrix Interface #
 ################################
 
-MemoryLayout(::Type{<:BandedBlockBandedMatrix}) = BandedBlockBandedColumnMajor()
+bandedblockbandedcolumns(L::AbstractColumnMajor) = BandedBlockBandedColumnMajor()
+bandedblockbandedcolumns(_) = UnknownLayout()
+
+MemoryLayout(::Type{<:BandedBlockBandedMatrix{<:Any,BLOCKS}}) where BLOCKS = 
+    bandedblockbandedcolumns(MemoryLayout(BLOCKS))
 bandedblockbandedbroadcaststyle(_) = BandedBlockBandedStyle()
 BroadcastStyle(::Type{<:BandedBlockBandedMatrix{<:Any,BLOCKS}}) where BLOCKS = 
     bandedblockbandedbroadcaststyle(BroadcastStyle(BLOCKS))
