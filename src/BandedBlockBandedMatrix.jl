@@ -85,6 +85,9 @@ function convert(::Type{<:BandedBlockBandedMatrix}, B::BandedMatrix)
     end
 end
 
+convert(::Type{BandedBlockBandedMatrix{T,BLOCKS,RAXIS}}, A::BandedBlockBandedMatrix) where {T,BLOCKS,RAXIS} =
+    _BandedBlockBandedMatrix(convert(BLOCKS, A.data), convert(RAXIS, A.raxis), (A.l, A.u), (A.λ, A.μ))
+
 function BandedBlockBandedMatrix{T,B,R}(Z::Zeros, axes::NTuple{2,AbstractUnitRange{Int}},
                                        lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B,R<:AbstractUnitRange{Int}}
    if size(Z) ≠ map(length,axes)
@@ -191,10 +194,7 @@ similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::NTuple{2,AbstractUnitRange{
 
 
 similar(A::BandedBlockBandedMatrix{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
-      BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))   
-      
-similar(A::BandedBlockBandedMatrix{T}, axes::NTuple{2,OneTo{Int}}) where T =
-      Matrix{T}(undef, map(length,axes))
+    similar(Matrix{T}, map(length,axes)...)
 
 axes(A::BandedBlockBandedMatrix) = (A.raxis, axes(A.data,2))
 

@@ -117,7 +117,7 @@ const BlockSlice1 = BlockSlice{Block{1,Int}}
 ######################################
 
 @inline colstart(A::AbstractBlockBandedMatrix, i::Integer) =
-    first(axes(A,1)[blockcolstart(A,findblock(axes(A,2),i))])
+    isempty(axes(A,1)) ? 1 : first(axes(A,1)[blockcolstart(A,findblock(axes(A,2),i))])
 
 @inline function colstop(A::AbstractBlockBandedMatrix, i::Integer)
     CS = blockcolstop(A,findblock(axes(A,2),i))

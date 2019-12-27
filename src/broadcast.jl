@@ -212,7 +212,7 @@ function blockbanded_axpy!(a, X::AbstractMatrix, Y::AbstractMatrix)
 end
 
 function _combine_blockaxes(A, B)
-    blockisequal(axes(A), axes(B)) || throw(DimensionMismatch())
+    blockisequal(axes(A), axes(B)) || throw(DimensionMismatch("Block sizes do not agree"))
     axes(A)
 end
 
