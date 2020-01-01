@@ -23,9 +23,9 @@ l,u = 2,1          # block bandwidths
 N = M = 4          # number of row/column blocks
 cols = rows = 1:N  # block sizes
 
-BlockBandedMatrix(Zeros(sum(rows),sum(cols)), (rows,cols), (l,u)) # creates a block-banded matrix of zeros
-BlockBandedMatrix(Ones(sum(rows),sum(cols)), (rows,cols), (l,u)) # creates a block-banded matrix with ones in the non-zero entries
-BlockBandedMatrix(I, (rows,cols), (l,u))                          # creates a block-banded  identity matrix
+BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows,cols, (l,u)) # creates a block-banded matrix of zeros
+BlockBandedMatrix(Ones(sum(rows),sum(cols)), rows,cols, (l,u)) # creates a block-banded matrix with ones in the non-zero entries
+BlockBandedMatrix(I, rows,cols, (l,u))                          # creates a block-banded  identity matrix
 ```
 
 A `BandedBlockBandedMatrix` has the added structure that the blocks themselves are
@@ -36,7 +36,7 @@ l,u = 2,1          # block bandwidths
 λ,μ = 1,2          # sub-block bandwidths: the bandwidths of each block
 N = M = 4          # number of row/column blocks
 cols = rows = 1:N  # block sizes
-BandedBlockBandedMatrix(Zeros(sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ)) # creates a banded-block-banded matrix of zeros
-BandedBlockBandedMatrix(Ones(sum(rows),sum(cols)), (rows,cols), (l,u), (λ,μ))  # creates a banded-block-banded matrix with ones in the non-zero entries
-BandedBlockBandedMatrix(I, (rows,cols), (l,u), (λ,μ)))                         # creates a banded-block-banded identity matrix
+BandedBlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows,cols, (l,u), (λ,μ)) # creates a banded-block-banded matrix of zeros
+BandedBlockBandedMatrix(Ones(sum(rows),sum(cols)), rows,cols, (l,u), (λ,μ))  # creates a banded-block-banded matrix with ones in the non-zero entries
+BandedBlockBandedMatrix(I, rows,cols, (l,u), (λ,μ)))                         # creates a banded-block-banded identity matrix
 ```
