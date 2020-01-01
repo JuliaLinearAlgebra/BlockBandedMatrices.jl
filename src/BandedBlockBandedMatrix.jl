@@ -398,20 +398,90 @@ end
 #   with BLASBandedMatrix.
 ##################
 
+const SubBandedBlockBandedMatrix{T,R1,R2} =
+    SubArray{T,2,<:BandedBlockBandedMatrix{T},<:Tuple{<:BlockSlice{R1},<:BlockSlice{R2}}}
+
+
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{Block1},BlockSlice{Block1}}}) = BandedColumnMajor()
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{BlockRange1},BlockSlice{BlockRange1}}}) = BandedBlockBandedColumnMajor()
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{Block1},BlockSlice{BlockRange1}}}) = BandedBlockBandedColumnMajor()
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{BlockRange1},BlockSlice{Block1}}}) = BandedBlockBandedColumnMajor()
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{BlockRange1},BlockSlice{BlockIndexRange1}}}) = BandedBlockBandedColumnMajor()
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{BlockIndexRange1},BlockSlice{BlockIndexRange1}}}) = BandedBlockBandedColumnMajor()
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{BlockIndexRange1},BlockSlice{Block1}}}) = BandedBlockBandedColumnMajor()
+sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{Block1},BlockSlice{BlockIndexRange1}}}) = BandedBlockBandedColumnMajor()
+
+isbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(typeof(A)) == BandedColumnMajor()
+isbandedblockbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(typeof(A)) == BandedBlockBandedColumnMajor()
+
+
+subblockbandwidths(V::SubBandedBlockBandedMatrix) = subblockbandwidths(parent(V))
+
+function blockbandwidths(V::SubBandedBlockBandedMatrix{<:Any,BlockRange1,Block1})
+    A = parent(V)
+
+    KR = parentindices(V)[1].block.indices[1]
+    J = parentindices(V)[2].block
+    shift = Int(KR[1])-Int(J)
+    blockbandwidth(A,1) - shift, blockbandwidth(A,2) + shift
+end
+
+function blockbandwidths(V::SubBandedBlockBandedMatrix{<:Any,Block1,BlockRange1})
+    A = parent(V)
+
+    K = parentindices(V)[1].block
+    JR = parentindices(V)[2].block.indices[1]
+    shift = Int(K)-Int(JR[1])
+
+    blockbandwidth(A,1) - shift, blockbandwidth(A,2) + shift
+end
+
+function blockbandwidths(V::SubBandedBlockBandedMatrix{<:Any,BlockRange1,BlockRange1})
+    A = parent(V)
+
+    KR = parentindices(V)[1].block.indices[1]
+    JR = parentindices(V)[2].block.indices[1]
+    shift = Int(KR[1])-Int(JR[1])
+
+    blockbandwidth(A,1) - shift, blockbandwidth(A,2) + shift
+end
+
+
 const BandedBlockBandedBlock{T, BLOCKS, RAXIS} = SubArray{T,2,BandedBlockBandedMatrix{T, BLOCKS, RAXIS},<:Tuple{<:BlockSlice1,<:BlockSlice1},false}
 
 
-isbanded(::BandedBlockBandedBlock) = true
-MemoryLayout(::BandedBlockBandedBlock) = BandedColumnMajor()
 BroadcastStyle(::Type{<: BandedBlockBandedBlock}) = BandedStyle()
 
 
-function inblockbands(V::BandedBlockBandedBlock)
+function inblockbands(V::SubArray{<:Any,2,<:AbstractMatrix,<:Tuple{<:BlockSlice1,<:BlockSlice1},false})
     A = parent(V)
     K_sl, J_sl = parentindices(V)
     K, J = K_sl.block, J_sl.block
-    -A.l ≤ Int(J-K) ≤ A.u
+    l,u = blockbandwidths(A)
+    -l ≤ Int(J-K) ≤ u
 end
+
+function parentblock(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{BlockIndexRange1},BlockSlice{BlockIndexRange1}}}) where T
+    A = parent(V)
+    K_sl, J_sl = parentindices(V)
+    view(A, K_sl.block.block, J_sl.block.block)
+end
+
+function parentblock(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{Block1},BlockSlice{BlockIndexRange1}}}) where T
+    A = parent(V)
+    K_sl, J_sl = parentindices(V)
+    view(A, K_sl.block, J_sl.block.block)
+end
+
+function parentblock(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{BlockIndexRange1},BlockSlice{Block1}}}) where T
+    A = parent(V)
+    K_sl, J_sl = parentindices(V)
+    view(A, K_sl.block.block, J_sl.block)
+end
+
+# gives the columns of parent(V).data that encode the block
+parentblocks2Int(V::BandedBlockBandedBlock)::Tuple{Int,Int} = Int(first(parentindices(V)).block),
+                                                          Int(last(parentindices(V)).block)
 
 
 ######################################
@@ -422,11 +492,23 @@ end
     (-720,-720)
 end
 
+function bandwidths(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{BlockIndexRange1},BlockSlice{BlockIndexRange1}}}) where T
+   B = parentblock(V)
+   K_sl, J_sl = parentindices(V)
+   bandwidths(B) .+ (-1,1) .* bandshift(K_sl.block.indices[1],J_sl.block.indices[1])
+end
 
+function bandwidths(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{Block1},BlockSlice{BlockIndexRange1}}}) where T
+    B = parentblock(V)
+    K_sl, J_sl = parentindices(V)
+    bandwidths(B) .+ (-1,1) .* bandshift(Base.OneTo(1),J_sl.block.indices[1])
+ end
 
-# gives the columns of parent(V).data that encode the block
-blocks(V::BandedBlockBandedBlock)::Tuple{Int,Int} = Int(first(parentindices(V)).block),
-                                                    Int(last(parentindices(V)).block)
+function bandwidths(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{BlockIndexRange1},BlockSlice{Block1}}}) where T
+    B = parentblock(V)
+    K_sl, J_sl = parentindices(V)
+    bandwidths(B) .+ (-1,1) .* bandshift(K_sl.block.indices[1],Base.OneTo(1))
+ end
 
 
 function bandeddata(V::BandedBlockBandedBlock{T}) where T
@@ -437,6 +519,27 @@ function bandeddata(V::BandedBlockBandedBlock{T}) where T
     K, J = K_sl.block, J_sl.block
     view(A.data, u + K - J + 1, J)
 end
+
+function bandeddata(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{BlockIndexRange1},BlockSlice{BlockIndexRange1}}}) where T
+    A = parent(V)
+    K_sl, J_sl = parentindices(V)
+    view(bandeddata(parentblock(V)), :, J_sl.block.indices[1])
+end
+
+function bandeddata(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{Block1},BlockSlice{BlockIndexRange1}}}) where T
+    A = parent(V)
+    K_sl, J_sl = parentindices(V)
+    view(bandeddata(parentblock(V)), :, J_sl.block.indices[1])
+end
+
+function bandeddata(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{BlockIndexRange1},BlockSlice{Block1}}}) where T
+    A = parent(V)
+    K_sl, J_sl = parentindices(V)
+    bandeddata(parentblock(V))
+end
+
+
+
 
 
 @inline function inbands_getindex(V::BandedBlockBandedBlock, k::Int, j::Int)
@@ -453,7 +556,7 @@ end
 @propagate_inbounds function getindex(V::BandedBlockBandedBlock, k::Int, j::Int)
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
-    K,J = blocks(V)
+    K,J = parentblocks2Int(V)
     if -A.l ≤ J-K ≤ A.u && -A.λ ≤ j-k ≤ A.μ
         inbands_getindex(V, k, j)
     else
@@ -464,7 +567,7 @@ end
 @propagate_inbounds function setindex!(V::BandedBlockBandedBlock, v, k::Int, j::Int)
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
-    K,J = blocks(V)
+    K,J = parentblocks2Int(V)
     if -A.l ≤ J-K ≤ A.u && -A.λ ≤ j-k ≤ A.μ
         inbands_setindex!(V, v, k, j)
     elseif iszero(v) # allow setindex for 0 datya
