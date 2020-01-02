@@ -136,6 +136,19 @@ end
 
     @time BLAS.axpy!(1.0, A, B)
     @test B ≈ AB
+
+    @testset "degenerate" begin
+        A = BandedBlockBandedMatrix{Float64}(undef, 1:5, 1:5,(-1,1), (-1,1))
+        B = BandedBlockBandedMatrix{Float64}(undef, 1:5, 1:5,(1,-1), (1,-1))
+        A.data .= randn.()
+        B.data .= randn.()
+        @test blockbandwidths(A^2) == subblockbandwidths(A^2) == (-2,2)
+        @test A^2 == Matrix(A)^2
+        @test blockbandwidths(B^2) == subblockbandwidths(B^2) == (2,-2)
+        @test B^2 == Matrix(B)^2        
+        @test blockbandwidths(A*B) == subblockbandwidths(A*B) == (0,0)
+        @test A*B == Matrix(A)*Matrix(B)
+    end
 end
 
 @testset "Rectangular block *" begin

@@ -38,12 +38,16 @@ import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrang
                         BandedColumnMajor,
                         BandedSubBandedMatrix, bandeddata, tribandeddata,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop,
-                        BandedStyle, _fill_lmul!,
+                        BandedStyle, _fill_lmul!, bandshift,
                         _banded_colval, _banded_rowval, _banded_nzval # for sparse
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, BlockSkylineMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block, BlockTridiagonal, isblockbanded
 
+
+const Block1 = Block{1,Int}
+const BlockRange1 = BlockRange{1,Tuple{UnitRange{Int}}}
+const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int}}}        
 
 include("AbstractBlockBandedMatrix.jl")
 include("broadcast.jl")
