@@ -1,14 +1,3 @@
-@lazylmul UpperTriangular{T, DefaultBandedBlockBandedMatrix{T}} where T
-@lazylmul UnitUpperTriangular{T, DefaultBandedBlockBandedMatrix{T}} where T
-@lazylmul LowerTriangular{T, DefaultBandedBlockBandedMatrix{T}} where T
-@lazylmul UnitLowerTriangular{T, DefaultBandedBlockBandedMatrix{T}} where T
-
-
-@lazyldiv UpperTriangular{T, DefaultBandedBlockBandedMatrix{T}} where T
-@lazyldiv UnitUpperTriangular{T, DefaultBandedBlockBandedMatrix{T}} where T
-@lazyldiv LowerTriangular{T, DefaultBandedBlockBandedMatrix{T}} where T
-@lazyldiv UnitLowerTriangular{T, DefaultBandedBlockBandedMatrix{T}} where T
-
 
 @inline hasmatchingblocks(A) = blockisequal(axes(A)...)
 

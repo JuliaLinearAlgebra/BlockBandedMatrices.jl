@@ -8,7 +8,7 @@ getindex(A::BandedBlockBandedMatrix, KR::BlockRange1, J::Block1) = BandedBlockBa
 getindex(A::BandedBlockBandedMatrix, K::Block1, JR::BlockRange1) = BandedBlockBandedMatrix(view(A, K, JR))
 
 
-@lazymul AbstractBlockBandedMatrix
+@layoutmul AbstractBlockBandedMatrix
 
 
 MemoryLayout(A::Type{<:PseudoBlockArray{T,N,R}}) where {T,N,R} = MemoryLayout(R)
