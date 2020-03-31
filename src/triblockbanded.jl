@@ -92,7 +92,10 @@ for UNIT in ('U', 'N')
             T = eltype(dest)
 
             A = triangulardata(U)
-            @assert hasmatchingblocks(A)
+            if !hasmatchingblocks(A) # Use default for now
+                return materialize!(Ldiv{TriangularLayout{'U',$UNIT,UnknownLayout}, 
+                                         typeof(MemoryLayout(typeof(dest)))}(U, dest))
+            end
 
             @boundscheck size(A,1) == size(dest,1) || throw(BoundsError())
 

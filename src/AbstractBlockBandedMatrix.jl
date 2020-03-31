@@ -7,9 +7,10 @@
 ####
 
 abstract type AbstractBlockBandedLayout <: MemoryLayout end
+abstract type AbstractBandedBlockBandedLayout <: AbstractBlockBandedLayout end
 
-struct BandedBlockBandedColumns{LAY} <: AbstractBlockBandedLayout end
-struct BandedBlockBandedRows{LAY} <: AbstractBlockBandedLayout end
+struct BandedBlockBandedColumns{LAY} <: AbstractBandedBlockBandedLayout end
+struct BandedBlockBandedRows{LAY} <: AbstractBandedBlockBandedLayout end
 struct BlockBandedColumns{LAY} <: AbstractBlockBandedLayout end
 struct BlockBandedRows{LAY} <: AbstractBlockBandedLayout end
 

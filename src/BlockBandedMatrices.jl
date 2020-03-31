@@ -18,14 +18,15 @@ import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
 import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex, BlasReal
 import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
-import MatrixFactorizations: ql, ql!, QLPackedQ
+import MatrixFactorizations: ql, ql!, _ql, QLPackedQ
 import SparseArrays: sparse
 
 import ArrayLayouts: @layoutmatrix, MatMulMatAdd, MatMulVecAdd, BlasMatLmulVec,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatLdivVec,
                     triangulardata, sublayout, 
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
-                    DiagonalLayout, materialize!, MulAdd, mul, colsupport, rowsupport
+                    DiagonalLayout, MulAdd, mul, colsupport, rowsupport,
+                    _qr, _factorize
 
 import BlockArrays: blocksize, blockcheckbounds, BlockedUnitRange, blockisequal, DefaultBlockAxis,
                         Block, BlockSlice, getblock, unblock, setblock!, block, blockindex,
