@@ -23,7 +23,6 @@ transposelayout(::BandedBlockBandedColumnMajor) = BandedBlockBandedRowMajor()
 transposelayout(::BandedBlockBandedRowMajor) = BandedBlockBandedColumnMajor()
 transposelayout(::BlockBandedColumnMajor) = BlockBandedRowMajor()
 transposelayout(::BlockBandedRowMajor) = BlockBandedColumnMajor()
-conjlayout(::Type{<:Complex}, M::AbstractBlockBandedLayout) = ConjLayout(M)
 
 
 
@@ -108,9 +107,6 @@ function _firstblockdiagcol(A::AbstractMatrix, j::Int)
 end
 
 
-## BlockSlice1 is a conveneience for views
-
-const BlockSlice1 = BlockSlice{Block{1,Int}}
 
 
 ######################################

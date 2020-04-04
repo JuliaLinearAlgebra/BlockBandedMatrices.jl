@@ -21,7 +21,7 @@ import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, check
 import MatrixFactorizations: ql, ql!, _ql, QLPackedQ
 import SparseArrays: sparse
 
-import ArrayLayouts: @layoutmatrix, MatMulMatAdd, MatMulVecAdd, BlasMatLmulVec,
+import ArrayLayouts: BlasMatLmulVec,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatLdivVec,
                     triangulardata, sublayout, 
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
