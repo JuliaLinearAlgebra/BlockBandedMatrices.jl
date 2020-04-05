@@ -56,22 +56,19 @@ blockbandrange(A::AbstractMatrix) = -blockbandwidth(A,1):blockbandwidth(A,2)
 
 
 # start/stop indices of the i-th column/row, bounded by actual matrix size
-@inline blockcolstart(A::AbstractVecOrMat, i::Integer) = Block(max(i-colblockbandwidth(A,2)[i], 1))
-@inline  blockcolstop(A::AbstractVecOrMat, i::Integer) = Block(max(min(i+colblockbandwidth(A,1)[i], blocksize(A, 1)), 0))
-@inline blockrowstart(A::AbstractVecOrMat, i::Integer) = Block(max(i-rowblockbandwidth(A,1)[i], 1))
-@inline  blockrowstop(A::AbstractVecOrMat, i::Integer) = Block(max(min(i+rowblockbandwidth(A,2)[i], blocksize(A, 2)), 0))
+@inline blockbanded_blockcolstart(A, i::Integer) = Block(max(i-colblockbandwidth(A,2)[i], 1))
+@inline blockbanded_blockcolstop(A, i::Integer) = Block(max(min(i+colblockbandwidth(A,1)[i], blocksize(A, 1)), 0))
+@inline blockbanded_blockrowstart(A, i::Integer) = Block(max(i-rowblockbandwidth(A,1)[i], 1))
+@inline blockbanded_blockrowstop(A, i::Integer) = Block(max(min(i+rowblockbandwidth(A,2)[i], blocksize(A, 2)), 0))
 
-for Func in (:blockcolstart, :blockcolstop, :blockrowstart, :blockrowstop)
-    @eval $Func(A, i::Block{1}) = $Func(A, Int(i))
-end
 
-@inline blockcolrange(A::AbstractVecOrMat, i) = blockcolstart(A,i):blockcolstop(A,i)
-@inline blockrowrange(A::AbstractVecOrMat, i) = blockrowstart(A,i):blockrowstop(A,i)
+@inline blockcolsupport(::AbstractBlockBandedLayout, A, i) = blockbanded_blockcolstart(A,i):blockbanded_blockcolstop(A,i)
+@inline blockrowsupport(::AbstractBlockBandedLayout, A, i) = blockbanded_blockrowstart(A,i):blockbanded_blockrowstop(A,i)
 
 
 # length of i-the column/row
-@inline blockcollength(A::AbstractVecOrMat, i) = max(Int(blockcolstop(A, i)) - Int(blockcolstart(A, i)) + 1, 0)
-@inline blockrowlength(A::AbstractVecOrMat, i) = max(Int(blockrowstop(A, i)) - Int(blockrowstart(A, i)) + 1, 0)
+@inline blockcollength(A, i) = max(Int(blockcolstop(A, i)) - Int(blockcolstart(A, i)) + 1, 0)
+@inline blockrowlength(A, i) = max(Int(blockrowstop(A, i)) - Int(blockrowstart(A, i)) + 1, 0)
 
 # this gives the block bandwidth in each block column/row
 @inline colblockbandwidths(A::AbstractMatrix) = Fill.(blockbandwidths(A), blocksize(A,2))
@@ -131,8 +128,8 @@ end
     last(axes(A,2)[CS])    
 end
 
-@inline blockbanded_colsupport(A, j::Integer) = colrange(A, j)
-@inline blockbanded_rowsupport(A, j::Integer) = rowrange(A, j)
+@inline blockbanded_colsupport(A, j::Integer) = colsupport(A, j)
+@inline blockbanded_rowsupport(A, j::Integer) = rowsupport(A, j)
 
 @inline blockbanded_rowsupport(A, j) = isempty(j) ? (1:0) : rowstart(A,minimum(j)):rowstop(A,maximum(j))
 @inline blockbanded_colsupport(A, j) = isempty(j) ? (1:0) : colstart(A,minimum(j)):colstop(A,maximum(j))

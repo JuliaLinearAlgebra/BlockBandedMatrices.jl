@@ -100,9 +100,8 @@ end
 function blockbanded_fill!(B::AbstractMatrix{T}, x) where T
     x == zero(T) || throw(BandError(B))
 
-    M,N = blocksize(B)
-    for J = 1:N, K = blockcolrange(B,J)
-        fill!(view(B,K,Block(J)), x)
+    for J = blockaxes(B,2), K = blockcolsupport(B,J)
+        fill!(view(B,K,J), x)
     end
     B
 end
@@ -111,9 +110,8 @@ end
 function blockbanded_rmul!(B::AbstractMatrix{T}, x::Number) where T
     x == zero(T) || throw(BandError(B))
 
-    M,N = blocksize(B)
-    for J = 1:N, K = blockcolrange(B,J)
-        rmul!(view(B,K,Block(J)), x)
+    for J = blockaxes(B,2), K = blockcolsupport(B,J)
+        rmul!(view(B,K,J), x)
     end
     B
 end
@@ -121,9 +119,8 @@ end
 function blockbanded_lmul!(x::Number, B::AbstractMatrix{T}) where T
     x == zero(T) || throw(BandError(B))
 
-    M,N = blocksize(B)
-    for J = 1:N, K = blockcolrange(B,J)
-        lmul!(x, view(B,K,Block(J)))
+    for J = blockaxes(B,2), K = blockcolsupport(B,J)
+        lmul!(x, view(B,K,J))
     end
     B
 end
@@ -205,7 +202,7 @@ similar(bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(\), <:Tuple{<:
 function blockbanded_axpy!(a, X::AbstractMatrix, Y::AbstractMatrix)
     size(X) == size(Y) || throw(DimensionMismatch())
 
-    for J=Block(1):Block(blocksize(X,2)), K=blockcolrange(X,J)
+    for J = blockaxes(X,2), K = blockcolsupport(X,J)
         view(Y,K,J) .= a .* view(X,K,J) .+ view(Y,K,J)
     end
     Y

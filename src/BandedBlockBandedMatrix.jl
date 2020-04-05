@@ -153,7 +153,7 @@ BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 function BandedBlockBandedMatrix{T,Blocks,RR}(A::AbstractMatrix, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,Blocks,RR<:AbstractUnitRange{Int}}
     ret = BandedBlockBandedMatrix{T,Blocks,RR}(Zeros{T}(size(A)), axes, lu, λμ)
     L,M = λμ 
-    for J = Block.(1:blocksize(ret, 2)), K = blockcolrange(ret, Int(J))
+    for J = blockaxes(ret,2), K = blockcolsupport(ret, J)
         kr, jr = axes[1][K], axes[2][J]
 
         # We have the correct block - now we need to only add the entries from
@@ -202,7 +202,7 @@ function sparse(A::BandedBlockBandedMatrix)
     i = Vector{Int}()
     j = Vector{Int}()
     z = Vector{eltype(A)}()
-    for J = blockaxes(A,2), K = blockcolrange(A, J)
+    for J = blockaxes(A,2), K = blockcolsupport(A, J)
         B = view(A, K, J)
         ĩ = _banded_rowval(B)
         j̃ = _banded_colval(B)

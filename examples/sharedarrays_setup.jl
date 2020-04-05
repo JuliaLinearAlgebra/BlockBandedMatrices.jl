@@ -2,7 +2,7 @@ using Pkg
 
 Pkg.activate(homedir() * "/Documents/Coding/gpublockbanded")
 using BandedMatrices, BlockBandedMatrices, SharedArrays, ArrayLayouts, BlockArrays, FillArrays
-import BlockBandedMatrices: _BandedBlockBandedMatrix, BandedBlockBandedSizes, BlockSizes, blockcolrange
+import BlockBandedMatrices: _BandedBlockBandedMatrix, BandedBlockBandedSizes, BlockSizes, blockcolsupport
 import BandedMatrices: AbstractBandedMatrix, bandwidths, BandedStyle
 import Base: getindex, size
 
@@ -28,7 +28,7 @@ Base.BroadcastStyle(::Type{<:Eye}) = BandedStyle()
 
 
 function blockcolbuild!(ret, A, JR)
-    for J in JR, K in blockcolrange(A,J)
+    for J in JR, K in blockcolsupport(A,J)
         view(ret,K,J) .= view(A,K,J)
     end
 end

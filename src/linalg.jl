@@ -113,7 +113,7 @@ function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,BlockRa
     JR = parentindices(V)[2]
     K = first(parentindices(V)[1].block)
     J = Block(JR)
-    K ∈ blockcolrange(A, J) || throw(ArgumentError("Pointer is only defined when inside colrange"))
+    K ∈ blockcolsupport(A, J) || throw(ArgumentError("Pointer is only defined when inside blockcolsupport"))
     p = unsafe_convert(Ptr{T}, view(A, K, J))
     p + sizeof(T)*(JR.block.indices[1][1]-1)*stride(V,2)
 end

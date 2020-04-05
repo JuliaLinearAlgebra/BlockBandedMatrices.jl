@@ -30,7 +30,8 @@ import ArrayLayouts: BlasMatLmulVec,
 
 import BlockArrays: blocksize, blockcheckbounds, BlockedUnitRange, blockisequal, DefaultBlockAxis,
                         Block, BlockSlice, getblock, unblock, setblock!, block, blockindex,
-                        _blocklengths2blocklasts, BlockIndexRange, sizes_from_blocks
+                        _blocklengths2blocklasts, BlockIndexRange, sizes_from_blocks, BlockSlice1,
+                        blockcolsupport, blockrowsupport, blockcolstart, blockcolstop, blockrowstart, blockrowstop
 
 import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrange,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
