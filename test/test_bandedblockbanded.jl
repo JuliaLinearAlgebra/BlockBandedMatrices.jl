@@ -1,5 +1,5 @@
 using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays, Test, ArrayLayouts , LinearAlgebra
-import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowrange, colrange, rowrange, isbandedblockbanded, bandeddata
+import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolsupport, blockrowsupport, colsupport, rowsupport, isbandedblockbanded, bandeddata
 
 @testset "BandedBlockBandedMatrix" begin
     @testset "constructors" begin
@@ -62,24 +62,24 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         @test BlockBandedMatrices.subblockbandwidths(A) == (l,u)
 
 
-        @test blockrowrange(A, 1) == Block.(1:2)
-        @test blockrowrange(A, 2) == Block.(1:3)
-        @test blockrowrange(A, 3) == Block.(2:4)
+        @test blockrowsupport(A, 1) == Block.(1:2)
+        @test blockrowsupport(A, 2) == Block.(1:3)
+        @test blockrowsupport(A, 3) == Block.(2:4)
 
-        @test blockcolrange(A, 1) == Block.(1:2)
-        @test blockcolrange(A, 2) == Block.(1:3)
-        @test blockcolrange(A, 3) == Block.(2:4)
+        @test blockcolsupport(A, 1) == Block.(1:2)
+        @test blockcolsupport(A, 2) == Block.(1:3)
+        @test blockcolsupport(A, 3) == Block.(2:4)
 
-        @test rowrange(A,1) == 1:3
-        @test rowrange(A,2) == 1:6
-        @test rowrange(A,3) == 1:6
-        @test rowrange(A,4) == 2:10
+        @test rowsupport(A,1) == 1:3
+        @test rowsupport(A,2) == 1:6
+        @test rowsupport(A,3) == 1:6
+        @test rowsupport(A,4) == 2:10
 
 
-        @test colrange(A,1) == 1:3
-        @test colrange(A,2) == 1:6
-        @test colrange(A,3) == 1:6
-        @test colrange(A,4) == 2:10
+        @test colsupport(A,1) == 1:3
+        @test colsupport(A,2) == 1:6
+        @test colsupport(A,3) == 1:6
+        @test colsupport(A,4) == 2:10
 
 
         l , u = 2,1
@@ -97,26 +97,26 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         @test A.μ == μ == subblockbandwidth(A,2)
         @test subblockbandwidths(A) == (λ, μ)
 
-        @test blockrowrange(A, 1) == Block.(1:2)
-        @test blockrowrange(A, 2) == Block.(1:3)
-        @test blockrowrange(A, 3) == Block.(1:4)
-        @test blockrowrange(A, 4) == Block.(2:4)
+        @test blockrowsupport(A, 1) == Block.(1:2)
+        @test blockrowsupport(A, 2) == Block.(1:3)
+        @test blockrowsupport(A, 3) == Block.(1:4)
+        @test blockrowsupport(A, 4) == Block.(2:4)
 
 
-        @test blockcolrange(A, 1) == Block.(1:3)
-        @test blockcolrange(A, 2) == Block.(1:4)
-        @test blockcolrange(A, 3) == Block.(2:4)
-        @test blockcolrange(A, 4) == Block.(3:4)
+        @test blockcolsupport(A, 1) == Block.(1:3)
+        @test blockcolsupport(A, 2) == Block.(1:4)
+        @test blockcolsupport(A, 3) == Block.(2:4)
+        @test blockcolsupport(A, 4) == Block.(3:4)
 
-        @test rowrange(A,1) == 1:3
-        @test rowrange(A,2) == 1:6
-        @test rowrange(A,3) == 1:6
-        @test rowrange(A,4) == 1:10
+        @test rowsupport(A,1) == 1:3
+        @test rowsupport(A,2) == 1:6
+        @test rowsupport(A,3) == 1:6
+        @test rowsupport(A,4) == 1:10
 
-        @test colrange(A,1) == 1:6
-        @test colrange(A,2) == 1:10
-        @test colrange(A,3) == 1:10
-        @test colrange(A,4) == 2:10
+        @test colsupport(A,1) == 1:6
+        @test colsupport(A,2) == 1:10
+        @test colsupport(A,3) == 1:10
+        @test colsupport(A,4) == 2:10
 
         l , u = -1,1
         λ , μ = 0,1
@@ -132,25 +132,25 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         @test A[Block(2,3)]  == [8.0 9.0 0.0; 0.0 10.0 11.0]
         @test bandwidths(view(A,Block(2,3))) == bandwidths(A[Block(2,3)]) == (0,1)
 
-        @test blockrowrange(A, 1) == Block.(2:2)
-        @test blockrowrange(A, 2) == Block.(3:3)
-        @test blockrowrange(A, 3) == Block.(4:4)
-        @test blockrowrange(A, 4) == Block.(5:5)
+        @test blockrowsupport(A, 1) == Block.(2:2)
+        @test blockrowsupport(A, 2) == Block.(3:3)
+        @test blockrowsupport(A, 3) == Block.(4:4)
+        @test blockrowsupport(A, 4) == Block.(5:5)
 
-        @test blockcolrange(A, 1) == Block.(1:0)
-        @test blockcolrange(A, 2) == Block.(1:1)
-        @test blockcolrange(A, 3) == Block.(2:2)
+        @test blockcolsupport(A, 1) == Block.(1:0)
+        @test blockcolsupport(A, 2) == Block.(1:1)
+        @test blockcolsupport(A, 3) == Block.(2:2)
 
-        @test rowrange(A,1) == 2:3
-        @test rowrange(A,2) == 4:6
-        @test rowrange(A,3) == 4:6
-        @test rowrange(A,4) == 7:10
+        @test rowsupport(A,1) == 2:3
+        @test rowsupport(A,2) == 4:6
+        @test rowsupport(A,3) == 4:6
+        @test rowsupport(A,4) == 7:10
 
 
-        @test colrange(A,1) == 1:0
-        @test colrange(A,2) == 1:1
-        @test colrange(A,3) == 1:1
-        @test colrange(A,4) == 2:3
+        @test colsupport(A,1) == 1:0
+        @test colsupport(A,2) == 1:1
+        @test colsupport(A,3) == 1:1
+        @test colsupport(A,4) == 2:3
 
         l , u = -1,1
         λ , μ = -1,1
@@ -161,14 +161,14 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolrange, blockrowran
         A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
         @test_throws BandError A[1,1] = 5
 
-        @test blockcolrange(A, 1) == Block.(1:0)
-        @test blockcolrange(A, 2) == Block.(1:1)
-        @test blockcolrange(A, 3) == Block.(2:2)
+        @test blockcolsupport(A, 1) == Block.(1:0)
+        @test blockcolsupport(A, 2) == Block.(1:1)
+        @test blockcolsupport(A, 3) == Block.(2:2)
 
-        @test colrange(A,1) == 1:0
-        @test colrange(A,2) == 1:1
-        @test colrange(A,3) == 1:1
-        @test colrange(A,4) == 2:3
+        @test colsupport(A,1) == 1:0
+        @test colsupport(A,2) == 1:1
+        @test colsupport(A,3) == 1:1
+        @test colsupport(A,4) == 2:3
     end
 
     @testset "block indexing" begin

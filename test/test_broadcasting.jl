@@ -8,8 +8,8 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
     B = Matrix{Float64}(undef, n,n)
     B .= exp.(A)
     @test B == exp.(Matrix(A)) == exp.(A)
-    @test exp.(A) isa BlockMatrix
-    @test A .+ 1 isa BlockMatrix
+    @test exp.(A) isa PseudoBlockMatrix
+    @test A .+ 1 isa PseudoBlockMatrix
 
     A = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1), (1,1))
         A.data .= randn.()
@@ -17,8 +17,8 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
     B = Matrix{Float64}(undef, n,n)
     B .= exp.(A)
     @test B == exp.(Matrix(A)) == exp.(A)
-    @test exp.(A) isa BlockMatrix
-    @test A .+ 1 isa BlockMatrix
+    @test exp.(A) isa PseudoBlockMatrix
+    @test A .+ 1 isa PseudoBlockMatrix
 end
 
 @testset "lmul!/rmul!" begin

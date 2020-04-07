@@ -18,18 +18,21 @@ import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
 import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex, BlasReal
 import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
-import MatrixFactorizations: ql, ql!, QLPackedQ
+import MatrixFactorizations: ql, ql!, _ql, QLPackedQ
 import SparseArrays: sparse
 
-import ArrayLayouts: @lazymul, MatMulMatAdd, MatMulVecAdd, BlasMatLmulVec,
+import ArrayLayouts: BlasMatLmulVec,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatLdivVec,
-                    triangulardata, sublayout, @lazyldiv, @lazylmul,
+                    triangulardata, sublayout, 
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
-                    DiagonalLayout, materialize!, MulAdd, mul, colsupport, rowsupport
+                    DiagonalLayout, MulAdd, mul, colsupport, rowsupport,
+                    _qr, _factorize, _copyto!
 
 import BlockArrays: blocksize, blockcheckbounds, BlockedUnitRange, blockisequal, DefaultBlockAxis,
                         Block, BlockSlice, getblock, unblock, setblock!, block, blockindex,
-                        _blocklengths2blocklasts, BlockIndexRange, sizes_from_blocks
+                        _blocklengths2blocklasts, BlockIndexRange, sizes_from_blocks, BlockSlice1,
+                        blockcolsupport, blockrowsupport, blockcolstart, blockcolstop, blockrowstart, blockrowstop,
+                        AbstractBlockLayout
 
 import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrange,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
@@ -47,7 +50,10 @@ export BandedBlockBandedMatrix, BlockBandedMatrix, BlockSkylineMatrix, blockband
 
 const Block1 = Block{1,Int}
 const BlockRange1 = BlockRange{1,Tuple{UnitRange{Int}}}
-const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int}}}        
+const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int}}}    
+
+blockcolrange(A...) = blockcolsupport(A...)
+blockrowrange(A...) = blockrowsupport(A...)
 
 include("AbstractBlockBandedMatrix.jl")
 include("broadcast.jl")

@@ -12,27 +12,30 @@ import BlockArrays: BlockedUnitRange, blockisequal
         @test MemoryLayout(typeof(U)) == TriangularLayout{'U','N',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
         @test U*b isa Vector{Float64}
-        @test lmul(U,b) ≈ U*b  ≈ Matrix(U)*b
-
+        @test all(lmul(U,b) .=== U*b)
+        @test U*b  ≈ Matrix(U)*b
 
         U = UnitUpperTriangular(A)
         @test MemoryLayout(typeof(U)) == TriangularLayout{'U','U',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
         @test U*b isa Vector{Float64}
-        @test lmul(U,b) ≈ U*b  ≈ Matrix(U)*b
+        @test all(lmul(U,b) .=== U*b)
+        @test U*b  ≈ Matrix(U)*b
 
         L = LowerTriangular(A)
         @test MemoryLayout(typeof(L)) == TriangularLayout{'L','N',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
         @test L*b isa Vector{Float64}
-        @test lmul(L,b) ≈ L*b  ≈ Matrix(L)*b
+        @test all(lmul(L,b) .=== L*b)
+        @test L*b  ≈ Matrix(L)*b
 
 
         L = UnitLowerTriangular(A)
         @test MemoryLayout(typeof(L)) == TriangularLayout{'L','U',BandedBlockBandedColumnMajor}()
         b = randn(size(L,1))
         @test L*b isa Vector{Float64}
-        @test lmul(L,b) ≈ L*b  ≈ Matrix(L)*b
+        @test all(lmul(L,b) .=== L*b)
+        @test L*b  ≈ Matrix(L)*b
     end
 
     @testset "Block by BlockIndex" begin
@@ -93,21 +96,14 @@ import BlockArrays: BlockedUnitRange, blockisequal
 
         V = view(A, Block.(1:3), Block.(1:4))
         @test blockisequal(axes(V), axes(A))
-
-
         @test all(Matrix(V) .=== Matrix(A))
-
         @test view(V, Block(2)[1:2], Block(3)) ≡ view(A, Block(2)[1:2], Block(3))
 
-        @test_broken all(UpperTriangular(A) \ b .===
-                        BlockBandedMatrices.blockbanded_rectblocks_trtrs!(A, copy(b)) .===
-                        BlockBandedMatrices.blockbanded_rectblocks_trtrs!(V, copy(b)))
+        @test similar(Ldiv(UpperTriangular(A), b)) isa PseudoBlockVector
         @test UpperTriangular(A) \ b ≈ UpperTriangular(V) \ b ≈ UpperTriangular(Matrix(A)) \ b
 
         V = view(A, 1:11, 1:11)
         b = randn(size(V,1))
-        @test_skip all(UpperTriangular(V) \ b .===
-                        BlockBandedMatrices.blockbanded_rectblocks_intrange_trtrs!(V, copy(b)))
         @test UpperTriangular(V) \ b ≈ UpperTriangular(Matrix(V)) \ b ≈ UpperTriangular(A[1:11,1:11]) \ b
 
         # bug from SingularIntegralEquations, fixed by k_old check in _squaredblocks_newbandwidth
@@ -119,7 +115,6 @@ import BlockArrays: BlockedUnitRange, blockisequal
 
         V = view(A, 1:400,1:400)
         b = randn(400)
-        @test_broken all(UpperTriangular(V) \ b .=== BlockBandedMatrices.blockbanded_rectblocks_intrange_trtrs!(V, copy(b)))
         @test UpperTriangular(V) \ b ≈ UpperTriangular(Matrix(V)) \ b
     end
 

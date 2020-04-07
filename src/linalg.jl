@@ -3,87 +3,6 @@ const SubBlockSkylineMatrix{T,LL,UU,R1,R2} =
     SubArray{T,2,BlockSkylineMatrix{T,LL,UU},<:Tuple{<:BlockSlice{R1},<:BlockSlice{R2}}}
 
 
-getindex(A::BandedBlockBandedMatrix, KR::BlockRange1, JR::BlockRange1) = BandedBlockBandedMatrix(view(A, KR, JR))
-getindex(A::BandedBlockBandedMatrix, KR::BlockRange1, J::Block1) = BandedBlockBandedMatrix(view(A, KR, J))
-getindex(A::BandedBlockBandedMatrix, K::Block1, JR::BlockRange1) = BandedBlockBandedMatrix(view(A, K, JR))
-
-
-@lazymul AbstractBlockBandedMatrix
-
-
-MemoryLayout(A::Type{<:PseudoBlockArray{T,N,R}}) where {T,N,R} = MemoryLayout(R)
-
-
-#############
-# BLAS overrides
-#############
-
-function materialize!(M::MatMulVecAdd{<:AbstractBlockBandedLayout,<:AbstractStridedLayout,<:AbstractStridedLayout})
-    α, A, x_in, β, y_in = M.α, M.A, M.B, M.β, M.C
-    if length(x_in) != size(A,2) || length(y_in) != size(A,1)
-        throw(DimensionMismatch())
-    end
-
-    # impose block structure
-    y = PseudoBlockArray(y_in, (axes(A,1),))
-    x = PseudoBlockArray(x_in, (axes(A,2),))
-
-    _fill_lmul!(β, y)
-
-    for J = Block.(1:blocksize(A,2))
-        for K = blockcolrange(A,J)
-            muladd!(α, view(A,K,J), view(x,J), one(α), view(y,K))
-        end
-    end
-    y_in
-end
-
-function materialize!(M::MatMulMatAdd{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayout})
-    α, A, X, β, Y = M.α, M.A, M.B, M.β, M.C
-    _fill_lmul!(β, Y)
-    for J=Block(1):Block(blocksize(X,2)), N=blockcolrange(X,J), K=blockcolrange(A,N)
-        muladd!(α, view(A,K,N), view(X,N,J), one(α), view(Y,K,J))
-    end
-    Y
-end
-
-function materialize!(M::MatMulMatAdd{<:AbstractBlockBandedLayout,<:AbstractColumnMajor,<:AbstractColumnMajor})
-    α, A, X_in, β, Y_in = M.α, M.A, M.B, M.β, M.C
-    _fill_lmul!(β, Y_in)
-    X = PseudoBlockArray(X_in, (axes(A,2), axes(X_in,2)))
-    Y = PseudoBlockArray(Y_in, (axes(A,1), axes(Y_in,2)))
-    for N=Block.(1:blocksize(X,1)), K=blockcolrange(A,N)
-        muladd!(α, view(A,K,N), view(X,N,Block(1)), one(α), view(Y,K,Block(1)))
-    end
-    Y_in
-end
-
-function materialize!(M::MatMulMatAdd{<:AbstractColumnMajor,<:AbstractBlockBandedLayout,<:AbstractColumnMajor})
-    α, A_in, X, β, Y_in = M.α, M.A, M.B, M.β, M.C
-    _fill_lmul!(β, Y_in)
-    A = PseudoBlockArray(A_in, (axes(A_in,1),axes(X,1)))
-    Y = PseudoBlockArray(Y_in, (axes(Y_in,1),axes(X,2)))
-    for J=Block(1):Block(blocksize(X,2)), N=blockcolrange(X,J)
-        muladd!(α, view(A,Block(1),N), view(X,N,J), one(α), view(Y,Block(1),J))
-    end
-    Y_in
-end
-
-
-
-
-#############
-# * overrides
-#############
-
-*(A::BlockBandedMatrix, B::BlockBandedMatrix) = mul(A,B)
-*(A::BlockBandedMatrix, B::BandedBlockBandedMatrix) = mul(A,B)
-*(A::BandedBlockBandedMatrix, B::BlockBandedMatrix) = mul(A,B)
-*(A::BandedBlockBandedMatrix, B::BandedBlockBandedMatrix) = mul(A,B)
-*(A::Matrix, B::BlockBandedMatrix) = mul(A,B)
-*(A::BlockBandedMatrix, B::Matrix) = mul(A,B)
-*(A::BandedBlockBandedMatrix, B::Matrix) = mul(A,B)
-*(A::Matrix, B::BandedBlockBandedMatrix) = mul(A,B)
 
 
 function add_bandwidths(A::AbstractBlockBandedMatrix,B::AbstractBlockBandedMatrix)
@@ -186,14 +105,6 @@ function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:Union
     p = unsafe_convert(Ptr{T}, view(A, first(KR), J))
 end
 
-struct ShiftedLayout{T,ML<:MemoryLayout} <: MemoryLayout
-    shift::Tuple{Int,Int}  # gives the shift to the start of the memory.
-                           # So shift == (0,0) is equivalent to layout
-                           # shift == (2,1) has the first two rows and first column all zero
-    layout::ML
-end
-
-
 strides(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockIndexRange1}) where {LL,UU} =
     (1,parent(V).block_sizes.block_strides[Int(Block(parentindices(V)[2]))])
 
@@ -202,7 +113,7 @@ function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,BlockRa
     JR = parentindices(V)[2]
     K = first(parentindices(V)[1].block)
     J = Block(JR)
-    K ∈ blockcolrange(A, J) || throw(ArgumentError("Pointer is only defined when inside colrange"))
+    K ∈ blockcolsupport(A, J) || throw(ArgumentError("Pointer is only defined when inside blockcolsupport"))
     p = unsafe_convert(Ptr{T}, view(A, K, J))
     p + sizeof(T)*(JR.block.indices[1][1]-1)*stride(V,2)
 end

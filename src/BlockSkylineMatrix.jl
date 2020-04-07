@@ -160,7 +160,7 @@ BlockSkylineMatrix
 
 function BlockSkylineMatrix{T}(A::AbstractMatrix, block_sizes::BlockSkylineSizes) where T
     ret = BlockSkylineMatrix(Zeros{T}(size(A)), block_sizes)
-    for J = Block.(1:blocksize(ret, 2)), K = blockcolrange(ret, Int(J))
+    for J = blockaxes(ret,2), K = blockcolsupport(ret, Int(J))
         kr, jr = getindex.(block_sizes.axes, (K, J))
         view(ret, K, J) .= view(A, kr, jr)
     end
@@ -170,7 +170,7 @@ end
 function BlockSkylineMatrix{T}(A::AbstractBlockBandedMatrix, block_sizes::BlockSkylineSizes) where T
     ret = BlockSkylineMatrix(Zeros{T}(size(A)), block_sizes)
     blockisequal(axes(A), block_sizes.axes) || throw(ArgumentError())
-    for J = blockaxes(ret,2), K = blockcolrange(ret, Int(J))
+    for J = blockaxes(ret,2), K = blockcolsupport(ret, J)
         view(ret, K, J) .= view(A, K, J)
     end
     ret
@@ -234,7 +234,7 @@ function convert(::Type{BlockSkylineMatrix}, A::AbstractMatrix)
     block_sizes = BlockSkylineSizes(axes(A), colblockbandwidths(A)...)
 
     ret = BlockSkylineMatrix{eltype(A)}(undef, block_sizes)
-    for J = blockaxes(ret,2), K = blockcolrange(ret, J)
+    for J = blockaxes(ret,2), K = blockcolsupport(ret, J)
         view(ret, K, J) .= view(A, K, J)
     end
     ret

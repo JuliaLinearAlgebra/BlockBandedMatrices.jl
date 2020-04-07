@@ -57,11 +57,9 @@ function ql!(A::BlockBandedMatrix{T}) where T
     QL(A,τ.blocks)
 end
 
-qr(A::BlockBandedMatrix) = qr!(BlockBandedMatrix(A, (blockbandwidth(A,1), blockbandwidth(A,1)+blockbandwidth(A,2))))
-ql(A::BlockBandedMatrix) = ql!(BlockBandedMatrix(A, (blockbandwidth(A,1)+blockbandwidth(A,2),blockbandwidth(A,2))))
-
-qr(A::BandedBlockBandedMatrix) = qr(BlockBandedMatrix(A))
-ql(A::BandedBlockBandedMatrix) = ql(BlockBandedMatrix(A))
+_qr(::AbstractBlockBandedLayout, _, A) = qr!(BlockBandedMatrix(A, (blockbandwidth(A,1), blockbandwidth(A,1)+blockbandwidth(A,2))))
+_ql(::AbstractBlockBandedLayout, _, A) = ql!(BlockBandedMatrix(A, (blockbandwidth(A,1)+blockbandwidth(A,2),blockbandwidth(A,2))))
+_factorize(::AbstractBlockBandedLayout, _, A) = qr(A)
 
 function lmul!(adjQ::Adjoint{<:Any,<:QRPackedQ{<:Any,<:BlockSkylineMatrix}}, Bin::AbstractVector)
     Q = parent(adjQ)
@@ -123,5 +121,3 @@ function ldiv!(A::QL{<:Any,<:BlockSkylineMatrix}, B::AbstractMatrix)
     lmul!(adjoint(A.Q), B)
     materialize!(Ldiv(LowerTriangular(A.factors), B))
 end
-
-\(A::AbstractBlockBandedMatrix, b::AbstractVecOrMat) = qr(A)\b  # use QR because LU would be a _mess_ to implement
