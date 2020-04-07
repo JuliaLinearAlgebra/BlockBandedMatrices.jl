@@ -32,7 +32,7 @@ function sizes_from_blocks(A::Diagonal, _)
     #     size(A.dl[k],1) == sz[1][k+1] || throw(ArgumentError("block sizes of lower diagonal inconsisent with diagonal"))
     #     size(A.dl[k],2) == sz[2][k] || throw(ArgumentError("block sizes of lower diagonal inconsisent with diagonal"))
     # end
-    BlockSizes(size.(A.diag, 1), size.(A.diag,2))
+    (size.(A.diag, 1), size.(A.diag,2))
 end    
 
 
