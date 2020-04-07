@@ -6,7 +6,7 @@
 # in addition to the banded matrix interface
 ####
 
-abstract type AbstractBlockBandedLayout <: MemoryLayout end
+abstract type AbstractBlockBandedLayout <: AbstractBlockLayout end
 abstract type AbstractBandedBlockBandedLayout <: AbstractBlockBandedLayout end
 
 struct BandedBlockBandedColumns{LAY} <: AbstractBandedBlockBandedLayout end
@@ -60,7 +60,9 @@ blockbandrange(A::AbstractMatrix) = -blockbandwidth(A,1):blockbandwidth(A,2)
 @inline blockbanded_blockcolstop(A, i::Integer) = Block(max(min(i+colblockbandwidth(A,1)[i], blocksize(A, 1)), 0))
 @inline blockbanded_blockrowstart(A, i::Integer) = Block(max(i-rowblockbandwidth(A,1)[i], 1))
 @inline blockbanded_blockrowstop(A, i::Integer) = Block(max(min(i+rowblockbandwidth(A,2)[i], blocksize(A, 2)), 0))
-
+for Func in (:blockbanded_blockcolstart, :blockbanded_blockcolstop, :blockbanded_blockrowstart, :blockbanded_blockrowstop)
+    @eval $Func(A, i::Block{1}) = $Func(A, Int(i))
+end
 
 @inline blockcolsupport(::AbstractBlockBandedLayout, A, i) = blockbanded_blockcolstart(A,i):blockbanded_blockcolstop(A,i)
 @inline blockrowsupport(::AbstractBlockBandedLayout, A, i) = blockbanded_blockrowstart(A,i):blockbanded_blockrowstop(A,i)
@@ -110,8 +112,16 @@ end
 #  RaggedMatrix interface
 ######################################
 
-@inline colstart(A::AbstractBlockBandedMatrix, i::Integer) =
-    isempty(axes(A,1)) ? 1 : first(axes(A,1)[blockcolstart(A,findblock(axes(A,2),i))])
+@inline function colstart(A::AbstractBlockBandedMatrix, i::Integer)
+    bs = blockcolstart(A,findblock(axes(A,2),i))
+    if isempty(axes(A,1)) 
+        1
+    elseif Int(bs) ≤ blocksize(A, 2)
+        first(axes(A,1)[bs])
+    else
+        size(A,1)+1
+    end
+end
 
 @inline function colstop(A::AbstractBlockBandedMatrix, i::Integer)
     CS = blockcolstop(A,findblock(axes(A,2),i))
@@ -128,8 +138,8 @@ end
     last(axes(A,2)[CS])    
 end
 
-@inline blockbanded_colsupport(A, j::Integer) = colsupport(A, j)
-@inline blockbanded_rowsupport(A, j::Integer) = rowsupport(A, j)
+@inline blockbanded_colsupport(A, j::Integer) = colrange(A, j)
+@inline blockbanded_rowsupport(A, j::Integer) = rowrange(A, j)
 
 @inline blockbanded_rowsupport(A, j) = isempty(j) ? (1:0) : rowstart(A,minimum(j)):rowstop(A,maximum(j))
 @inline blockbanded_colsupport(A, j) = isempty(j) ? (1:0) : colstart(A,minimum(j)):colstop(A,maximum(j))

@@ -221,7 +221,7 @@ end
 ################################
 
 bandedblockbandedcolumns(L::AbstractColumnMajor) = BandedBlockBandedColumnMajor()
-bandedblockbandedcolumns(_) = UnknownLayout()
+bandedblockbandedcolumns(_) = BandedBlockBandedColumns{UnknownLayout}()
 
 MemoryLayout(::Type{<:BandedBlockBandedMatrix{<:Any,BLOCKS}}) where BLOCKS = 
     bandedblockbandedcolumns(MemoryLayout(BLOCKS))

@@ -121,5 +121,3 @@ function ldiv!(A::QL{<:Any,<:BlockSkylineMatrix}, B::AbstractMatrix)
     lmul!(adjoint(A.Q), B)
     materialize!(Ldiv(LowerTriangular(A.factors), B))
 end
-
-\(A::AbstractBlockBandedMatrix, b::AbstractVecOrMat) = qr(A)\b  # use QR because LU would be a _mess_ to implement

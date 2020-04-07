@@ -79,7 +79,7 @@ function blockbanded_copyto!(dest::AbstractMatrix, src::AbstractMatrix)
 end
 
 
-copyto!(dest::AbstractMatrix, src::AbstractBlockBandedMatrix) = blockbanded_copyto!(dest, src)
+_copyto!(_, ::AbstractBlockBandedLayout, dest::AbstractMatrix, src::AbstractMatrix) = blockbanded_copyto!(dest, src)
 
 
 function copyto!(dest::AbstractArray, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(identity)})
