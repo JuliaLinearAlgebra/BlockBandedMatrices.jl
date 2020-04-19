@@ -77,8 +77,9 @@ function blockbandwidths(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockR
     KR = parentindices(V)[1].block.indices[1]
     JR = parentindices(V)[2].block.indices[1]
 
-    @assert KR[1] == JR[1] == 1
-    blockbandwidths(A)
+    shift =  KR[1] - JR[1]
+    l,u = blockbandwidths(A)
+    l-shift, u+shift
 end
 
 
@@ -92,6 +93,10 @@ sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockRange1}, <:
 sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{BlockIndexRange1}}}) = ColumnMajor()
 sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockIndexRange1}, <:BlockSlice{BlockIndexRange1}}}) = ColumnMajor()
 
+isblockbanded(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{BlockRange1}}}) = 
+    isblockbanded(parent(V))
+
+sub_materialize(::AbstractBlockBandedLayout, V, _) = BlockBandedMatrix(V)
 
 strides(V::SubBlockSkylineMatrix{<:Any,LL,UU,<:Union{BlockRange1,Block1},Block1}) where {LL,UU} =
     (1,parent(V).block_sizes.block_strides[Int(parentindices(V)[2].block)])

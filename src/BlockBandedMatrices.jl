@@ -23,7 +23,7 @@ import SparseArrays: sparse
 
 import ArrayLayouts: BlasMatLmulVec,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatLdivVec,
-                    triangulardata, sublayout, 
+                    triangulardata, sublayout, sub_materialize,
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
                     DiagonalLayout, MulAdd, mul, colsupport, rowsupport,
                     _qr, _factorize, _copyto!

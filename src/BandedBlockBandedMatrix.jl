@@ -316,12 +316,17 @@ end
 end
 
 ## structured matrix methods ##
-function Base.replace_in_print_matrix(A::BandedBlockBandedMatrix, i::Integer, j::Integer, s::AbstractString)
+function _bandedblockbanded_replace_in_print_matrix(A, i, j, s)
     bi = findblockindex.(axes(A), (i,j))
     I,J = block.(bi)
     i,j = blockindex.(bi)
-    -A.l ≤ Int(J-I) ≤ A.u && -A.λ ≤ j-i ≤ A.μ ? s : Base.replace_with_centered_mark(s)
+    l,u = blockbandwidths(A)
+    λ,μ = subblockbandwidths(A)
+    -l ≤ Int(J-I) ≤ u && -λ ≤ j-i ≤ μ ? s : Base.replace_with_centered_mark(s)
 end
+
+Base.replace_in_print_matrix(A::BandedBlockBandedMatrix, i::Integer, j::Integer, s::AbstractString) = 
+    _bandedblockbanded_replace_in_print_matrix(A, i, j, s)
 
 
 ############
@@ -410,6 +415,8 @@ sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{BlockRange1}
 sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{Block1},BlockSlice{BlockRange1}}}) = BandedBlockBandedColumnMajor()
 sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{BlockRange1},BlockSlice{Block1}}}) = BandedBlockBandedColumnMajor()
 sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{BlockRange1},BlockSlice{BlockIndexRange1}}}) = BandedBlockBandedColumnMajor()
+
+sub_materialize(::AbstractBandedBlockBandedLayout, V, _) = BandedBlockBandedMatrix(V)
 
 isbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(typeof(A)) == BandedColumnMajor()
 isbandedblockbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(typeof(A)) == BandedBlockBandedColumnMajor()
