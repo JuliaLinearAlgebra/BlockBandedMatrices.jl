@@ -77,8 +77,9 @@ function blockbandwidths(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockR
     KR = parentindices(V)[1].block.indices[1]
     JR = parentindices(V)[2].block.indices[1]
 
-    @assert KR[1] == JR[1] == 1
-    blockbandwidths(A)
+    shift =  first(KR) - first(JR)
+    l,u = blockbandwidths(A)
+    l-shift, u+shift
 end
 
 
