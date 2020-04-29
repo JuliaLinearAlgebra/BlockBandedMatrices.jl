@@ -64,12 +64,6 @@ for Func in (:blockbanded_blockcolstart, :blockbanded_blockcolstop, :blockbanded
     @eval $Func(A, i::Block{1}) = $Func(A, Int(i))
 end
 
-blockbanded_blockcolstart(A, i::BlockRange) = blockbanded_blockcolstart(A, minimum(i))
-blockbanded_blocktowstart(A, i::BlockRange) = blockbanded_blockrowstart(A, minimum(i))
-blockbanded_blockcolstop(A, i::BlockRange) = blockbanded_blockcolstop(A, maximum(i))
-blockbanded_blocktowstop(A, i::BlockRange) = blockbanded_blockrowstop(A, maximum(i))
-
-
 @inline blockcolsupport(::AbstractBlockBandedLayout, A, i) = blockbanded_blockcolstart(A,i):blockbanded_blockcolstop(A,i)
 @inline blockrowsupport(::AbstractBlockBandedLayout, A, i) = blockbanded_blockrowstart(A,i):blockbanded_blockrowstop(A,i)
 

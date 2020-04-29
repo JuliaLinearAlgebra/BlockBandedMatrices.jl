@@ -175,10 +175,8 @@ function BandedBlockBandedMatrix{T,Blocks,RR}(A::AbstractMatrix, axes::NTuple{2,
 end
 
 
-BandedBlockBandedMatrix{T}(A::AbstractMatrix) where T =
-    copyto!(BandedBlockBandedMatrix{T}(undef, axes(A), blockbandwidths(A), subblockbandwidths(A)), A)
-
-BandedBlockBandedMatrix(A::AbstractMatrix{T}) where T = BandedBlockBandedMatrix{T}(A)
+BandedBlockBandedMatrix(A::AbstractMatrix) =
+    BandedBlockBandedMatrix(A, axes(A), blockbandwidths(A), subblockbandwidths(A))
 
 BandedBlockBandedMatrix(A::AbstractMatrix, rdims::AbstractVector{Int}, cdims::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
     BandedBlockBandedMatrix(A, (blockedrange(rdims), blockedrange(cdims)), lu, λμ)
@@ -443,7 +441,7 @@ function blockbandwidths(V::SubBandedBlockBandedMatrix{<:Any,BlockRange1,BlockRa
 
     KR = parentindices(V)[1].block.indices[1]
     JR = parentindices(V)[2].block.indices[1]
-    shift = Int(first(KR))-Int(first(JR))
+    shift = Int(KR[1])-Int(JR[1])
 
     blockbandwidth(A,1) - shift, blockbandwidth(A,2) + shift
 end
@@ -489,7 +487,7 @@ parentblocks2Int(V::BandedBlockBandedBlock)::Tuple{Int,Int} = Int(first(parentin
 ######################################
 # BandedMatrix interface  for Blocks #
 ######################################
-@inline function bandwidths(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice1,BlockSlice1}}) where T
+@inline function bandwidths(V::BandedBlockBandedBlock) 
     inblockbands(V) && return subblockbandwidths(parent(V))
     (-720,-720)
 end

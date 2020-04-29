@@ -46,7 +46,7 @@ similar(bc::Broadcasted{<:AbstractBlockBandedStyle}, ::Type{T}) where T =
 
 checkblocks(A, B) = blockisequal(axes(A), axes(B)) || throw(DimensionMismatch("*"))
 
-function _blockbanded_copyto!(dest::AbstractMatrix, src::AbstractMatrix)
+function _blockbanded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
     @boundscheck checkblocks(dest, src)
 
     dl, du = colblockbandwidths(dest)
@@ -57,13 +57,13 @@ function _blockbanded_copyto!(dest::AbstractMatrix, src::AbstractMatrix)
 
     for J = 1:N
         for K = max(1,J-du[J]):min(J-su[J]-1,M)
-            zero!(view(dest,Block(K),Block(J)))
+            view(dest,Block(K),Block(J)) .= zero(T)
         end
         for K = max(1,J-su[J]):min(J+sl[J],M)
-            copyto!(view(dest,Block(K),Block(J)), view(src,Block(K),Block(J)))
+            view(dest,Block(K),Block(J)) .= view(src,Block(K),Block(J))
         end
         for K = max(1,J+sl[J]+1):min(J+dl[J],M)
-            zero!(dest,Block(K),Block(J))
+            view(dest,Block(K),Block(J)) .= zero(T)
         end
     end
     dest
