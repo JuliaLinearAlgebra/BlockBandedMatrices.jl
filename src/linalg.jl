@@ -93,6 +93,10 @@ sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockRange1}, <:
 sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{BlockIndexRange1}}}) = ColumnMajor()
 sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockIndexRange1}, <:BlockSlice{BlockIndexRange1}}}) = ColumnMajor()
 
+isblockbanded(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{BlockRange1}}}) =
+    isblockbanded(parent(V))
+
+sub_materialize(::AbstractBlockBandedLayout, V, _) = BlockBandedMatrix(V)
 
 strides(V::SubBlockSkylineMatrix{<:Any,LL,UU,<:Union{BlockRange1,Block1},Block1}) where {LL,UU} =
     (1,parent(V).block_sizes.block_strides[Int(parentindices(V)[2].block)])
@@ -134,5 +138,3 @@ strides(V::SubBlockSkylineMatrix{T,LL,UU,BlockIndexRange1,BlockIndexRange1}) whe
     (1,parent(V).block_sizes.block_strides[Int(parentindices(V)[2].block.block)])
 
 MemoryLayout(V::SubBlockSkylineMatrix{T,LL,UU,BlockIndexRange1,BlockIndexRange1}) where {T,LL,UU} = ColumnMajor()
-
-
