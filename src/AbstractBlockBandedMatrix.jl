@@ -1,23 +1,13 @@
+####
+# Matrix memory layout traits
+#
+# if MemoryLayout(A) returns BandedColumnMajor, you must override
+# pointer and leadingdimension
+# in addition to the banded matrix interface
+####
 
-"""
-   AbstractBlockBandedLayout
-
-isa a `MemoryLayout` that indicates that the array implements the block-banded
-interface.
-"""
 abstract type AbstractBlockBandedLayout <: AbstractBlockLayout end
-
-"""
-   AbstractBandedBlockBandedLayout
-
-isa a `MemoryLayout` that indicates that the array implements the banded-block-banded
-interface.
-"""
 abstract type AbstractBandedBlockBandedLayout <: AbstractBlockBandedLayout end
-
-
-struct BandedBlockBandedLayout <: AbstractBandedBlockBandedLayout end
-struct BlockBandedLayout <: AbstractBlockBandedLayout end
 
 struct BandedBlockBandedColumns{LAY} <: AbstractBandedBlockBandedLayout end
 struct BandedBlockBandedRows{LAY} <: AbstractBandedBlockBandedLayout end

@@ -11,7 +11,7 @@ import Base.Broadcast: materialize!
         cols = rows = 1:N
 
         @test Matrix(BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (l,u))) ==
-            Array(BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (l,u))) ==
+            Array(BlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows, cols, (l,u))) == 
             zeros(Float64, 10, 10)
 
         @test Matrix(BlockBandedMatrix{Int}(Zeros(sum(rows),sum(cols)), rows,cols, (l,u))) ==
@@ -35,10 +35,12 @@ import Base.Broadcast: materialize!
         N = M = 4
         cols = rows = 1:N
         A = BlockBandedMatrix{Int}(undef, rows,cols, (l,u))
-        A.data .= 1:length(A.data)
+            A.data .= 1:length(A.data)
 
         @test A[1,1] == 1
         @test A[1,3] == 10
+
+
 
         @test blockbandwidth(A,1)  == 1
         @test blockbandwidths(A) == (l,u)
@@ -90,34 +92,12 @@ import Base.Broadcast: materialize!
         @test ret[1,2] == 0
     end
 
-    @testset "block-banded matrix interface for blockranges" begin
-        l , u = 1,1
-        N = M = 4
-        cols = rows = 1:N
-        A = BlockBandedMatrix{Int}(undef, rows,cols, (l,u))
-        A.data .= 1:length(A.data)
-
-        V = view(A, Block.(2:3), Block.(3:4))
-        @test isblockbanded(V)
-
-        B = BlockBandedMatrix(V)
-        @test B isa BlockBandedMatrix
-        @test blockbandwidths(V) == blockbandwidths(B) == (2,0)
-        @test B == V == A[Block.(2:3), Block.(3:4)]
-
-        @test A[Block.(2:3), Block.(3:4)] isa BlockBandedMatrix
-
-        x = randn(size(B,2))
-        y = similar(x, size(B,1))
-        @test all((similar(y) .= MulAdd(B, x)) .=== (similar(y) .= MulAdd(V,x)))
-    end
-
     @testset "BlockBandedMatrix indexing" begin
         l , u = 1,1
         N = M = 10
         cols = rows = 1:N
         A = BlockBandedMatrix{Float64}(undef, rows,cols, (l,u))
-        A.data .= 1:length(A.data)
+            A.data .= 1:length(A.data)
 
         A[1,1] = 5
         @test A[1,1] == 5

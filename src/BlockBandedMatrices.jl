@@ -23,7 +23,7 @@ import SparseArrays: sparse
 
 import ArrayLayouts: BlasMatLmulVec,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatLdivVec,
-                    triangulardata, sublayout, sub_materialize,
+                    triangulardata, sublayout, 
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
                     DiagonalLayout, MulAdd, mul, colsupport, rowsupport,
                     _qr, _factorize, _copyto!
@@ -38,7 +38,7 @@ import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrang
                         inbands_setindex!, inbands_getindex, banded_setindex!,
                         banded_generic_axpy!,
                         BlasFloat, banded_dense_axpy!, MemoryLayout,
-                        BandedLayout, BandedColumnMajor,
+                        BandedColumnMajor,
                         BandedSubBandedMatrix, bandeddata, tribandeddata,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop,
                         BandedStyle, _fill_lmul!, bandshift,
@@ -50,7 +50,7 @@ export BandedBlockBandedMatrix, BlockBandedMatrix, BlockSkylineMatrix, blockband
 
 const Block1 = Block{1,Int}
 const BlockRange1 = BlockRange{1,Tuple{UnitRange{Int}}}
-const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int}}}
+const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int}}}    
 
 blockcolrange(A...) = blockcolsupport(A...)
 blockrowrange(A...) = blockrowsupport(A...)
