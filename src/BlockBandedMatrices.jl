@@ -26,7 +26,7 @@ import ArrayLayouts: BlasMatLmulVec,
                     triangulardata, sublayout, sub_materialize,
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
                     DiagonalLayout, MulAdd, mul, colsupport, rowsupport,
-                    _qr, _factorize, _copyto!
+                    _qr, _factorize, _copyto!, zero!
 
 import BlockArrays: blocksize, blockcheckbounds, BlockedUnitRange, blockisequal, DefaultBlockAxis,
                         Block, BlockSlice, getblock, unblock, setblock!, block, blockindex,
