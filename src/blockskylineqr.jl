@@ -73,8 +73,8 @@ _qr(lay::AbstractBlockBandedLayout, ax::Tuple{AbstractUnitRange{Int},AbstractUni
 _ql(::AbstractBlockBandedLayout, _, A) = ql!(BlockBandedMatrix(A, (blockbandwidth(A,1)+blockbandwidth(A,2),blockbandwidth(A,2))))
 _factorize(::AbstractBlockBandedLayout, _, A) = qr(A)
 
-function materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractBlockBandedLayout}})
-    adjQ,Bin = M.A,M.B
+function materialize!(Mul::Lmul{<:AdjQRPackedQLayout{<:AbstractBlockBandedLayout}})
+    adjQ,Bin = Mul.A,Mul.B
     Q = parent(adjQ)
     A = Q.factors
     l,u = blockbandwidths(A)
@@ -91,22 +91,22 @@ function materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractBlockBandedLayout}}
     end
     Bin
 end
-function materialize!(M::Lmul{<:AdjQLPackedQLayout{<:AbstractBlockBandedLayout}})
-    Q = parent(adjQ)
+function materialize!(Mul::Lmul{<:AdjQLPackedQLayout{<:AbstractBlockBandedLayout}})
+    Q = parent(Mul.A)
     A = Q.factors
     l,u = blockbandwidths(A)
     N,M = blocksize(A)
     # impose block structure
     ax1 = (axes(A,1),)
     τ  = PseudoBlockArray(Q.τ, ax1)
-    B = PseudoBlockArray(Bin, ax1)
+    B = PseudoBlockArray(Mul.B, ax1)
     for K = N:-1:1
         KR = Block.(max(1,K-u):K)
         V = view(A,KR,Block(K))
         t = view(τ,Block(K))
         apply_ql!(V, t, view(B,KR))
     end
-    Bin
+    Mul.B
 end
 
 # avoid LinearALgebra Strided obsession 

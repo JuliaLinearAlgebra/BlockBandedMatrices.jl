@@ -7,7 +7,7 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
         A.data .= randn.()
 
         F = qr(A)
-        @test F isa LinearAlgebra.QR{Float64,<:BlockSkylineMatrix}
+        @test F isa MatrixFactorizations.QR{Float64,<:BlockSkylineMatrix}
         @test F.factors ≈ qr(Matrix(A)).factors
         @test F.τ ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).τ
 
@@ -20,7 +20,7 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
         @test Q'b ≈ Q̃'b
         @test Q*b ≈ Q̃*b
 
-        @test factorize(A) isa LinearAlgebra.QR{Float64,<:BlockSkylineMatrix}
+        @test factorize(A) isa MatrixFactorizations.QR{Float64,<:BlockSkylineMatrix}
         @test F\b ≈ ldiv!(F, copy(b)) ≈ Matrix(A)\b ≈ A\b
     end
 
