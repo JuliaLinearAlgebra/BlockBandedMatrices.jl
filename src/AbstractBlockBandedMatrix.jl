@@ -1,13 +1,23 @@
-####
-# Matrix memory layout traits
-#
-# if MemoryLayout(A) returns BandedColumnMajor, you must override
-# pointer and leadingdimension
-# in addition to the banded matrix interface
-####
 
+"""
+   AbstractBlockBandedLayout
+
+isa a `MemoryLayout` that indicates that the array implements the block-banded
+interface.
+"""
 abstract type AbstractBlockBandedLayout <: AbstractBlockLayout end
+
+"""
+   AbstractBandedBlockBandedLayout
+
+isa a `MemoryLayout` that indicates that the array implements the banded-block-banded
+interface.
+"""
 abstract type AbstractBandedBlockBandedLayout <: AbstractBlockBandedLayout end
+
+
+struct BandedBlockBandedLayout <: AbstractBandedBlockBandedLayout end
+struct BlockBandedLayout <: AbstractBlockBandedLayout end
 
 struct BandedBlockBandedColumns{LAY} <: AbstractBandedBlockBandedLayout end
 struct BandedBlockBandedRows{LAY} <: AbstractBandedBlockBandedLayout end
@@ -63,6 +73,12 @@ blockbandrange(A::AbstractMatrix) = -blockbandwidth(A,1):blockbandwidth(A,2)
 for Func in (:blockbanded_blockcolstart, :blockbanded_blockcolstop, :blockbanded_blockrowstart, :blockbanded_blockrowstop)
     @eval $Func(A, i::Block{1}) = $Func(A, Int(i))
 end
+
+blockbanded_blockcolstart(A, i::BlockRange) = blockbanded_blockcolstart(A, minimum(i))
+blockbanded_blocktowstart(A, i::BlockRange) = blockbanded_blockrowstart(A, minimum(i))
+blockbanded_blockcolstop(A, i::BlockRange) = blockbanded_blockcolstop(A, maximum(i))
+blockbanded_blocktowstop(A, i::BlockRange) = blockbanded_blockrowstop(A, maximum(i))
+
 
 @inline blockcolsupport(::AbstractBlockBandedLayout, A, i) = blockbanded_blockcolstart(A,i):blockbanded_blockcolstop(A,i)
 @inline blockrowsupport(::AbstractBlockBandedLayout, A, i) = blockbanded_blockrowstart(A,i):blockbanded_blockrowstop(A,i)

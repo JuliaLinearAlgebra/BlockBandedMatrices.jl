@@ -14,19 +14,19 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Br
 
 import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
                         AbstractTriangular, AdjOrTrans, HermOrSym, StructuredMatrixStyle,
-                        qr, qr!, QRPackedQ
+                        qr, qr!
 import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex, BlasReal
 import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
-import MatrixFactorizations: ql, ql!, _ql, QLPackedQ
+import MatrixFactorizations: ql, ql!, _ql, QLPackedQ, AdjQRPackedQLayout, AdjQLPackedQLayout, QR, QRPackedQ
 import SparseArrays: sparse
 
 import ArrayLayouts: BlasMatLmulVec,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatLdivVec,
-                    triangulardata, sublayout, 
+                    triangulardata, sublayout, sub_materialize,
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
                     DiagonalLayout, MulAdd, mul, colsupport, rowsupport,
-                    _qr, _factorize, _copyto!
+                    _qr, _factorize, _copyto!, zero!
 
 import BlockArrays: blocksize, blockcheckbounds, BlockedUnitRange, blockisequal, DefaultBlockAxis,
                         Block, BlockSlice, getblock, unblock, setblock!, block, blockindex,
@@ -38,7 +38,7 @@ import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrang
                         inbands_setindex!, inbands_getindex, banded_setindex!,
                         banded_generic_axpy!,
                         BlasFloat, banded_dense_axpy!, MemoryLayout,
-                        BandedColumnMajor,
+                        BandedLayout, BandedColumnMajor,
                         BandedSubBandedMatrix, bandeddata, tribandeddata,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop,
                         BandedStyle, _fill_lmul!, bandshift,
@@ -50,7 +50,7 @@ export BandedBlockBandedMatrix, BlockBandedMatrix, BlockSkylineMatrix, blockband
 
 const Block1 = Block{1,Int}
 const BlockRange1 = BlockRange{1,Tuple{UnitRange{Int}}}
-const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int}}}    
+const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int}}}
 
 blockcolrange(A...) = blockcolsupport(A...)
 blockrowrange(A...) = blockrowsupport(A...)
