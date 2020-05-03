@@ -63,7 +63,7 @@ function _blockbanded_copyto!(dest::AbstractMatrix, src::AbstractMatrix)
             copyto!(view(dest,Block(K),Block(J)), view(src,Block(K),Block(J)))
         end
         for K = max(1,J+sl[J]+1):min(J+dl[J],M)
-            zero!(dest,Block(K),Block(J))
+            zero!(view(dest,Block(K),Block(J)))
         end
     end
     dest

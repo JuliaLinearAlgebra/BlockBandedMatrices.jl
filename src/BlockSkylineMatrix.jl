@@ -65,11 +65,14 @@ BlockSkylineSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l::Abstr
     BlockSkylineSizes((blockedrange(rows),blockedrange(cols)), l, u)
 
 BlockBandedSizes(b_axes::NTuple{2,AbstractUnitRange{Int}}, l::Int, u::Int) =
-    BlockSkylineSizes(b_axes, Fill(l, blocklength(b_axes[2])), Fill(u, blocklength(b_axes[2])))
+    convert(BlockBandedSizes, BlockSkylineSizes(b_axes, Fill(l, blocklength(b_axes[2])), Fill(u, blocklength(b_axes[2]))))
 
 
 BlockBandedSizes(rows::AbstractVector{Int}, cols::AbstractVector{Int}, l::Int, u::Int) =
-    BlockSkylineSizes(rows, cols, Fill(l, length(cols)), Fill(u, length(cols)))
+    convert(BlockBandedSizes, BlockSkylineSizes(rows, cols, Fill(l, length(cols)), Fill(u, length(cols))))
+
+convert(::Type{BlockSkylineSizes{BS,LL,UU,BStarts,BStrides}}, b::BlockSkylineSizes) where {BS,LL,UU,BStarts,BStrides} =
+    BlockSkylineSizes(convert(BS, b.axes), convert(BStarts, b.block_starts), convert(BStrides,b.block_strides), convert(LL,b.l), convert(UU,b.u))
 
 colblockbandwidths(bs::BlockSkylineSizes) = (bs.l, bs.u)
 
@@ -227,7 +230,7 @@ BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
                         rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
                         lu::NTuple{2,Int}) = BlockBandedMatrix{eltype(A)}(A, rdims, cdims, lu)
 
-BlockBandedMatrix(A::BlockBandedMatrix, lu::NTuple{2,Int}) = BlockBandedMatrix(A, BlockBandedSizes(axes(A), lu...))
+BlockBandedMatrix(A::AbstractMatrix, lu::NTuple{2,Int}) = BlockBandedMatrix(A, BlockBandedSizes(axes(A), lu...))
 
 function convert(::Type{BlockSkylineMatrix}, A::AbstractMatrix)
     @assert isblockbanded(A)

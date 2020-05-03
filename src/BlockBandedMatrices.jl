@@ -14,11 +14,11 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Br
 
 import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
                         AbstractTriangular, AdjOrTrans, HermOrSym, StructuredMatrixStyle,
-                        qr, qr!, QRPackedQ
+                        qr, qr!
 import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, libblas, BlasComplex, BlasReal
 import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
                     chkuplo
-import MatrixFactorizations: ql, ql!, _ql, QLPackedQ, AdjQRPackedQLayout, AdjQLPackedQLayout
+import MatrixFactorizations: ql, ql!, _ql, QLPackedQ, AdjQRPackedQLayout, AdjQLPackedQLayout, QR, QRPackedQ
 import SparseArrays: sparse
 
 import ArrayLayouts: BlasMatLmulVec,
