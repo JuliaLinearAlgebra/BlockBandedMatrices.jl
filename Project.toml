@@ -18,9 +18,9 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-ArrayLayouts = "0.2.3"
-BandedMatrices = "0.15.5"
-BlockArrays = "0.12"
-FillArrays = "0.8"
+ArrayLayouts = "0.2.6"
+BandedMatrices = "0.15.6"
+BlockArrays = "0.12.4"
+FillArrays = "0.8.8"
 MatrixFactorizations = "0.4"
 julia = "1.2"
