@@ -267,25 +267,32 @@ for op in (:+, :-)
 
         for J̃ = 1:M
             J = Block(J̃)
+            # joint block range
             for K = Block.(max(1,J̃-min(A_u,B_u)):min(N,J̃+min(A_l,B_l)))
                 view(C,K,J) .= $op.(view(A,K,J), view(B,K,J))
             end
+            # above, A but not B
             for K = Block.(max(1,J̃-A_u):min(N,J̃-B_u-1))
                 view(C,K,J) .= view(A,K,J)
             end
+            # above, B but not A
             for K = Block.(max(1,J̃-B_u):min(N,J̃-A_u-1))
                 view(C,K,J) .= $op.(view(B,K,J))
             end
-            for K = Block.(max(1,J̃+B_l+1):min(N,J̃+A_u))
+            # below, A but not B
+            for K = Block.(max(1,J̃+B_l+1):min(N,J̃+A_l))
                 view(C,K,J) .= view(A,K,J)
             end
-            for K = Block.(max(1,J̃+A_l+1):min(N,J̃+B_u))
+            # below, B but not A
+            for K = Block.(max(1,J̃+A_l+1):min(N,J̃+B_l))
                 view(C,K,J) .= $op.(view(B,K,J))
             end
+            # above, neither
             for K = Block.(max(J̃-C_u,1):min(J̃-max(A_u,B_u)-1,N))
                 view(C,K,J) .= zero(T)
             end
-            for K = Block.(max(J̃+max(A_l,B_l)+1,1):min(J̃+C_u,N))
+            # below, neither
+            for K = Block.(max(J̃+max(A_l,B_l)+1,1):min(J̃+C_l,N))
                 view(C,K,J) .= zero(T)
             end
         end
