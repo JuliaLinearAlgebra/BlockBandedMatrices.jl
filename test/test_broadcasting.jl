@@ -177,6 +177,20 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
     @testset "Degenerate bands" begin
         A = BandedBlockBandedMatrix{Float64}(undef, Fill(4,4), Fill(4,3), (2,0), (1,1)); A.data .= randn.();
         B = BandedBlockBandedMatrix{Float64}(undef, Fill(4,4), Fill(4,3), (1,-1), (1,1)); B.data .= randn.();
-        @test A + B == Matrix(A) + Matrix(B)
+        @test A + B == B + A == Matrix(A) + Matrix(B)
+        @test A - B == Matrix(A) - Matrix(B)
+        @test B - A == Matrix(B) - Matrix(A)
+
+        A = BandedBlockBandedMatrix{Float64}(undef, Fill(4,4), Fill(4,3), (0,2), (1,1)); A.data .= randn.();
+        B = BandedBlockBandedMatrix{Float64}(undef, Fill(4,4), Fill(4,3), (-1,1), (1,1)); B.data .= randn.();
+        @test A + B == B + A == Matrix(A) + Matrix(B)
+        @test A - B == Matrix(A) - Matrix(B)
+        @test B - A == Matrix(B) - Matrix(A)
+
+        A = BlockBandedMatrix{Float64}(undef, Fill(4,4), Fill(4,3), (2,0)); A.data .= randn.();
+        B = BandedBlockBandedMatrix{Float64}(undef, Fill(4,4), Fill(4,3), (1,-1), (1,1)); B.data .= randn.();
+        @test A + B == B + A == Matrix(A) + Matrix(B)
+        @test A - B == Matrix(A) - Matrix(B)
+        @test B - A == Matrix(B) - Matrix(A)
     end
 end
