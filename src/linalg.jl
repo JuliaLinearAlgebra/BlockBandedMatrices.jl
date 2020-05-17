@@ -97,6 +97,7 @@ isblockbanded(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlice{BlockRange1}, <:Blo
     isblockbanded(parent(V))
 
 sub_materialize(::AbstractBlockBandedLayout, V, _) = BlockBandedMatrix(V)
+sub_materialize(::BlockLayout{<:AbstractBandedLayout}, V, _) = BlockBandedMatrix(V)
 
 strides(V::SubBlockSkylineMatrix{<:Any,LL,UU,<:Union{BlockRange1,Block1},Block1}) where {LL,UU} =
     (1,parent(V).block_sizes.block_strides[Int(parentindices(V)[2].block)])

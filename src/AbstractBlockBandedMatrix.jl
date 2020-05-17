@@ -128,7 +128,7 @@ end
 #  RaggedMatrix interface
 ######################################
 
-@inline function colstart(A::AbstractBlockBandedMatrix, i::Integer)
+@inline function blockbanded_colstart(A, i::Integer)
     bs = blockcolstart(A,findblock(axes(A,2),i))
     if isempty(axes(A,1)) 
         1
@@ -139,26 +139,26 @@ end
     end
 end
 
-@inline function colstop(A::AbstractBlockBandedMatrix, i::Integer)
+@inline function blockbanded_colstop(A, i::Integer)
     CS = blockcolstop(A,findblock(axes(A,2),i))
     CS == Block(0) && return 0
     last(axes(A,1)[CS])
 end
 
-@inline rowstart(A::AbstractBlockBandedMatrix, i::Integer) =
+@inline blockbanded_rowstart(A, i::Integer) =
     first(axes(A,2)[blockrowstart(A,findblock(axes(A,1),i))])
 
-@inline function rowstop(A::AbstractBlockBandedMatrix, i::Integer)
+@inline function blockbanded_rowstop(A, i::Integer)
     CS = blockrowstop(A,findblock(axes(A,1),i))
     CS == Block(0) && return 0
     last(axes(A,2)[CS])    
 end
 
-@inline blockbanded_colsupport(A, j::Integer) = colrange(A, j)
-@inline blockbanded_rowsupport(A, j::Integer) = rowrange(A, j)
+@inline blockbanded_colsupport(A, j::Integer) = blockbanded_colstart(A, j):blockbanded_colstop(A, j)
+@inline blockbanded_rowsupport(A, j::Integer) = blockbanded_rowstart(A, j):blockbanded_rowstop(A, j)
 
-@inline blockbanded_rowsupport(A, j) = isempty(j) ? (1:0) : rowstart(A,minimum(j)):rowstop(A,maximum(j))
-@inline blockbanded_colsupport(A, j) = isempty(j) ? (1:0) : colstart(A,minimum(j)):colstop(A,maximum(j))
+@inline blockbanded_rowsupport(A, j) = isempty(j) ? (1:0) : blockbanded_rowstart(A,minimum(j)):blockbanded_rowstop(A,maximum(j))
+@inline blockbanded_colsupport(A, j) = isempty(j) ? (1:0) : blockbanded_colstart(A,minimum(j)):blockbanded_colstop(A,maximum(j))
 
 @inline colsupport(::AbstractBlockBandedLayout, A, j) = blockbanded_colsupport(A, j)
 @inline rowsupport(::AbstractBlockBandedLayout, A, j) = blockbanded_rowsupport(A, j)
