@@ -81,7 +81,7 @@ end
 
 _copyto!(_, ::AbstractBlockBandedLayout, dest::AbstractMatrix, src::AbstractMatrix) = blockbanded_copyto!(dest, src)
 function _copyto!(_, ::BlockLayout{<:BandedColumns}, dest::AbstractMatrix, src::AbstractMatrix)
-    if !checkblocks(dest, src) 
+    if !blockisequal(axes(dest), axes(src))
         copyto!(PseudoBlockArray(dest, axes(src)), src)
         return dest
     end
@@ -110,7 +110,7 @@ function _copyto!(_, ::BlockLayout{<:BandedColumns}, dest::AbstractMatrix, src::
 end
 
 function _copyto!(_, ::BlockLayout{<:AbstractBandedLayout}, dest::AbstractMatrix, src::AbstractMatrix)
-    if !checkblocks(dest, src) 
+    if !blockisequal(axes(dest), axes(src))
         copyto!(PseudoBlockArray(dest, axes(src)), src)
         return dest
     end
