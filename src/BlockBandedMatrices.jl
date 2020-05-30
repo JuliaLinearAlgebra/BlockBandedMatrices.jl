@@ -7,7 +7,7 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         unsafe_convert, fill!, length, first, last,
                         eltype, getindex, to_indices, to_index,
                         reindex, _maybetail, tail, @_propagate_inbounds_meta,
-                        ==, axes, copyto!, similar, OneTo, replace_in_print_matrix
+                        ==, axes, copyto!, similar, OneTo
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
                         materialize, materialize!
@@ -26,19 +26,19 @@ import ArrayLayouts: BlasMatLmulVec,
                     triangulardata, sublayout, sub_materialize,
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
                     DiagonalLayout, MulAdd, mul, colsupport, rowsupport,
-                    _qr, _factorize, _copyto!, zero!
+                    _qr, _factorize, _copyto!, zero!, layout_replace_in_print_matrix
 
 import BlockArrays: blocksize, blockcheckbounds, BlockedUnitRange, blockisequal, DefaultBlockAxis,
                         Block, BlockSlice, getblock, unblock, setblock!, block, blockindex,
                         _blocklengths2blocklasts, BlockIndexRange, sizes_from_blocks, BlockSlice1,
                         blockcolsupport, blockrowsupport, blockcolstart, blockcolstop, blockrowstart, blockrowstop,
-                        AbstractBlockLayout
+                        AbstractBlockLayout, BlockLayout, blocks
 
 import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrange,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
                         banded_generic_axpy!,
                         BlasFloat, banded_dense_axpy!, MemoryLayout,
-                        BandedLayout, BandedColumnMajor,
+                        BandedLayout, BandedColumnMajor, BandedColumns,
                         BandedSubBandedMatrix, bandeddata, tribandeddata,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop,
                         BandedStyle, _fill_lmul!, bandshift,

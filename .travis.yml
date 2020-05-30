@@ -13,9 +13,9 @@ matrix:
 notifications:
   email: false
 after_success:
-  - julia -e 'Pkg.add("Documenter")'
-  - julia -e 'cd(Pkg.dir("BlockBandedMatrices")); include(joinpath("docs", "make.jl"))'
-  - julia -e 'cd(Pkg.dir("BlockBandedMatrices")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia -e 'using Pkg; Pkg.add("Documenter")'
+  - julia -e 'using Pkg; cd(Pkg.dir("BlockBandedMatrices")); include(joinpath("docs", "make.jl"))'
+  - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
 
 # uncomment the following lines to override the default test script
 #script:

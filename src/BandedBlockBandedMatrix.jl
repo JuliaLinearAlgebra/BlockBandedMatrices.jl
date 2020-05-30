@@ -318,7 +318,7 @@ end
 end
 
 ## structured matrix methods ##
-function _bandedblockbanded_replace_in_print_matrix(A, i, j, s)
+function layout_replace_in_print_matrix(::AbstractBandedBlockBandedLayout, A, i, j, s)
     bi = findblockindex.(axes(A), (i,j))
     I,J = block.(bi)
     i,j = blockindex.(bi)
@@ -326,9 +326,6 @@ function _bandedblockbanded_replace_in_print_matrix(A, i, j, s)
     λ,μ = subblockbandwidths(A)
     -l ≤ Int(J-I) ≤ u && -λ ≤ j-i ≤ μ ? s : Base.replace_with_centered_mark(s)
 end
-
-Base.replace_in_print_matrix(A::BandedBlockBandedMatrix, i::Integer, j::Integer, s::AbstractString) = 
-    _bandedblockbanded_replace_in_print_matrix(A, i, j, s)
 
 
 ############

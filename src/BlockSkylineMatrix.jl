@@ -26,8 +26,6 @@ function bb_blockstarts(axes, l::AbstractVector{Int}, u::AbstractVector{Int})
     b_start
 end
 
-bb_blockstarts(b_size, l::Integer, u::Integer) = bb_blockstarts(b_size, Fill(l, nblocks(b_size,2)), Fill(u, nblocks(b_size,2)))
-
 function bb_blockstrides(b_axes, l::AbstractVector{Int}, u::AbstractVector{Int})
     N, M = blocksize.(b_axes,1)
     L,U = maximum(l), maximum(u)
@@ -233,18 +231,12 @@ BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
 BlockBandedMatrix(A::AbstractMatrix, lu::NTuple{2,Int}) = BlockBandedMatrix(A, BlockBandedSizes(axes(A), lu...))
 
 function convert(::Type{BlockSkylineMatrix}, A::AbstractMatrix)
-    @assert isblockbanded(A)
     block_sizes = BlockSkylineSizes(axes(A), colblockbandwidths(A)...)
 
-    ret = BlockSkylineMatrix{eltype(A)}(undef, block_sizes)
-    for J = blockaxes(ret,2), K = blockcolsupport(ret, J)
-        view(ret, K, J) .= view(A, K, J)
-    end
-    ret
+    copyto!(BlockSkylineMatrix{eltype(A)}(undef, block_sizes), A)
 end
 
 function convert(::Type{BlockBandedMatrix}, A::AbstractMatrix)
-    @assert isblockbanded(A)
     convert(BlockSkylineMatrix, A)
 end
 
@@ -318,13 +310,6 @@ end
     V = view(A, block.(bi)...)
     @inbounds V[blockindex.(bi)...] = convert(T, v)::T
     return v
-end
-
-## structured matrix methods ##
-function Base.replace_in_print_matrix(A::BlockSkylineMatrix, i::Integer, j::Integer, s::AbstractString)
-    bi = findblockindex.(axes(A), (i,j))
-    I,J = Int.(block.(bi))
-    -A.block_sizes.l[J] ≤ J-I ≤ A.block_sizes.u[J] ? s : Base.replace_with_centered_mark(s)
 end
 
 ############
@@ -405,8 +390,8 @@ const BlockBandedBlock{T} = SubArray{T,2,<:BlockSkylineMatrix,<:Tuple{<:BlockSli
 
 
 # gives the columns of parent(V).data that encode the block
-blocks(V::BlockBandedBlock)::Tuple{Int,Int} = first(first(parentindices(V)).block.n),
-first(last(parentindices(V)).block.n)
+_parent_blocks(V::BlockBandedBlock)::Tuple{Int,Int} = 
+    first(first(parentindices(V)).block.n),first(last(parentindices(V)).block.n)
 
 ######################################
 # Matrix interface  for Blocks #
@@ -417,16 +402,16 @@ MemoryLayout(::Type{<:BlockBandedBlock}) = ColumnMajor()
 
 function Base.unsafe_convert(::Type{Ptr{T}}, V::BlockBandedBlock{T}) where T
     A = parent(V)
-    K,J = blocks(V)
+    K,J = _parent_blocks(V)
     Base.unsafe_convert(Ptr{T}, A.data) + sizeof(T)*(blockstart(A,K,J)-1)
 end
 
-strides(V::BlockBandedBlock) = (1,parent(V).block_sizes.block_strides[blocks(V)[2]])
+strides(V::BlockBandedBlock) = (1,parent(V).block_sizes.block_strides[_parent_blocks(V)[2]])
 
 @propagate_inbounds function getindex(V::BlockBandedBlock, k::Int, j::Int)
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
-    K,J = blocks(V)
+    K,J = _parent_blocks(V)
     if -A.block_sizes.l[J] ≤ J-K ≤ A.block_sizes.u[J]
         b_start = blockstart(A,K,J)
         b_start == 0 && return zero(eltype(V))
@@ -440,7 +425,7 @@ end
 @propagate_inbounds function setindex!(V::BlockBandedBlock, v, k::Int, j::Int)
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
-    K,J = blocks(V)
+    K,J = _parent_blocks(V)
     if -A.block_sizes.l[J] ≤ J-K ≤ A.block_sizes.u[J]
         b_start = blockstart(A,K,J)
         # TODO: What to do if b_start == 0 ?

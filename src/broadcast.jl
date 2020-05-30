@@ -80,6 +80,62 @@ end
 
 
 _copyto!(_, ::AbstractBlockBandedLayout, dest::AbstractMatrix, src::AbstractMatrix) = blockbanded_copyto!(dest, src)
+function _copyto!(_, ::BlockLayout{<:BandedColumns}, dest::AbstractMatrix, src::AbstractMatrix)
+    if !blockisequal(axes(dest), axes(src))
+        copyto!(PseudoBlockArray(dest, axes(src)), src)
+        return dest
+    end
+
+    srcB = blocks(src)
+    srcD = bandeddata(srcB)
+
+    dl, du = colblockbandwidths(dest)
+    sl, su = bandwidths(srcB)
+    M,N = size(srcB)
+    # Source matrix must fit within bands of destination matrix
+    all(dl .≥ min(sl,M-1)) && all(du .≥ min(su,N-1)) || throw(BandError(dest))
+
+    for J = 1:N
+        for K = max(1,J-du[J]):min(J-su-1,M)
+            zero!(view(dest,Block(K),Block(J)))
+        end
+        for K = max(1,J-su):min(J+sl,M)
+            copyto!(view(dest,Block(K),Block(J)), srcD[K-J+su+1,J])
+        end
+        for K = max(1,J+sl+1):min(J+dl[J],M)
+            zero!(view(dest,Block(K),Block(J)))
+        end
+    end
+    dest
+end
+
+function _copyto!(_, ::BlockLayout{<:AbstractBandedLayout}, dest::AbstractMatrix, src::AbstractMatrix)
+    if !blockisequal(axes(dest), axes(src))
+        copyto!(PseudoBlockArray(dest, axes(src)), src)
+        return dest
+    end
+
+    srcB = blocks(src)
+
+    dl, du = colblockbandwidths(dest)
+    sl, su = bandwidths(srcB)
+    M,N = size(srcB)
+    # Source matrix must fit within bands of destination matrix
+    all(dl .≥ min(sl,M-1)) && all(du .≥ min(su,N-1)) || throw(BandError(dest))
+
+    for J = 1:N
+        for K = max(1,J-du[J]):min(J-su-1,M)
+            zero!(view(dest,Block(K),Block(J)))
+        end
+        for K = max(1,J-su):min(J+sl,M)
+            copyto!(view(dest,Block(K),Block(J)), inbands_getindex(srcB, K, J))
+        end
+        for K = max(1,J+sl+1):min(J+dl[J],M)
+            zero!(view(dest,Block(K),Block(J)))
+        end
+    end
+    dest
+end
 
 
 function copyto!(dest::AbstractArray, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(identity)})

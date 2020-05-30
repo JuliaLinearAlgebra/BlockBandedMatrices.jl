@@ -74,17 +74,3 @@ for op in (:-, :+)
         end
     end
 end
-
-function replace_in_print_matrix(A::BlockDiagonal, i::Integer, j::Integer, s::AbstractString)
-    bi = findblockindex.(axes(A), (i,j))
-    I,J = block.(bi)
-    i,j = blockindex.(bi)
-    Int(J-I) == 0 ? s : Base.replace_with_centered_mark(s)
-end
-
-function replace_in_print_matrix(A::BlockTridiagonal, i::Integer, j::Integer, s::AbstractString)
-    bi = findblockindex.(axes(A), (i,j))
-    I,J = block.(bi)
-    i,j = blockindex.(bi)
-    -1 ≤ Int(J-I) ≤ 1 ? s : Base.replace_with_centered_mark(s)
-end
