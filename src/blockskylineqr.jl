@@ -73,7 +73,7 @@ _qr(lay::AbstractBlockBandedLayout, ax::Tuple{AbstractUnitRange{Int},AbstractUni
 _ql(::AbstractBlockBandedLayout, _, A) = ql!(BlockBandedMatrix(A, (blockbandwidth(A,1)+blockbandwidth(A,2),blockbandwidth(A,2))))
 _factorize(::AbstractBlockBandedLayout, _, A) = qr(A)
 
-function materialize!(Mul::Lmul{<:AdjQRPackedQLayout{<:AbstractBlockBandedLayout}})
+function materialize!(Mul::MatLmulVec{<:AdjQRPackedQLayout{<:AbstractBlockBandedLayout}})
     adjQ,Bin = Mul.A,Mul.B
     Q = parent(adjQ)
     A = Q.factors
@@ -91,7 +91,7 @@ function materialize!(Mul::Lmul{<:AdjQRPackedQLayout{<:AbstractBlockBandedLayout
     end
     Bin
 end
-function materialize!(Mul::Lmul{<:AdjQLPackedQLayout{<:AbstractBlockBandedLayout}})
+function materialize!(Mul::MatLmulVec{<:AdjQLPackedQLayout{<:AbstractBlockBandedLayout}})
     Q = parent(Mul.A)
     A = Q.factors
     l,u = blockbandwidths(A)
@@ -111,7 +111,7 @@ end
 
 # avoid LinearALgebra Strided obsession 
 
-for Typ in (:StridedVector, :StridedMatrix, :AbstractVector, :AbstractMatrix)
+for Typ in (:StridedVector, :StridedMatrix, :AbstractVector, :AbstractMatrix, :LayoutMatrix)
     @eval function ldiv!(A::QR{<:Any,<:BlockSkylineMatrix}, B::$Typ)
         lmul!(adjoint(A.Q), B)
         M,N = blocksize(A.factors)
