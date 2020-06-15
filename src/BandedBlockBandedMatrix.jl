@@ -310,7 +310,7 @@ end
     BI,BJ = findblockindex.(axes(A), (i,j))
     if -A.l ≤ Int(block(BJ)-block(BI)) ≤ A.u
         V = view(A, block(BI),block(BJ))
-        @inbounds V[blockindex(BI),blockindex(BJ)] = convert(T, v)::T
+         @inbounds V[blockindex(BI),blockindex(BJ)] = convert(T, v)::T
     elseif !iszero(v)
         throw(BandError(A))
     end
@@ -462,13 +462,13 @@ function blockbandwidths(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlice{<:BlockR
 end
 
 
-const BandedBlockBandedBlock{T, BLOCKS, RAXIS} = SubArray{T,2,BandedBlockBandedMatrix{T, BLOCKS, RAXIS},<:Tuple{<:BlockSlice1,<:BlockSlice1},false}
+const BandedBlockBandedBlock{T, BLOCKS, RAXIS} = SubArray{T,2,BandedBlockBandedMatrix{T, BLOCKS, RAXIS},<:Tuple{<:BlockSlice{Block1},<:BlockSlice{Block1}},false}
 
 
 BroadcastStyle(::Type{<: BandedBlockBandedBlock}) = BandedStyle()
 
 
-function inblockbands(V::SubArray{<:Any,2,<:AbstractMatrix,<:Tuple{<:BlockSlice1,<:BlockSlice1},false})
+function inblockbands(V::SubArray{<:Any,2,<:AbstractMatrix,<:Tuple{<:BlockSlice{Block1},<:BlockSlice{Block1}},false})
     A = parent(V)
     K_sl, J_sl = parentindices(V)
     K, J = K_sl.block, J_sl.block
@@ -502,7 +502,7 @@ parentblocks2Int(V::BandedBlockBandedBlock)::Tuple{Int,Int} = Int(first(parentin
 ######################################
 # BandedMatrix interface  for Blocks #
 ######################################
-@inline function bandwidths(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice1,BlockSlice1}}) where T
+@inline function bandwidths(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{Block1},BlockSlice{Block1}}}) where T
     inblockbands(V) && return subblockbandwidths(parent(V))
     (-720,-720)
 end

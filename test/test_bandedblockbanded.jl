@@ -470,6 +470,17 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolsupport, blockrows
         @test bandwidths(V2) == (-1,1)
         @test BandedMatrix(V2) == A[3:3,5:6]
     end
+
+    @testset "OneTo axes" begin
+        ret = BandedBlockBandedMatrix{Int}(undef, (Base.OneTo(5),Base.OneTo(5)), (0,0), (1,1))
+        V = view(ret, Block(1,1))
+        @test bandwidths(V) == (1,1)
+        A = brand(5,5,1,1)
+        B = BandedBlockBandedMatrix(A)
+        @test A == B
+        @test subblockbandwidths(B) == (1,1)
+        @test blockbandwidths(B) == (0,0)
+    end
 end
 
 if false # turned off since tests have check-bounds=yes
