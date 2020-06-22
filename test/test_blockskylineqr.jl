@@ -1,4 +1,5 @@
-using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
+using BlockBandedMatrices, BlockArrays, LinearAlgebra, MatrixFactorizations, Test
+import BlockBandedMatrices: blockcolsupport
 
 @testset "BlockBandedMatrix QR/QL" begin
     @testset "Square QR" begin
@@ -118,7 +119,7 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
         N = 5
         A = BlockBandedMatrix{Float64}(undef, 1:N,1:N+1, (2,1))
         A.data .= randn.()
-        
+
         @test_throws ArgumentError ql(A)
     end
 
@@ -147,6 +148,34 @@ using BlockBandedMatrices, LinearAlgebra, MatrixFactorizations
                 end
             end
         end
+    end
+
+    @testset "Fast QR \\" begin
+        A = [1. 2; 3 4]; A = A + A'
+        B = [5. 6; 7 8]
+        N = 10_000;
+        T = BlockBandedMatrix(mortar(Tridiagonal(fill(Matrix(B'),N-1), fill(zeros(2,2),N), fill(B,N-1))))
+        z = 1+2im
+        @time F = qr(T - z*I);
+        @test blockbandwidths(UpperTriangular(F.factors)) == (0,2)
+        @test blockcolsupport(UpperTriangular(F.factors),Block(4)) == Block.(2:4)
+        V = view(F.factors,Block.(1:N), Block.(1:N))
+        @test blocksize(V) == (N,N)
+        @test @allocated(blocksize(V)) ≤ 40
+        @test blockbandwidths(V) == (1,2)
+        @test @allocated(blockbandwidths(V)) ≤ 40
+        R = UpperTriangular(V)
+        @test axes(R) == axes(V) == axes(F.factors)
+        @test blocksize(R) == (N,N)
+        @test @allocated(blocksize(R)) ≤ 40
+        @test blockbandwidths(R) == (0,2)
+        @test @allocated(blockbandwidths(R)) ≤ 40
+        @test blockcolsupport(R,Block(4)) == Block.(2:4)
+        @test @allocated(blockcolsupport(R,Block(4))) ≤ 40
+
+        b = [1; zeros(size(T,1)-1)]
+        B = [Matrix(I,2,2); zeros(size(T,1)-2,2)]
+        @test ((T - z*I)\b)[1] ≈ (F\b)[1] ≈ (F \ B)[1,1] ≈ ((T - z*I)\B)[1,1] ≈ -0.1309123477325813 + 0.28471699370329884im 
     end
 end
 

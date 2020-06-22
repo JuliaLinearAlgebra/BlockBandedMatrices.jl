@@ -32,14 +32,14 @@ import BlockArrays: blocksize, blockcheckbounds, BlockedUnitRange, blockisequal,
                         Block, BlockSlice, getblock, unblock, setblock!, block, blockindex,
                         _blocklengths2blocklasts, BlockIndexRange, sizes_from_blocks, BlockSlice1,
                         blockcolsupport, blockrowsupport, blockcolstart, blockcolstop, blockrowstart, blockrowstop,
-                        AbstractBlockLayout, BlockLayout, blocks
+                        AbstractBlockLayout, BlockLayout, blocks, hasmatchingblocks
 
 import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrange,
                         inbands_setindex!, inbands_getindex, banded_setindex!,
                         banded_generic_axpy!,
                         BlasFloat, banded_dense_axpy!, MemoryLayout,
                         BandedLayout, BandedColumnMajor, BandedColumns,
-                        BandedSubBandedMatrix, bandeddata, tribandeddata,
+                        BandedSubBandedMatrix, bandeddata, 
                         _BandedMatrix, colstart, colstop, rowstart, rowstop,
                         BandedStyle, _fill_lmul!, bandshift,
                         _banded_colval, _banded_rowval, _banded_nzval # for sparse

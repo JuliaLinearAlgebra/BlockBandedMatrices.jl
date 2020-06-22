@@ -109,15 +109,38 @@ function materialize!(Mul::MatLmulVec{<:AdjQLPackedQLayout{<:AbstractBlockBanded
     Mul.B
 end
 
+function materialize!(Mul::MatLmulMat{<:AdjQRPackedQLayout{<:AbstractBlockBandedLayout}})
+    adjQ,Bin = Mul.A,Mul.B
+    Q = parent(adjQ)
+    A = Q.factors
+    l,u = blockbandwidths(A)
+    N,M = blocksize(A)
+    # impose block structure
+    ax1 = (axes(A,1),)
+    τ  = PseudoBlockArray(Q.τ, ax1)
+    B = PseudoBlockArray(Bin, (axes(A,1),axes(Bin,2)))
+    for K = 1:min(N,M), J = 1:blocksize(Bin,2)
+        KR = Block.(K:min(K+l,N))
+        V = view(A,KR,Block(K))
+        t = view(τ,Block(K))
+        apply_qr!(V, t, view(B,KR,Block(J)))
+    end
+    Bin
+end
+
 # avoid LinearALgebra Strided obsession 
 
 for Typ in (:StridedVector, :StridedMatrix, :AbstractVector, :AbstractMatrix, :LayoutMatrix)
     @eval function ldiv!(A::QR{<:Any,<:BlockSkylineMatrix}, B::$Typ)
         lmul!(adjoint(A.Q), B)
         M,N = blocksize(A.factors)
-        MN = min(M,N)
-        V = view(A.factors,Block.(1:MN), Block.(1:MN))
-        materialize!(Ldiv(UpperTriangular(V), view(B,1:size(V,1),:)))
+        if M == N
+            materialize!(Ldiv(UpperTriangular(A.factors), view(B,1:size(A.factors,1),:)))
+        else
+            MN = min(M,N)
+            V = view(A.factors,Block.(1:MN), Block.(1:MN))
+            materialize!(Ldiv(UpperTriangular(V), view(B,1:size(V,1),:)))
+        end
         B
     end
 end

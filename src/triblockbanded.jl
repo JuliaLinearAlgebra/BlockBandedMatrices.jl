@@ -10,7 +10,7 @@ isbandedblockbanded(A::AbstractTriangular) =
 function blockbandwidths(A::Union{UpperTriangular,UnitUpperTriangular}) 
     P = parent(A)
     if hasmatchingblocks(P)
-        (min(0,blockbandwidths(P,1)), blockbandwidth(P,2))
+        (min(0,blockbandwidth(P,1)), blockbandwidth(P,2))
     else
         blockbandwidths(P)
     end
