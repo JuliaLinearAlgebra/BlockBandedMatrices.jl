@@ -1,6 +1,6 @@
 using BlockBandedMatrices, BandedMatrices, BlockArrays, ArrayLayouts, LinearAlgebra, Test
 import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedColumnMajor,
-                        BandedColumnMajor, tribandeddata, BlockSkylineSizes, blockrowstop, blockcolstop, ColumnMajor
+                        BandedColumnMajor, BlockSkylineSizes, blockrowstop, blockcolstop, ColumnMajor
 import BlockArrays: BlockedUnitRange, blockisequal
 
 @testset "triangular" begin
