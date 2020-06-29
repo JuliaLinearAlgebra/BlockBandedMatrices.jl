@@ -95,9 +95,9 @@ for op in (:-, :+)
             checksquareblocks(A)
             mortar(Bidiagonal(broadcast($op, A.blocks.dv, Ref(λ)), A.blocks.ev, A.blocks.uplo))
         end
-        function $op(λ::UniformScaling, A::BlockTridiagonal) 
+        function $op(λ::UniformScaling, A::BlockBidiagonal) 
             checksquareblocks(A)
-            mortar(Bidiagonal(broadcast($op, Ref(λ), A.blocks.ev, A.blocks.uplo)))
+            mortar(Bidiagonal(broadcast($op, Ref(λ), A.blocks.dv), A.blocks.ev, A.blocks.uplo))
         end
     end
 end
