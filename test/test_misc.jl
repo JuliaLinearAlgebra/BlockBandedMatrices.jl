@@ -21,6 +21,25 @@ import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle, bandeddata
     @test BandedMatrix(V) == V
 end
 
+@testset "Block Bidiagonal" begin
+    Bu = BlockBidiagonal(fill([1 2],4), fill([3 4],3), :U)
+    Bl = BlockBidiagonal(fill([1 2],4), fill([3 4],3), :L)
+    @test blockbandwidths(Bu) == (0,1)
+    @test blockbandwidths(Bl) == (1,0)
+    @test isblockbanded(Bu)
+    @test isblockbanded(Bl)
+    @test Bu[Block(1,1)] == Bl[Block(1,1)] == [1 2]
+    @test @inferred(Bu[Block(1,2)]) == @inferred(Bl[Block(2,1)]) == [3 4]
+    @test @inferred(getblock(Bu,1,3)) == @inferred(Bu[Block(1,3)]) == [0 0]
+    @test_throws DimensionMismatch Bu+I
+    Bu = BlockBidiagonal(fill([1 2; 1 2],4), fill([3 4; 3 4],3), :U)
+    Bl = BlockBidiagonal(fill([1 2; 1 2],4), fill([3 4; 3 4],3), :L)
+    @test Bu+I == I+Bu == mortar(Bidiagonal(fill([2 2; 1 3],4), fill([3 4; 3 4],3), :U)) == Matrix(Bu) + I
+    @test Bl+I == I+Bl == mortar(Bidiagonal(fill([2 2; 1 3],4), fill([3 4; 3 4],3), :L)) == Matrix(Bl) + I
+    @test Bu-I == mortar(Bidiagonal(fill([0 2; 1 1],4), fill([3 4; 3 4],3), :U)) == Matrix(Bu) - I
+    @test I-Bu == mortar(Bidiagonal(fill([0 -2; -1 -1],4), fill(-[3 4; 3 4],3), :U)) == I - Matrix(Bu)
+end
+
 @testset "Block Tridiagonal" begin
     A = BlockTridiagonal(fill([1 2],3), fill([3 4],4), fill([4 5],3))
     @test blockbandwidths(A) == (1,1)
@@ -31,4 +50,6 @@ end
     @test_throws DimensionMismatch A+I
     A = BlockTridiagonal(fill([1 2; 1 2],3), fill([3 4; 3 4],4), fill([4 5; 4 5],3))
     @test A+I == I+A == mortar(Tridiagonal(fill([1 2; 1 2],3), fill([4 4; 3 5],4), fill([4 5; 4 5],3))) == Matrix(A) + I
+    @test A-I == mortar(Tridiagonal(fill([1 2; 1 2],3), fill([2 4; 3 3],4), fill([4 5; 4 5],3))) == Matrix(A) - I
+    @test I-A == mortar(Tridiagonal(fill(-[1 2; 1 2],3), fill([-2 -4; -3 -3],4), fill(-[4 5; 4 5],3))) == I - Matrix(A)
 end
