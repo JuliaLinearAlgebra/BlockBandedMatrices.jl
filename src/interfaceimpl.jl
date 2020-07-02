@@ -25,7 +25,7 @@ const BlockDiagonal{T,VT<:Matrix{T}} = BlockMatrix{T,<:Diagonal{VT}}
 
 BlockDiagonal(A) = mortar(Diagonal(A))
 
-function sizes_from_blocks(A::Diagonal, _) 
+function sizes_from_blocks(A::Diagonal, _)
     # for k = 1:length(A.du)
     #     size(A.du[k],1) == sz[1][k] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
     #     size(A.du[k],2) == sz[2][k+1] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
@@ -33,7 +33,7 @@ function sizes_from_blocks(A::Diagonal, _)
     #     size(A.dl[k],2) == sz[2][k] || throw(ArgumentError("block sizes of lower diagonal inconsisent with diagonal"))
     # end
     (size.(A.diag, 1), size.(A.diag,2))
-end    
+end
 
 
 # Block Bi/Tridiagonal
@@ -43,7 +43,7 @@ const BlockBidiagonal{T,VT<:Matrix{T}} = BlockMatrix{T,<:Bidiagonal{VT}}
 BlockTridiagonal(A,B,C) = mortar(Tridiagonal(A,B,C))
 BlockBidiagonal(A, B, uplo) = mortar(Bidiagonal(A,B,uplo))
 
-function sizes_from_blocks(A::Tridiagonal, _) 
+function sizes_from_blocks(A::Tridiagonal, _)
     # for k = 1:length(A.du)
     #     size(A.du[k],1) == sz[1][k] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
     #     size(A.du[k],2) == sz[2][k+1] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
@@ -53,7 +53,7 @@ function sizes_from_blocks(A::Tridiagonal, _)
     (size.(A.d, 1), size.(A.d,2))
 end
 
-function sizes_from_blocks(A::Bidiagonal, _) 
+function sizes_from_blocks(A::Bidiagonal, _)
     # for k = 1:length(A.du)
     #     size(A.du[k],1) == sz[1][k] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
     #     size(A.du[k],2) == sz[2][k+1] || throw(ArgumentError("block sizes of upper diagonal inconsisent with diagonal"))
@@ -83,19 +83,28 @@ checksquareblocks(A) = blockisequal(axes(A)...) || throw(DimensionMismatch("bloc
 
 for op in (:-, :+)
     @eval begin
-        function $op(A::BlockTridiagonal, λ::UniformScaling) 
+        function $op(A::BlockDiagonal, λ::UniformScaling)
+            checksquareblocks(A)
+            mortar(Diagonal(broadcast($op, A.blocks.diag, Ref(λ))))
+        end
+        function $op(λ::UniformScaling, A::BlockDiagonal)
+            checksquareblocks(A)
+            mortar(Diagonal(broadcast($op, Ref(λ), A.blocks.diag)))
+        end
+
+        function $op(A::BlockTridiagonal, λ::UniformScaling)
             checksquareblocks(A)
             mortar(Tridiagonal(A.blocks.dl, broadcast($op, A.blocks.d, Ref(λ)), A.blocks.du))
         end
-        function $op(λ::UniformScaling, A::BlockTridiagonal) 
+        function $op(λ::UniformScaling, A::BlockTridiagonal)
             checksquareblocks(A)
             mortar(Tridiagonal(broadcast($op,A.blocks.dl), broadcast($op, Ref(λ), A.blocks.d), broadcast($op,A.blocks.du)))
         end
-        function $op(A::BlockBidiagonal, λ::UniformScaling) 
+        function $op(A::BlockBidiagonal, λ::UniformScaling)
             checksquareblocks(A)
             mortar(Bidiagonal(broadcast($op, A.blocks.dv, Ref(λ)), A.blocks.ev, A.blocks.uplo))
         end
-        function $op(λ::UniformScaling, A::BlockBidiagonal) 
+        function $op(λ::UniformScaling, A::BlockBidiagonal)
             checksquareblocks(A)
             mortar(Bidiagonal(broadcast($op, Ref(λ), A.blocks.dv), broadcast($op,A.blocks.ev), A.blocks.uplo))
         end

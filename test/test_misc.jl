@@ -21,6 +21,17 @@ import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle, bandeddata
     @test BandedMatrix(V) == V
 end
 
+@testset "Block Diagonal" begin
+    A = BlockBandedMatrices.BlockDiagonal(fill([1 2],3))
+    @test blockbandwidths(A) == (0,0)
+    @test isblockbanded(A)
+    @test A[Block(1,1)] == [1 2]
+    @test @inferred(getblock(A,1,2)) == @inferred(A[Block(1,2)]) == [0 0]
+    @test_throws DimensionMismatch A+I
+    A = BlockBandedMatrices.BlockDiagonal(fill([1 2; 1 2],3))
+    @test A+I == I+A == mortar(Diagonal(fill([2 2; 1 3],3))) == Matrix(A) + I
+end
+
 @testset "Block Bidiagonal" begin
     Bu = BlockBidiagonal(fill([1 2],4), fill([3 4],3), :U)
     Bl = BlockBidiagonal(fill([1 2],4), fill([3 4],3), :L)

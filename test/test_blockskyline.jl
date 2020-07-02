@@ -104,4 +104,50 @@ Random.seed!(0)
         @test Matrix(AC) == Matrix(A) + Matrix(C)
         @test blockisequal(axes(AC),axes(C))
     end
+
+    @testset "BlockSkylineMatrix arithmetic" begin
+        t = Int
+        rows = cols = 1:4
+        N = sum(rows)
+        D = Diagonal(ones(t, N))
+        Bu = Bidiagonal(ones(t, N), 2ones(t, N-1), 'U')
+        Bl = Bidiagonal(ones(t, N), 2ones(t, N-1), 'L')
+        T = Tridiagonal(ones(t, N-1), 2ones(t, N), 3ones(t, N-1))
+        ST = SymTridiagonal(ones(t, N), 2ones(t, N-1))
+
+        function check_blockskylinematrix_arithmetic(A, op, B, (l,u))
+            C = op(A, B)
+            Cdense = op((A isa BlockSkylineMatrix ? Matrix(A) : A),
+                        (B isa BlockSkylineMatrix ? Matrix(B) : B))
+            @test C == Cdense
+
+            bs = (A isa BlockSkylineMatrix ? A : B).block_sizes
+            expl = max.(l, bs.l)
+            expu = max.(u, bs.u)
+
+            Cbs = C.block_sizes
+            @test all(Cbs.l .== expl)
+            @test all(Cbs.u .== expu)
+        end
+
+        for (l,u) = [([0,0,0,0],[0,0,0,0]),
+                     ([-1,-1,-1,-1],[1,2,2,2]),
+                     ([-1,-2,-2,-2],[1,1,2,2]),
+                     ([2,2,1,1],[-1,-1,-1,-1]),
+                     ([2,2,1,1],[-2,-2,-2,-1])]
+            M = BlockSkylineMatrix{t}(undef, rows, cols, (l,u))
+            M.data .= 1
+            for (A,expected_bws) = [(3I, ([0,0,0,0],[0,0,0,0])),
+                                    (D, ([0,0,0,0],[0,0,0,0])),
+                                    (Bu, ([0,0,0,0],[0,1,1,1])),
+                                    (Bl, ([1,1,1,0],[0,0,0,0])),
+                                    (T, ([1,1,1,0],[0,1,1,1])),
+                                    (ST, ([1,1,1,0],[0,1,1,1]))]
+                for op = (+, -)
+                    check_blockskylinematrix_arithmetic(M, op, A, expected_bws)
+                    check_blockskylinematrix_arithmetic(A, op, M, expected_bws)
+                end
+            end
+        end
+    end
 end
