@@ -52,7 +52,7 @@ struct BlockSkylineSizes{BS<:NTuple{2,AbstractUnitRange{Int}}, LL<:AbstractVecto
     u::UU
 end
 
-const BlockBandedSizes = BlockSkylineSizes{NTuple{2,BlockedUnitRange{Vector{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, 
+const BlockBandedSizes = BlockSkylineSizes{NTuple{2,BlockedUnitRange{Vector{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}},
                                             BandedMatrix{Int,Matrix{Int},OneTo{Int}}, Vector{Int}}
 
 
@@ -247,7 +247,7 @@ BlockBandedMatrix(A::AbstractMatrix) = convert(BlockBandedMatrix, A)
 similar(A::BlockSkylineMatrix, T::Type=eltype(A), bs::BlockSkylineSizes=A.block_sizes) =
     BlockSkylineMatrix{T}(undef, bs)
 
-axes(A::BlockSkylineMatrix) = A.block_sizes.axes    
+axes(A::BlockSkylineMatrix) = A.block_sizes.axes
 
 ################################
 # BlockSkylineMatrix Interface #
@@ -390,7 +390,7 @@ const BlockBandedBlock{T} = SubArray{T,2,<:BlockSkylineMatrix,<:Tuple{<:BlockSli
 
 
 # gives the columns of parent(V).data that encode the block
-_parent_blocks(V::BlockBandedBlock)::Tuple{Int,Int} = 
+_parent_blocks(V::BlockBandedBlock)::Tuple{Int,Int} =
     first(first(parentindices(V)).block.n),first(last(parentindices(V)).block.n)
 
 ######################################
@@ -435,5 +435,149 @@ end
         v
     else
         throw(BandError(A, J-K))
+    end
+end
+
+"""
+    copy_accommodating_diagonals(A::BlockSkylineMatrix, diagonals::UnitRange{<:Integer})
+
+Return copy of `A`, ensuring blocks are present covering the
+`diagonals` as well.
+"""
+function copy_accommodating_diagonals(A::BlockSkylineMatrix, diagonals::UnitRange{<:Integer}, ::Type{T}=eltype(A)) where T
+    checksquareblocks(A)
+    bs = A.block_sizes
+    l,u = bs.l,bs.u
+    ax = first(bs.axes)
+
+    if 0 ∈ diagonals
+        l = max.(l, 0)
+        u = max.(u, 0)
+    end
+
+    for d = extrema(diagonals)
+        d == 0 && continue # Already taken care of above
+        v = d > 0 ? u : l
+        # The j:th element of rows is the row index which the diagonal
+        # d covers in the j:th column.
+        rows = clamp.(ax .- d, 1, last(ax))
+        for (j,i) in enumerate(rows)
+            # First we find which block the j:th element of the main
+            # diagonal would occupy.
+            md_block = findfirst(≥(j), ax.lasts)
+
+            # Next we find which block covers row i
+            d_block = findfirst(≥(i), ax.lasts)
+
+            # Finally, we increase the block-bandwidth as necessary
+            v[md_block] = max(v[md_block], abs(d_block-md_block))
+        end
+    end
+
+    BlockSkylineMatrix{T}(A, BlockSkylineSizes((ax,ax), l, u))
+end
+
+for op in (:-, :+)
+    @eval begin
+        function $op(A::BlockSkylineMatrix, I::UniformScaling)
+            B = copy_accommodating_diagonals(A, 0:0, Base._return_type(+, Tuple{eltype(A), eltype(I)}))
+            @inbounds for i in axes(A, 1)
+                B[i,i] = $op(B[i,i], I.λ)
+            end
+            B
+        end
+        function $op(I::UniformScaling, A::BlockSkylineMatrix)
+            B = copy_accommodating_diagonals($op(A), 0:0, Base._return_type(+, Tuple{eltype(A), eltype(I)}))
+            @inbounds for i in axes(A, 1)
+                B[i,i] += I.λ
+            end
+            B
+        end
+
+        function $op(A::BlockSkylineMatrix, D::Diagonal)
+            B = copy_accommodating_diagonals(A, 0:0, Base._return_type(+, Tuple{eltype(A), eltype(D)}))
+            @inbounds for i in axes(A, 1)
+                B[i,i] = $op(B[i,i], D.diag[i])
+            end
+            B
+        end
+        function $op(D::Diagonal, A::BlockSkylineMatrix)
+            B = copy_accommodating_diagonals($op(A), 0:0, Base._return_type(+, Tuple{eltype(A), eltype(D)}))
+            @inbounds for i in axes(A, 1)
+                B[i,i] += D.diag[i]
+            end
+            B
+        end
+
+        function $op(A::BlockSkylineMatrix, Bd::Bidiagonal)
+            B = copy_accommodating_diagonals(A, Bd.uplo == 'U' ? (0:1) : (-1:0),
+                                             Base._return_type(+, Tuple{eltype(A), eltype(Bd)}))
+            @inbounds for i in axes(A, 1)
+                B[i,i] = $op(B[i,i], Bd.dv[i])
+            end
+            @inbounds for i in 1:size(A, 1)-1
+                Bd.uplo == 'U' && (B[i,i+1] = $op(B[i,i+1], Bd.ev[i]))
+                Bd.uplo == 'L' && (B[i+1,i] = $op(B[i+1,i], Bd.ev[i]))
+            end
+            B
+        end
+        function $op(Bd::Bidiagonal, A::BlockSkylineMatrix)
+            B = copy_accommodating_diagonals($op(A), Bd.uplo == 'U' ? (0:1) : (-1:0),
+                                             Base._return_type(+, Tuple{eltype(A), eltype(Bd)}))
+            @inbounds for i in axes(A, 1)
+                B[i,i] += Bd.dv[i]
+            end
+            @inbounds for i in 1:size(A, 1)-1
+                Bd.uplo == 'U' && (B[i,i+1] += Bd.ev[i])
+                Bd.uplo == 'L' && (B[i+1,i] += Bd.ev[i])
+            end
+            B
+        end
+
+        function $op(A::BlockSkylineMatrix, T::Tridiagonal)
+            B = copy_accommodating_diagonals(A, -1:1, Base._return_type(+, Tuple{eltype(A), eltype(T)}))
+            @inbounds for i in axes(A, 1)
+                B[i,i] = $op(B[i,i], T.d[i])
+            end
+            @inbounds for i in 1:size(A, 1)-1
+                B[i,i+1] = $op(B[i,i+1], T.du[i])
+                B[i+1,i] = $op(B[i+1,i], T.dl[i])
+            end
+            B
+        end
+        function $op(T::Tridiagonal, A::BlockSkylineMatrix)
+            B = copy_accommodating_diagonals($op(A), -1:1, Base._return_type(+, Tuple{eltype(A), eltype(T)}))
+            @inbounds for i in axes(A, 1)
+                B[i,i] += T.d[i]
+            end
+            @inbounds for i in 1:size(A, 1)-1
+                B[i,i+1] += T.du[i]
+                B[i+1,i] += T.dl[i]
+            end
+            B
+        end
+
+        function $op(A::BlockSkylineMatrix, T::SymTridiagonal)
+            B = copy_accommodating_diagonals(A, -1:1, Base._return_type(+, Tuple{eltype(A), eltype(T)}))
+            @inbounds for i in axes(A, 1)
+                B[i,i] = $op(B[i,i], T.dv[i])
+            end
+            @inbounds for i in 1:size(A, 1)-1
+                B[i,i+1] = $op(B[i,i+1], T.ev[i])
+                B[i+1,i] = $op(B[i+1,i], T.ev[i])
+            end
+            B
+        end
+        function $op(T::SymTridiagonal, A::BlockSkylineMatrix)
+            B = copy_accommodating_diagonals($op(A), -1:1, Base._return_type(+, Tuple{eltype(A), eltype(T)}))
+            @inbounds for i in axes(A, 1)
+                B[i,i] += T.dv[i]
+            end
+            @inbounds for i in 1:size(A, 1)-1
+                B[i,i+1] += T.ev[i]
+                B[i+1,i] += T.ev[i]
+            end
+            B
+        end
     end
 end

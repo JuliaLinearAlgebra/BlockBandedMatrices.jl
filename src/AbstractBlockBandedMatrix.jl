@@ -75,9 +75,9 @@ for Func in (:blockbanded_blockcolstart, :blockbanded_blockcolstop, :blockbanded
 end
 
 blockbanded_blockcolstart(A, i::BlockRange) = blockbanded_blockcolstart(A, minimum(i))
-blockbanded_blocktowstart(A, i::BlockRange) = blockbanded_blockrowstart(A, minimum(i))
+blockbanded_blockrowstart(A, i::BlockRange) = blockbanded_blockrowstart(A, minimum(i))
 blockbanded_blockcolstop(A, i::BlockRange) = blockbanded_blockcolstop(A, maximum(i))
-blockbanded_blocktowstop(A, i::BlockRange) = blockbanded_blockrowstop(A, maximum(i))
+blockbanded_blockrowstop(A, i::BlockRange) = blockbanded_blockrowstop(A, maximum(i))
 
 const AllBlockBandedLayout{UPLO,UNIT} = Union{AbstractBlockBandedLayout,TriangularLayout{UPLO,UNIT,<:AbstractBlockBandedLayout}}
 
