@@ -1,5 +1,5 @@
 using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, ArrayLayouts, LinearAlgebra, Test
-import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle, BlockBandedStyle
+import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle, BlockBandedStyle, blockrowsupport, blockcolsupport
 import Base.Broadcast: materialize!
 
 @testset "BlockBandedMatrix" begin
@@ -88,6 +88,23 @@ import Base.Broadcast: materialize!
         V = view(ret, Block(1), Block(2))
         V[1,1] = 2
         @test ret[1,2] == 0
+    end
+
+    @testset "blockcol/rowsupport" begin
+        l , u = 1,2
+        N = M = 4
+        cols = rows = 1:N
+        A = BlockBandedMatrix{Int}(undef, rows,cols, (l,u))
+        A.data .= 1:length(A.data)
+        
+        @test blockrowsupport(A, 1) == Block.(1:3)
+        @test blockrowsupport(A, 2) == Block.(1:4)
+        @test blockrowsupport(A, 3) == Block.(2:4)
+
+        @test blockcolsupport(A, 1) == Block.(1:2)
+        @test blockcolsupport(A, 2) == Block.(1:3)
+        @test blockcolsupport(A, 3) == Block.(1:4)
+        @test blockcolsupport(A, 4) == Block.(2:4)
     end
 
     @testset "block-banded matrix interface for blockranges" begin
