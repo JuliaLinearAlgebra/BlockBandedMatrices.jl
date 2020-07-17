@@ -136,14 +136,47 @@ const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, BlockBandedSizes}
     _BlockSkylineMatrix(Vector{T}(undef, bb_numentries(block_sizes)), block_sizes)
 
 """
-    BlockSkylineMatrix{T,LL,UU}(undef, (rows, cols), (l::LL, u::UU))
+    BlockSkylineMatrix{T,LL,UU}(M::Union{UndefInitializer,UniformScaling,AbstractMatrix},
+                                rows, cols, (l::LL, u::UU))
 
-returns an undef `sum(rows)`×`sum(cols)` block-banded matrix `A`
-of type `T` with block-bandwidths `(l,u)` and where `A[Block(K,J)]`
-is a `Matrix{T}` of size `rows[K]`×`cols[J]`.
+returns a `sum(rows)`×`sum(cols)` block-banded matrix `A` of type `T`
+with block-bandwidths `(l,u)` and where `A[Block(K,J)]` is a
+`Matrix{T}` of size `rows[K]`×`cols[J]`.
 
 `(l,u)` may be integers for constant bandwidths or integer vectors of
 lengths `rows` and `cols`, respectively, for ragged bands.
+
+# Examples
+
+```jldoctest
+julia> BlockSkylineMatrix(I, [2,3,4], [1,2,3], ([2,0,1],[1,1,1]))
+3×3-blocked 9×6 BlockSkylineMatrix{Bool,Array{Bool,1},BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedUnitRange{Array{Int64,1}},BlockArrays.BlockedUnitRange{Array{Int64,1}}},Array{Int64,1},Array{Int64,1},BandedMatrices.BandedMatrix{Int64,Array{Int64,2},Base.OneTo{Int64}},Array{Int64,1}}}:
+ 1  │  0  0  │  ⋅  ⋅  ⋅
+ 0  │  1  0  │  ⋅  ⋅  ⋅
+ ───┼────────┼─────────
+ 0  │  0  1  │  0  0  0
+ 0  │  0  0  │  1  0  0
+ 0  │  0  0  │  0  1  0
+ ───┼────────┼─────────
+ 0  │  ⋅  ⋅  │  0  0  1
+ 0  │  ⋅  ⋅  │  0  0  0
+ 0  │  ⋅  ⋅  │  0  0  0
+ 0  │  ⋅  ⋅  │  0  0  0
+
+julia> BlockSkylineMatrix(Ones(9,6), [2,3,4], [1,2,3], ([2,0,1],[1,1,1]))
+3×3-blocked 9×6 BlockSkylineMatrix{Float64,Array{Float64,1},BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedUnitRange{Array{Int64,1}},BlockArrays.BlockedUnitRange{Array{Int64,1}}},Array{Int64,1},Array{Int64,1},BandedMatrices.BandedMatrix{Int64,Array{Int64,2},Base.OneTo{Int64}},Array{Int64,1}}}:
+ 1.0  │  1.0  1.0  │   ⋅    ⋅    ⋅
+ 1.0  │  1.0  1.0  │   ⋅    ⋅    ⋅
+ ─────┼────────────┼───────────────
+ 1.0  │  1.0  1.0  │  1.0  1.0  1.0
+ 1.0  │  1.0  1.0  │  1.0  1.0  1.0
+ 1.0  │  1.0  1.0  │  1.0  1.0  1.0
+ ─────┼────────────┼───────────────
+ 1.0  │   ⋅    ⋅   │  1.0  1.0  1.0
+ 1.0  │   ⋅    ⋅   │  1.0  1.0  1.0
+ 1.0  │   ⋅    ⋅   │  1.0  1.0  1.0
+ 1.0  │   ⋅    ⋅   │  1.0  1.0  1.0
+```
 """
 BlockSkylineMatrix
 
