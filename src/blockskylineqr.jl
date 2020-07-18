@@ -130,7 +130,7 @@ end
 
 # avoid LinearALgebra Strided obsession 
 
-for Typ in (:StridedVector, :StridedMatrix, :AbstractVector, :AbstractMatrix, :LayoutMatrix)
+for Typ in (:StridedVector, :StridedMatrix, :AbstractVector, :AbstractMatrix, :LayoutMatrix, :LayoutVector)
     @eval function ldiv!(A::QR{<:Any,<:BlockSkylineMatrix}, B::$Typ)
         lmul!(adjoint(A.Q), B)
         M,N = blocksize(A.factors)
