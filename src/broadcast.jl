@@ -59,13 +59,29 @@ function _broadcast_blockbandwidths((l,u), A::AbstractArray, (ax1,ax2))
 end
 
 
-
-
 blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)}) =
     min.(_broadcast_blockbandwidths.(Ref(_blockbnds(bc)), bc.args, Ref(axes(bc)))...)
 
 blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(/)}) = _broadcast_blockbandwidths(_blockbnds(bc), first(bc.args))
 blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(\)}) = _broadcast_blockbandwidths(_blockbnds(bc), last(bc.args))
+
+_subblockbnds(bc) = size(bc) .- 1
+
+_broadcast_subblockbandwidths(bnds) = bnds
+_broadcast_subblockbandwidths(bnds, _) = bnds
+_broadcast_subblockbandwidths((l,u), a::AbstractVector) = (bandwidth(a,1),u)
+
+function _broadcast_subblockbandwidths((l,u), A::AbstractArray) 
+    size(A,2) == 1 && return (subblockbandwidth(A,1),u) 
+    size(A,1) == 1 && return (l, subblockbandwidth(A,2))
+    subblockbandwidths(A) # need to special case vector broadcasting
+end
+
+subblockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)}) =
+    min.(_broadcast_subblockbandwidths.(Ref(_subblockbnds(bc)), bc.args)...)
+
+subblockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(/)}) = _broadcast_subblockbandwidths(_subblockbnds(bc), first(bc.args))
+subblockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(\)}) = _broadcast_subblockbandwidths(_subblockbnds(bc), last(bc.args))
 
 
 # zero is preserved. Take the maximum bandwidth
@@ -79,6 +95,7 @@ function blockbandwidths(bc::Broadcasted)
 end
 
 similar(bc::Broadcasted{BlockBandedStyle}, ::Type{T}) where T = BlockBandedMatrix{T}(undef, axes(bc), blockbandwidths(bc))
+similar(bc::Broadcasted{BandedBlockBandedStyle}, ::Type{T}) where T = BandedBlockBandedMatrix{T}(undef, axes(bc), blockbandwidths(bc), subblockbandwidths(bc))
 
 
 ####
