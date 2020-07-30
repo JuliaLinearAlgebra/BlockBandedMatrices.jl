@@ -199,4 +199,10 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
         @test A - B == Matrix(A) - Matrix(B)
         @test B - A == Matrix(B) - Matrix(A)
     end
+
+    @testset "Diag" begin
+        A = BandedBlockBandedMatrix{Float64}(undef, Fill(4,4), Fill(4,3), (2,1), (1,2)); A.data .= randn.();
+        b = 1:size(A,1)
+        @test b .* A == b .* Matrix(A)
+    end
 end

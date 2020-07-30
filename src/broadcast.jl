@@ -14,8 +14,6 @@ struct BlockBandedStyle <: AbstractBlockSkylineStyle end
 BlockSkylineStyle(::Val{2}) = BlockBandedStyle()
 BlockBandedStyle(::Val{2}) = BlockBandedStyle()
 BandedBlockBandedStyle(::Val{2}) = BandedBlockBandedStyle()
-BroadcastStyle(::DefaultArrayStyle{2}, ::AbstractBlockBandedStyle) = DefaultArrayStyle{2}()
-BroadcastStyle(::AbstractBlockBandedStyle, ::DefaultArrayStyle{2}) = DefaultArrayStyle{2}()
 
 BroadcastStyle(::BlockSkylineStyle, ::BandedBlockBandedStyle) = BlockSkylineStyle()
 BroadcastStyle(::BandedBlockBandedStyle, ::BlockSkylineStyle) = BlockSkylineStyle()
@@ -25,6 +23,59 @@ BroadcastStyle(::BlockBandedStyle, ::BlockSkylineStyle) = BlockSkylineStyle()
 BroadcastStyle(::BlockBandedStyle, ::BandedBlockBandedStyle) = BlockBandedStyle()
 BroadcastStyle(::BandedBlockBandedStyle, ::BlockBandedStyle) = BlockBandedStyle()
 
+BroadcastStyle(::DefaultArrayStyle{2}, ::BlockSkylineStyle) = BlockSkylineStyle()
+BroadcastStyle(::BlockSkylineStyle, ::DefaultArrayStyle{2}) = BlockSkylineStyle()
+
+BroadcastStyle(::DefaultArrayStyle{2}, ::BlockBandedStyle) = BlockBandedStyle()
+BroadcastStyle(::BlockBandedStyle, ::DefaultArrayStyle{2}) = BlockBandedStyle()
+
+BroadcastStyle(::DefaultArrayStyle{2}, ::BandedBlockBandedStyle) = BandedBlockBandedStyle()
+BroadcastStyle(::BandedBlockBandedStyle, ::DefaultArrayStyle{2}) = BandedBlockBandedStyle()
+
+###
+# broadcast blockbandwidths
+###
+
+
+_broadcast_blockbandwidths(bnds) = bnds
+_broadcast_blockbandwidths(bnds, _) = bnds
+_broadcast_blockbandwidths((l,u), a::AbstractVector) = (bandwidth(a,1),u)
+function _broadcast_blockbandwidths((l,u), A::AbstractArray) 
+    size(A,2) == 1 && return (bandwidth(A,1),u) 
+    size(A,1) == 1 && return (l, bandwidth(A,2))
+    bandwidths(A) # need to special case vector broadcasting
+end
+
+_band_eval_args() = ()
+_band_eval_args(a, b...) = (a, _band_eval_args(b...)...)
+_band_eval_args(::Base.RefValue{Type{T}}, b...) where T = (T, _band_eval_args(b...)...)
+_band_eval_args(a::AbstractMatrix{T}, b...) where T = (zero(T), _band_eval_args(b...)...)
+_band_eval_args(a::AbstractVector{T}, b...) where T = (one(T), _band_eval_args(b...)...)
+_band_eval_args(a::Broadcasted, b...) = (zero(mapreduce(eltype, promote_type, a.args)), _band_eval_args(b...)...)
+
+
+# zero dominates. Take the minimum bandwidth
+_bnds(bc) = size(bc).-1
+    
+bandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)}) =
+    min.(_broadcast_bandwidths.(Ref(_bnds(bc)), bc.args)...)
+
+bandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(/)}) = _broadcast_bandwidths(_bnds(bc), first(bc.args))
+bandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(\)}) = _broadcast_bandwidths(_bnds(bc), last(bc.args))
+
+
+# zero is preserved. Take the maximum bandwidth
+_isweakzero(f, args...) =  iszero(f(_band_eval_args(args...)...))
+
+
+function bandwidths(bc::Broadcasted)
+    (a,b) = size(bc)
+    bnds = (a-1,b-1)
+    _isweakzero(bc.f, bc.args...) && return min.(bnds, max.(_broadcast_bandwidths.(Ref(bnds), bc.args)...))
+    bnds
+end
+
+similar(bc::Broadcasted{BandedStyle}, ::Type{T}) where T = BandedMatrix{T}(undef, size(bc), bandwidths(bc))
 
 
 ####
