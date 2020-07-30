@@ -35,47 +35,50 @@ BroadcastStyle(::BandedBlockBandedStyle, ::DefaultArrayStyle{2}) = BandedBlockBa
 ###
 # broadcast blockbandwidths
 ###
+_blockbnds(bc) = blocksize(bc) .- 1
 
+_blockbandwidth_u(u, a, ax) = blockisequal(axes(a,1),ax) ? (blockbandwidth(a,1),u) : (blocksize(ax,1)-1,u)
+_blockbandwidth_l(l, a, ax) = blockisequal(axes(a,2),ax) ? (l,blockbandwidth(a,2)) : (l,blocksize(ax,1)-1)
 
 _broadcast_blockbandwidths(bnds) = bnds
 _broadcast_blockbandwidths(bnds, _) = bnds
-_broadcast_blockbandwidths((l,u), a::AbstractVector) = (bandwidth(a,1),u)
-function _broadcast_blockbandwidths((l,u), A::AbstractArray) 
-    size(A,2) == 1 && return (bandwidth(A,1),u) 
-    size(A,1) == 1 && return (l, bandwidth(A,2))
-    bandwidths(A) # need to special case vector broadcasting
+_broadcast_blockbandwidths((l,u), a::AbstractVector, (ax1,ax2)) =
+    _blockbandwidth_u(u, a, ax1)
+    
+
+function _broadcast_blockbandwidths((l,u), A::AbstractArray, (ax1,ax2))
+    if size(A,2) == 1
+        _blockbandwidth_u(u, A, ax1)
+    elseif size(A,1) == 1
+        _blockbandwidth_l(l, A, ax2)
+    elseif blockisequal(axes(A), (ax1,ax2))
+        blockbandwidths(A) # need to special case vector broadcasting
+    else
+        _blockbnds(A)
+    end
 end
 
-_band_eval_args() = ()
-_band_eval_args(a, b...) = (a, _band_eval_args(b...)...)
-_band_eval_args(::Base.RefValue{Type{T}}, b...) where T = (T, _band_eval_args(b...)...)
-_band_eval_args(a::AbstractMatrix{T}, b...) where T = (zero(T), _band_eval_args(b...)...)
-_band_eval_args(a::AbstractVector{T}, b...) where T = (one(T), _band_eval_args(b...)...)
-_band_eval_args(a::Broadcasted, b...) = (zero(mapreduce(eltype, promote_type, a.args)), _band_eval_args(b...)...)
 
 
-# zero dominates. Take the minimum bandwidth
-_bnds(bc) = size(bc).-1
-    
-bandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)}) =
-    min.(_broadcast_bandwidths.(Ref(_bnds(bc)), bc.args)...)
 
-bandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(/)}) = _broadcast_bandwidths(_bnds(bc), first(bc.args))
-bandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(\)}) = _broadcast_bandwidths(_bnds(bc), last(bc.args))
+blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)}) =
+    min.(_broadcast_blockbandwidths.(Ref(_blockbnds(bc)), bc.args, Ref(axes(bc)))...)
+
+blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(/)}) = _broadcast_blockbandwidths(_blockbnds(bc), first(bc.args))
+blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(\)}) = _broadcast_blockbandwidths(_blockbnds(bc), last(bc.args))
 
 
 # zero is preserved. Take the maximum bandwidth
-_isweakzero(f, args...) =  iszero(f(_band_eval_args(args...)...))
+import BandedMatrices: _isweakzero
 
-
-function bandwidths(bc::Broadcasted)
+function blockbandwidths(bc::Broadcasted)
     (a,b) = size(bc)
     bnds = (a-1,b-1)
-    _isweakzero(bc.f, bc.args...) && return min.(bnds, max.(_broadcast_bandwidths.(Ref(bnds), bc.args)...))
+    _isweakzero(bc.f, bc.args...) && return min.(bnds, max.(_broadcast_blockbandwidths.(Ref(bnds), bc.args)...))
     bnds
 end
 
-similar(bc::Broadcasted{BandedStyle}, ::Type{T}) where T = BandedMatrix{T}(undef, size(bc), bandwidths(bc))
+similar(bc::Broadcasted{BlockBandedStyle}, ::Type{T}) where T = BlockBandedMatrix{T}(undef, axes(bc), blockbandwidths(bc))
 
 
 ####

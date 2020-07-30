@@ -201,8 +201,25 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
     end
 
     @testset "Diag" begin
-        A = BandedBlockBandedMatrix{Float64}(undef, Fill(4,4), Fill(4,3), (2,1), (1,2)); A.data .= randn.();
+        A = BlockBandedMatrix{Float64}(undef, Fill(4,4), Fill(4,3), (2,1)); A.data .= randn.();
         b = 1:size(A,1)
+        bc = Base.broadcasted(*, b, A)
+        @test blockisequal(axes(bc), axes(A))
+        @test blockaxes(bc) == blockaxes(A)
+        @test blocksize(bc) == blocksize(A)
+        @test blockbandwidths(bc) == (2,1)
         @test b .* A == b .* Matrix(A)
+        @test b .* A isa BlockBandedMatrix
+        @test blockisequal(axes(b .* A), axes(A))
+
+        bᵗ = permutedims(1:size(A,2))
+        bc = Base.broadcasted(*, A, bᵗ)
+        @test blockisequal(axes(bc), axes(A))
+        @test blockaxes(bc) == blockaxes(A)
+        @test blocksize(bc) == blocksize(A)
+        @test blockbandwidths(bc) == (2,1)
+        @test A .* bᵗ == Matrix(A) .* bᵗ
+        @test A .* bᵗ isa BlockBandedMatrix
+        @test blockisequal(axes(A .* bᵗ), axes(A))
     end
 end
