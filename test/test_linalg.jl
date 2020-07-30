@@ -125,17 +125,19 @@ end
     fill!(A, 0.0)
     @test Matrix(A) == zeros(size(A))
 
-    dataA = randn((λ+μ+1)*(l+u+1), sum(cols))
-    A = _BandedBlockBandedMatrix(copy(dataA), rows,cols, (l,u), (λ,μ))
+    @testset "axpy!" begin
+        dataA = randn((λ+μ+1)*(l+u+1), sum(cols))
+        A = _BandedBlockBandedMatrix(copy(dataA), rows,cols, (l,u), (λ,μ))
 
-    dataB = randn((λ+μ+3)*(l+u+3), sum(cols))
-    B = _BandedBlockBandedMatrix(copy(dataB), rows,cols, (l+1,u+1), (λ+1,μ+1))
+        dataB = randn((λ+μ+3)*(l+u+3), sum(cols))
+        B = _BandedBlockBandedMatrix(copy(dataB), rows,cols, (l+1,u+1), (λ+1,μ+1))
 
-    @time AB = A + B
-    @test AB ≈ Matrix(A) + Matrix(B)
+        @time AB = A + B
+        @test AB ≈ Matrix(A) + Matrix(B)
 
-    @time BLAS.axpy!(1.0, A, B)
-    @test B ≈ AB
+        @time BLAS.axpy!(1.0, A, B)
+        @test B ≈ AB
+    end
 
     @testset "degenerate" begin
         A = BandedBlockBandedMatrix{Float64}(undef, 1:5, 1:5,(-1,1), (-1,1))

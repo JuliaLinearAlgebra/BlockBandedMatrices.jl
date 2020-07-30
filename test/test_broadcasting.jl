@@ -9,8 +9,8 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
         B = Matrix{Float64}(undef, n,n)
         B .= exp.(A)
         @test B == exp.(Matrix(A)) == exp.(A)
-        @test exp.(A) isa PseudoBlockMatrix
-        @test A .+ 1 isa PseudoBlockMatrix
+        @test exp.(A) isa BlockBandedMatrix
+        @test A .+ 1 isa BlockBandedMatrix
 
         A = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1), (1,1))
             A.data .= randn.()
@@ -18,8 +18,8 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
         B = Matrix{Float64}(undef, n,n)
         B .= exp.(A)
         @test B == exp.(Matrix(A)) == exp.(A)
-        @test exp.(A) isa PseudoBlockMatrix
-        @test A .+ 1 isa PseudoBlockMatrix
+        @test exp.(A) isa BandedBlockBandedMatrix
+        @test A .+ 1 isa BandedBlockBandedMatrix
     end
 
     @testset "lmul!/rmul!" begin
@@ -126,9 +126,9 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
     @testset "axpy!" begin
         N = 10
         A = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1))
-            A.data .= randn.()
+        A.data .= randn.()
         B = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (2,2))
-            B.data .= randn.()
+        B.data .= randn.()
         C = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (3,3))
         @time C .= A .+ B
         @test C == A + B == A .+ B
@@ -143,6 +143,8 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
         @test C == 2A+B == 2.0.*A .+ B
         @test 2A + B isa typeof(A)
         @test 2.0.*A .+ B isa typeof(A)
+        bc = Base.broadcasted(+, Base.broadcasted(*, 2.0, A), B)
+        blockbandwidths(bc)
         @test blockbandwidths(2A+B) == blockbandwidths(2.0.*A .+ B) == (2,2)
         B .= 2.0 .* A .+ B
         @test B == C
