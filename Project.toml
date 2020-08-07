@@ -19,7 +19,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 ArrayLayouts = "0.3.3"
 BandedMatrices = "0.15.14"
 BlockArrays = "0.12.9"
-FillArrays = "0.8.10"
+FillArrays = "0.8.10, 0.9"
 MatrixFactorizations = "0.4.1, 0.5"
 julia = "1.2"
 
