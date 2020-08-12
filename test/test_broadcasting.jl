@@ -9,8 +9,8 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
         B = Matrix{Float64}(undef, n,n)
         B .= exp.(A)
         @test B == exp.(Matrix(A)) == exp.(A)
-        @test exp.(A) isa PseudoBlockMatrix
-        @test A .+ 1 isa PseudoBlockMatrix
+        @test exp.(A) isa BlockBandedMatrix
+        @test A .+ 1 isa BlockBandedMatrix
 
         A = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1), (1,1))
             A.data .= randn.()
@@ -18,8 +18,8 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
         B = Matrix{Float64}(undef, n,n)
         B .= exp.(A)
         @test B == exp.(Matrix(A)) == exp.(A)
-        @test exp.(A) isa PseudoBlockMatrix
-        @test A .+ 1 isa PseudoBlockMatrix
+        @test exp.(A) isa BandedBlockBandedMatrix
+        @test A .+ 1 isa BandedBlockBandedMatrix
     end
 
     @testset "lmul!/rmul!" begin
@@ -126,9 +126,9 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
     @testset "axpy!" begin
         N = 10
         A = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1))
-            A.data .= randn.()
+        A.data .= randn.()
         B = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (2,2))
-            B.data .= randn.()
+        B.data .= randn.()
         C = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (3,3))
         @time C .= A .+ B
         @test C == A + B == A .+ B
@@ -143,6 +143,8 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
         @test C == 2A+B == 2.0.*A .+ B
         @test 2A + B isa typeof(A)
         @test 2.0.*A .+ B isa typeof(A)
+        bc = Base.broadcasted(+, Base.broadcasted(*, 2.0, A), B)
+        blockbandwidths(bc)
         @test blockbandwidths(2A+B) == blockbandwidths(2.0.*A .+ B) == (2,2)
         B .= 2.0 .* A .+ B
         @test B == C
@@ -198,5 +200,80 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
         @test A + B == B + A == Matrix(A) + Matrix(B)
         @test A - B == Matrix(A) - Matrix(B)
         @test B - A == Matrix(B) - Matrix(A)
+    end
+
+    @testset "Diag" begin
+        @testset "BlockBanded" begin
+            A = BlockBandedMatrix{Float64}(undef, Fill(4,4), Fill(4,3), (2,1)); A.data .= randn.();
+            b = 1:size(A,1)
+            bc = Base.broadcasted(*, b, A)
+            @test blockisequal(axes(bc), axes(A))
+            @test blockaxes(bc) == blockaxes(A)
+            @test blocksize(bc) == blocksize(A)
+            @test blockbandwidths(bc) == (2,1)
+            @test b .* A == b .* Matrix(A)
+            @test b .* A isa BlockBandedMatrix
+            @test blockisequal(axes(b .* A), axes(A))
+
+            bᵗ = permutedims(1:size(A,2))
+            bc = Base.broadcasted(*, A, bᵗ)
+            @test blockisequal(axes(bc), axes(A))
+            @test blockaxes(bc) == blockaxes(A)
+            @test blocksize(bc) == blocksize(A)
+            @test blockbandwidths(bc) == (2,1)
+            @test A .* bᵗ == Matrix(A) .* bᵗ
+            @test A .* bᵗ isa BlockBandedMatrix
+            @test blockisequal(axes(A .* bᵗ), axes(A))
+        end
+        @testset "BandedBlockBanded" begin
+            A = BandedBlockBandedMatrix{Float64}(undef, Fill(4,4), Fill(4,3), (2,1), (1,2)); A.data .= randn.();
+            b = 1:size(A,1)
+            bc = Base.broadcasted(*, b, A)
+            @test blockisequal(axes(bc), axes(A))
+            @test blockaxes(bc) == blockaxes(A)
+            @test blocksize(bc) == blocksize(A)
+            @test b .* A == b .* Matrix(A)
+            @test b .* A isa BandedBlockBandedMatrix
+            @test blockisequal(axes(b .* A), axes(A))
+            @test blockbandwidths(bc) == blockbandwidths(b .* A) == (2,1)
+            @test subblockbandwidths(bc) == subblockbandwidths(b .* A) == (1,2)
+
+            bᵗ = permutedims(1:size(A,2))
+            bc = Base.broadcasted(*, A, bᵗ)
+            @test blockisequal(axes(bc), axes(A))
+            @test blockaxes(bc) == blockaxes(A)
+            @test blocksize(bc) == blocksize(A)
+            @test blockbandwidths(bc) == (2,1)
+            @test subblockbandwidths(bc) == (1,2)
+            @test A .* bᵗ == Matrix(A) .* bᵗ
+            @test A .* bᵗ isa BandedBlockBandedMatrix
+            @test blockisequal(axes(A .* bᵗ), axes(A))
+
+            bc = Base.broadcasted(\, b, A)
+            @test blockisequal(axes(bc), axes(A))
+            @test blockaxes(bc) == blockaxes(A)
+            @test blocksize(bc) == blocksize(A)
+            @test b .\ A == b .\ Matrix(A)
+            @test b .\ A isa BandedBlockBandedMatrix
+            @test blockisequal(axes(b .* A), axes(A))
+            @test blockbandwidths(bc) == blockbandwidths(b .* A) == (2,1)
+            @test subblockbandwidths(bc) == subblockbandwidths(b .* A) == (1,2)
+
+            bc = Base.broadcasted(/, A, b)
+            @test blockisequal(axes(bc), axes(A))
+            @test blockaxes(bc) == blockaxes(A)
+            @test blocksize(bc) == blocksize(A)
+            @test b ./ A == b ./ Matrix(A)
+            @test b ./ A isa BandedBlockBandedMatrix
+            @test blockisequal(axes(b .* A), axes(A))
+            @test blockbandwidths(bc) == blockbandwidths(b .* A) == (2,1)
+            @test subblockbandwidths(bc) == subblockbandwidths(b .* A) == (1,2)
+        end
+        @testset "Incompatible blocksize" begin
+            A = BandedBlockBandedMatrix{Float64}(undef, Fill(4,4), Fill(4,3), (2,1), (1,2)); A.data .= randn.();
+            C = Array{Float64}(undef, size(A))
+            C .= A .+ A
+            @test C == A + A
+        end
     end
 end

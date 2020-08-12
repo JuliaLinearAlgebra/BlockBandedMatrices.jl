@@ -14,8 +14,6 @@ struct BlockBandedStyle <: AbstractBlockSkylineStyle end
 BlockSkylineStyle(::Val{2}) = BlockBandedStyle()
 BlockBandedStyle(::Val{2}) = BlockBandedStyle()
 BandedBlockBandedStyle(::Val{2}) = BandedBlockBandedStyle()
-BroadcastStyle(::DefaultArrayStyle{2}, ::AbstractBlockBandedStyle) = DefaultArrayStyle{2}()
-BroadcastStyle(::AbstractBlockBandedStyle, ::DefaultArrayStyle{2}) = DefaultArrayStyle{2}()
 
 BroadcastStyle(::BlockSkylineStyle, ::BandedBlockBandedStyle) = BlockSkylineStyle()
 BroadcastStyle(::BandedBlockBandedStyle, ::BlockSkylineStyle) = BlockSkylineStyle()
@@ -25,6 +23,85 @@ BroadcastStyle(::BlockBandedStyle, ::BlockSkylineStyle) = BlockSkylineStyle()
 BroadcastStyle(::BlockBandedStyle, ::BandedBlockBandedStyle) = BlockBandedStyle()
 BroadcastStyle(::BandedBlockBandedStyle, ::BlockBandedStyle) = BlockBandedStyle()
 
+BroadcastStyle(::DefaultArrayStyle{2}, ::BlockSkylineStyle) = BlockSkylineStyle()
+BroadcastStyle(::BlockSkylineStyle, ::DefaultArrayStyle{2}) = BlockSkylineStyle()
+
+BroadcastStyle(::DefaultArrayStyle{2}, ::BlockBandedStyle) = BlockBandedStyle()
+BroadcastStyle(::BlockBandedStyle, ::DefaultArrayStyle{2}) = BlockBandedStyle()
+
+BroadcastStyle(::DefaultArrayStyle{2}, ::BandedBlockBandedStyle) = BandedBlockBandedStyle()
+BroadcastStyle(::BandedBlockBandedStyle, ::DefaultArrayStyle{2}) = BandedBlockBandedStyle()
+
+###
+# broadcast blockbandwidths
+###
+_blockbnds(bc) = blocksize(bc) .- 1
+
+_blockbandwidth_u(u, a, ax) = blockisequal(axes(a,1),ax) ? (blockbandwidth(a,1),u) : (blocksize(ax,1)-1,u)
+_blockbandwidth_l(l, a, ax) = blockisequal(axes(a,2),ax) ? (l,blockbandwidth(a,2)) : (l,blocksize(ax,1)-1)
+
+_broadcast_blockbandwidths(bnds, _, _) = bnds
+_broadcast_blockbandwidths((l,u), a::AbstractVector, (ax1,ax2)) =
+    _blockbandwidth_u(u, a, ax1)
+    
+
+function _broadcast_blockbandwidths((l,u), A::AbstractArray, (ax1,ax2))
+    if size(A,2) == 1
+        _blockbandwidth_u(u, A, ax1)
+    elseif size(A,1) == 1
+        _blockbandwidth_l(l, A, ax2)
+    elseif blockisequal(axes(A), (ax1,ax2))
+        blockbandwidths(A) # need to special case vector broadcasting
+    else
+        _blockbnds(A)
+    end
+end
+
+
+blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)}) =
+    min.(_broadcast_blockbandwidths.(Ref(_blockbnds(bc)), bc.args, Ref(axes(bc)))...)
+
+blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(/)}) = _broadcast_blockbandwidths(_blockbnds(bc), first(bc.args), axes(bc))
+blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(\)}) = _broadcast_blockbandwidths(_blockbnds(bc), last(bc.args), axes(bc))
+
+_subblockbnds(bc) = size(bc) .- 1
+
+_broadcast_subblockbandwidths(bnds) = bnds
+_broadcast_subblockbandwidths(bnds, _) = bnds
+_broadcast_subblockbandwidths((l,u), a::AbstractVector) = (bandwidth(a,1),u)
+
+function _broadcast_subblockbandwidths((l,u), A::AbstractArray) 
+    size(A,2) == 1 && return (subblockbandwidth(A,1),u) 
+    size(A,1) == 1 && return (l, subblockbandwidth(A,2))
+    subblockbandwidths(A) # need to special case vector broadcasting
+end
+
+subblockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)}) =
+    min.(_broadcast_subblockbandwidths.(Ref(_subblockbnds(bc)), bc.args)...)
+
+subblockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(/)}) = _broadcast_subblockbandwidths(_subblockbnds(bc), first(bc.args))
+subblockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(\)}) = _broadcast_subblockbandwidths(_subblockbnds(bc), last(bc.args))
+
+function subblockbandwidths(bc::Broadcasted)
+    (a,b) = size(bc)
+    bnds = (a-1,b-1)
+    _isweakzero(bc.f, bc.args...) && return min.(bnds, max.(_broadcast_subblockbandwidths.(Ref(bnds), bc.args)...))
+    bnds
+end
+
+
+# zero is preserved. Take the maximum bandwidth
+import BandedMatrices: _isweakzero
+
+function blockbandwidths(bc::Broadcasted)
+    (a,b) = size(bc)
+    bnds = (a-1,b-1)
+    _isweakzero(bc.f, bc.args...) && return min.(bnds, max.(_broadcast_blockbandwidths.(Ref(bnds), bc.args, Ref(axes(bc)))...))
+    bnds
+end
+
+similar(bc::Broadcasted{BlockBandedStyle}, ::Type{T}) where T = BlockBandedMatrix{T}(undef, axes(bc), blockbandwidths(bc))
+similar(bc::Broadcasted{BandedBlockBandedStyle}, ::Type{T}) where T = BandedBlockBandedMatrix{T}(undef, axes(bc), blockbandwidths(bc), subblockbandwidths(bc))
 
 
 ####
@@ -264,61 +341,26 @@ function blockbanded_axpy!(a, X::AbstractMatrix, Y::AbstractMatrix)
     Y
 end
 
-function _combine_blockaxes(A, B)
-    blockisequal(axes(A), axes(B)) || throw(DimensionMismatch("Block sizes do not agree"))
-    axes(A)
-end
-
-_combine_blockaxes(::Diagonal, B) = axes(B)
-_combine_blockaxes(A, ::Diagonal) = axes(A)
-
-function _combined_blockaxes(A, B)
-    blockisequal(axes(A), axes(B)) || throw(DimensionMismatch("Block sizes do not agree"))
-    (A,B)
-end
-
-_combined_blockaxes(A::Diagonal, B) = PseudoBlockArray(A, axes(B)), B
-_combined_blockaxes(A, B::Diagonal) = A, PseudoBlockArray(B, axes(A))
-
-
-
-for op in (:+, :-)
-    @eval begin
-        function similar(bc::Broadcasted{<:BlockSkylineStyle, <:Any, typeof($op), <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}, ::Type{T}) where T
-            A,B = bc.args
-            Al,Au = colblockbandwidths(A)
-            Bl,Bu = colblockbandwidths(B)
-            BlockSkylineMatrix{T}(undef, _combine_blockaxes(A,B), (max.(Al,Bl), max.(Au,Bu)))
-        end
-
-        function similar(bc::Broadcasted{<:BlockBandedStyle, <:Any, typeof($op), <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}, ::Type{T}) where T
-            A,B = bc.args
-            Al,Au = blockbandwidths(A)
-            Bl,Bu = blockbandwidths(B)
-            BlockBandedMatrix{T}(undef, _combine_blockaxes(A,B), (max(Al,Bl), max(Au,Bu)))
-        end
-
-        function similar(bc::Broadcasted{<:BandedBlockBandedStyle, <:Any, typeof($op), <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}, ::Type{T}) where T
-            A,B = bc.args
-            Al,Au = blockbandwidths(A)
-            Bl,Bu = blockbandwidths(B)
-            Aλ,Aμ = subblockbandwidths(A)
-            Bλ,Bμ = subblockbandwidths(B)
-
-            BandedBlockBandedMatrix{T}(undef, _combine_blockaxes(A,B), (max(Al,Bl), max(Au,Bu)), (max(Aλ,Bλ), max(Aμ,Bμ)))
-        end
-    end
-end
 
 for op in (:+, :-)
     @eval function copyto!(C::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof($op),
                                                                 <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
-        A,B = _combined_blockaxes(bc.args...)
+        bc_axes = Base.Broadcast.combine_axes(bc.args...)# Use combine_axes as `bc` might get axes from `C`
+        if !blockisequal(axes(C), bc_axes) 
+            copyto!(PseudoBlockArray(C, bc_axes), bc)
+            return C
+        end
+
+        A,B = bc.args
+        if !blockisequal(axes(A), axes(B))
+            copyto!(C, Base.broadcasted(BlockStyle{2}(), $op, A, B))
+            return C
+        end
+
         A_l,A_u = blockbandwidths(A)
         B_l,B_u = blockbandwidths(B)
         C_l,C_u = blockbandwidths(C)
 
-        size(A) == size(B) == size(C) || throw(DimensionMismatch())
         N,M = blocksize(C)
 
         for J̃ = 1:M
@@ -357,6 +399,10 @@ for op in (:+, :-)
     end
 end
 
+##
+# special cases to hack tests where 2.0 .* A .+ B can be constructed in different ways depending on REPL or in a function.
+# Should be made more general.
+##
 
 function copyto!(dest::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(+),
                                                         <:Tuple{<:Broadcasted{<:AbstractBlockBandedStyle,<:Any,typeof(*),<:Tuple{<:Number,<:AbstractMatrix}},
@@ -367,6 +413,8 @@ function copyto!(dest::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedSt
     blockbanded_axpy!(α, A, dest)
 end
 
+
+
 function similar(bc::Broadcasted{BlockBandedStyle, <:Any, typeof(+),
                         <:Tuple{<:Broadcasted{<:AbstractBlockBandedStyle,<:Any,typeof(*),<:Tuple{<:Number,<:AbstractMatrix}},
                         <:AbstractMatrix}}, ::Type{T}) where T
@@ -374,7 +422,7 @@ function similar(bc::Broadcasted{BlockBandedStyle, <:Any, typeof(+),
     α,A = αA.args
     Al,Au = blockbandwidths(A)
     Bl,Bu = blockbandwidths(B)
-    BlockBandedMatrix{T}(undef, _combine_blockaxes(A,B), (max(Al,Bl), max(Au,Bu)))
+    BlockBandedMatrix{T}(undef, axes(bc), (max(Al,Bl), max(Au,Bu)))
 end
 
 function similar(bc::Broadcasted{BandedBlockBandedStyle, <:Any, typeof(+),
@@ -387,7 +435,7 @@ function similar(bc::Broadcasted{BandedBlockBandedStyle, <:Any, typeof(+),
     Aλ,Aμ = subblockbandwidths(A)
     Bλ,Bμ = subblockbandwidths(B)
 
-    BandedBlockBandedMatrix{T}(undef, _combine_blockaxes(A,B), (max(Al,Bl), max(Au,Bu)), (max(Aλ,Bλ), max(Aμ,Bμ)))
+    BandedBlockBandedMatrix{T}(undef, axes(bc), (max(Al,Bl), max(Au,Bu)), (max(Aλ,Bλ), max(Aμ,Bμ)))
 end
 
 
