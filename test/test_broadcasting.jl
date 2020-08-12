@@ -248,6 +248,32 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
             @test A .* bᵗ == Matrix(A) .* bᵗ
             @test A .* bᵗ isa BandedBlockBandedMatrix
             @test blockisequal(axes(A .* bᵗ), axes(A))
+
+            bc = Base.broadcasted(\, b, A)
+            @test blockisequal(axes(bc), axes(A))
+            @test blockaxes(bc) == blockaxes(A)
+            @test blocksize(bc) == blocksize(A)
+            @test b .\ A == b .\ Matrix(A)
+            @test b .\ A isa BandedBlockBandedMatrix
+            @test blockisequal(axes(b .* A), axes(A))
+            @test blockbandwidths(bc) == blockbandwidths(b .* A) == (2,1)
+            @test subblockbandwidths(bc) == subblockbandwidths(b .* A) == (1,2)
+
+            bc = Base.broadcasted(/, A, b)
+            @test blockisequal(axes(bc), axes(A))
+            @test blockaxes(bc) == blockaxes(A)
+            @test blocksize(bc) == blocksize(A)
+            @test b ./ A == b ./ Matrix(A)
+            @test b ./ A isa BandedBlockBandedMatrix
+            @test blockisequal(axes(b .* A), axes(A))
+            @test blockbandwidths(bc) == blockbandwidths(b .* A) == (2,1)
+            @test subblockbandwidths(bc) == subblockbandwidths(b .* A) == (1,2)
+        end
+        @testset "Incompatible blocksize" begin
+            A = BandedBlockBandedMatrix{Float64}(undef, Fill(4,4), Fill(4,3), (2,1), (1,2)); A.data .= randn.();
+            C = Array{Float64}(undef, size(A))
+            C .= A .+ A
+            @test C == A + A
         end
     end
 end

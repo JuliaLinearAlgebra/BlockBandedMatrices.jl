@@ -432,10 +432,7 @@ _parent_blocks(V::BlockBandedBlock)::Tuple{Int,Int} =
 
 
 MemoryLayout(::Type{<:BlockBandedBlock}) = ColumnMajor()
-
-if VERSION ≥ v"1.5"
-    Base.elsize(::Type{<:BlockSkylineMatrix{T,R}}) where {T,R} = Base.elsize(R)
-end
+Base.elsize(::Type{<:BlockSkylineMatrix{T,R}}) where {T,R} = Base.elsize(R)
 
 function Base.unsafe_convert(::Type{Ptr{T}}, V::BlockBandedBlock{T}) where T
     A = parent(V)

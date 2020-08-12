@@ -61,8 +61,8 @@ end
 blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)}) =
     min.(_broadcast_blockbandwidths.(Ref(_blockbnds(bc)), bc.args, Ref(axes(bc)))...)
 
-blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(/)}) = _broadcast_blockbandwidths(_blockbnds(bc), first(bc.args))
-blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(\)}) = _broadcast_blockbandwidths(_blockbnds(bc), last(bc.args))
+blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(/)}) = _broadcast_blockbandwidths(_blockbnds(bc), first(bc.args), axes(bc))
+blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(\)}) = _broadcast_blockbandwidths(_blockbnds(bc), last(bc.args), axes(bc))
 
 _subblockbnds(bc) = size(bc) .- 1
 
@@ -345,8 +345,9 @@ end
 for op in (:+, :-)
     @eval function copyto!(C::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof($op),
                                                                 <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
-        if !blockisequal(axes(C), axes(bc))
-            copyto!(PseudoBlockArray(C, axes(bc)), bc)
+        bc_axes = Base.Broadcast.combine_axes(bc.args...)# Use combine_axes as `bc` might get axes from `C`
+        if !blockisequal(axes(C), bc_axes) 
+            copyto!(PseudoBlockArray(C, bc_axes), bc)
             return C
         end
 
