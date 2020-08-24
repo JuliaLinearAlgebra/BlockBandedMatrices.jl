@@ -20,7 +20,7 @@ ArrayLayouts = "0.4.1"
 BandedMatrices = "0.15.16"
 BlockArrays = "0.12.12"
 FillArrays = "0.9.2"
-MatrixFactorizations = "0.5.2"
+MatrixFactorizations = "0.5.2, 0.6"
 julia = "1.5"
 
 [extras]
