@@ -1,5 +1,5 @@
 # BlockBandedMatrices.jl
-A Julia package for representing block-block-banded matrices and banded-block-banded matrices
+A Julia package for representing block-banded matrices and banded-block-banded matrices
 
 [![Travis](https://travis-ci.org/JuliaMatrices/BlockBandedMatrices.jl.svg?branch=master)](https://travis-ci.org/JuliaMatrices/BlockBandedMatrices.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/a300xe23ltjbebbf?svg=true)](https://ci.appveyor.com/project/dlfivefifty/blockbandedmatrices-jl)
@@ -17,7 +17,7 @@ storing the entries in the non-zero bands.
 
 
 A `BlockBandedMatrix` is a subtype of `BlockMatrix` of [BlockArrays.jl](https://github.com/JuliaArrays/BlockArrays.jl)
-whose non-zero blocks are banded. We can construct a `BlockBandedMatrix` as follows:
+whose layout of non-zero blocks is banded. We can construct a `BlockBandedMatrix` as follows:
 ```julia
 l,u = 2,1          # block bandwidths
 N = M = 4          # number of row/column blocks
@@ -38,5 +38,5 @@ N = M = 4          # number of row/column blocks
 cols = rows = 1:N  # block sizes
 BandedBlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows,cols, (l,u), (λ,μ)) # creates a banded-block-banded matrix of zeros
 BandedBlockBandedMatrix(Ones(sum(rows),sum(cols)), rows,cols, (l,u), (λ,μ))  # creates a banded-block-banded matrix with ones in the non-zero entries
-BandedBlockBandedMatrix(I, rows,cols, (l,u), (λ,μ)))                         # creates a banded-block-banded identity matrix
+BandedBlockBandedMatrix(I, rows,cols, (l,u), (λ,μ))                          # creates a banded-block-banded identity matrix
 ```
