@@ -256,6 +256,8 @@ end
 ################################
 
 bandedblockbandedcolumns(L::AbstractColumnMajor) = BandedBlockBandedColumnMajor()
+bandedblockbandedcolumns(L::AbstractRowMajor) = BandedBlockBandedColumns{RowMajor}()
+bandedblockbandedcolumns(::DualLayout{ML}) where ML = bandedblockbandedcolumns(ML())
 bandedblockbandedcolumns(_) = BandedBlockBandedColumns{UnknownLayout}()
 
 MemoryLayout(::Type{<:BandedBlockBandedMatrix{<:Any,BLOCKS}}) where BLOCKS =

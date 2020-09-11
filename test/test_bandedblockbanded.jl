@@ -1,5 +1,6 @@
 using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays, Test, ArrayLayouts , LinearAlgebra
-import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolsupport, blockrowsupport, colsupport, rowsupport, isbandedblockbanded, bandeddata
+import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolsupport, blockrowsupport, colsupport, rowsupport, 
+                            isbandedblockbanded, bandeddata, BandedBlockBandedColumns
 
 @testset "BandedBlockBandedMatrix" begin
     @testset "constructors" begin
@@ -480,6 +481,11 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolsupport, blockrows
         @test A == B
         @test subblockbandwidths(B) == (1,1)
         @test blockbandwidths(B) == (0,0)
+    end
+
+    @testset "DualLayout blocks" begin
+        A = _BandedBlockBandedMatrix(PseudoBlockVector([1,2,3],[1,2])', blockedrange([1,2]), (-1,1), (-1,1))
+        @test MemoryLayout(A) isa BandedBlockBandedColumns{RowMajor}
     end
 end
 
