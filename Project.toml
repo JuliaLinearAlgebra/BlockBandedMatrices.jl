@@ -1,6 +1,6 @@
 name = "BlockBandedMatrices"
 uuid = "ffab5731-97b5-5995-9138-79e8c1846df0"
-version = "0.9.2"
+version = "0.9.3"
 
 [deps]
 ArrayLayouts = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
@@ -18,7 +18,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 ArrayLayouts = "0.4.1"
 BandedMatrices = "0.15.16"
-BlockArrays = "0.12.12"
+BlockArrays = "0.12.13"
 FillArrays = "0.9.2"
 MatrixFactorizations = "0.5.2, 0.6"
 julia = "1.5"
