@@ -94,11 +94,15 @@ for op in (:-, :+)
 
         function $op(A::BlockTridiagonal, λ::UniformScaling)
             checksquareblocks(A)
-            mortar(Tridiagonal(A.blocks.dl, broadcast($op, A.blocks.d, Ref(λ)), A.blocks.du))
+            mortar(Tridiagonal(broadcast($op, A.blocks.dl, Ref(0λ)), 
+                               broadcast($op, A.blocks.d, Ref(λ)),
+                               broadcast($op, A.blocks.du, Ref(0λ))))
         end
         function $op(λ::UniformScaling, A::BlockTridiagonal)
             checksquareblocks(A)
-            mortar(Tridiagonal(broadcast($op,A.blocks.dl), broadcast($op, Ref(λ), A.blocks.d), broadcast($op,A.blocks.du)))
+            mortar(Tridiagonal(broadcast($op, Ref(0λ), A.blocks.dl), 
+                               broadcast($op, Ref(λ), A.blocks.d), 
+                               broadcast($op, Ref(0λ), A.blocks.du)))
         end
         function $op(A::BlockBidiagonal, λ::UniformScaling)
             checksquareblocks(A)
