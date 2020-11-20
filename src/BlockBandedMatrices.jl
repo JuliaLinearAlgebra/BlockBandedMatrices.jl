@@ -49,8 +49,8 @@ export BandedBlockBandedMatrix, BlockBandedMatrix, BlockSkylineMatrix, blockband
 
 
 const Block1 = Block{1,Int}
-const BlockRange1 = BlockRange{1,Tuple{UnitRange{Int}}}
-const BlockIndexRange1 = BlockIndexRange{1,Tuple{UnitRange{Int}}}
+const BlockRange1{R<:AbstractUnitRange{Int}} = BlockRange{1,Tuple{R}}
+const BlockIndexRange1{R<:AbstractUnitRange{Int}} = BlockIndexRange{1,Tuple{R}}
 
 blockcolrange(A...) = blockcolsupport(A...)
 blockrowrange(A...) = blockrowsupport(A...)
