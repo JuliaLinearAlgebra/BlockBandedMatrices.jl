@@ -9,8 +9,8 @@ using BlockBandedMatrices, BandedMatrices, ArrayLayouts, FillArrays
 function finitedifference_2d(n)
     h = 1/n
     D² = BandedMatrix(0 => Fill(-2,n), 1 => Fill(1,n-1), -1 => Fill(1,n-1))/h^2
-    D_xx = BandedBlockBandedMatrix(Kron(D², Eye(n)))
-    D_yy = BandedBlockBandedMatrix(Kron(Eye(n), D²))
+    D_xx = BandedBlockBandedMatrix(kron(D², Eye(n)))
+    D_yy = BandedBlockBandedMatrix(kron(Eye(n), D²))
     D_xx + D_yy
 end
 
@@ -156,8 +156,8 @@ S = sparse(A);
 
 h = 1/n
     @time D² = BandedMatrix(0 => Fill(-2,n), 1 => Fill(1,n-1), -1 => Fill(1,n-1))/h^2
-    @time D_xx = BandedBlockBandedMatrix(Kron(D², Eye(n)))
-    @time D_yy = BandedBlockBandedMatrix(Kron(Eye(n), D²))
+    @time D_xx = BandedBlockBandedMatrix(kron(D², Eye(n)))
+    @time D_yy = BandedBlockBandedMatrix(kron(Eye(n), D²))
     @time D_xx .+ D_yy
     4
 
