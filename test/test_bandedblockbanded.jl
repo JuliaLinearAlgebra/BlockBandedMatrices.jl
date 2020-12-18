@@ -1,6 +1,7 @@
 using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays, Test, ArrayLayouts , LinearAlgebra
 import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolsupport, blockrowsupport, colsupport, rowsupport, 
                             isbandedblockbanded, bandeddata, BandedBlockBandedColumns
+import ArrayLayouts: RangeCumsum
 
 @testset "BandedBlockBandedMatrix" begin
     @testset "constructors" begin
@@ -181,7 +182,7 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolsupport, blockrows
         A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
 
         @test A[Block(1), Block(1)] isa BandedMatrix
-        @test A[Block(1), Block(1)] == A[Block(1,1)] == BlockArrays.getblock(A, 1, 1) == BandedMatrix(view(A, Block(1,1)))
+        @test A[Block(1), Block(1)] == A[Block(1,1)] == view(A, Block(1, 1)) == BandedMatrix(view(A, Block(1,1)))
         @test A[1,1] == view(A,Block(1),Block(1))[1,1] == view(A,Block(1,1))[1,1] == A[Block(1,1)][1,1]  == A[Block(1),Block(1)][1,1] == 5
         @test A[2,1] == view(A,Block(2),Block(1))[1,1] == view(A,Block(2,1))[1,1] == 8
         @test A[3,1] == view(A,Block(2),Block(1))[2,1] == 9
@@ -486,6 +487,12 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolsupport, blockrows
     @testset "DualLayout blocks" begin
         A = _BandedBlockBandedMatrix(PseudoBlockVector([1,2,3],[1,2])', blockedrange([1,2]), (-1,1), (-1,1))
         @test MemoryLayout(A) isa BandedBlockBandedColumns{RowMajor}
+    end
+
+    @testset "1:N blocks" begin
+        N = 10
+        A = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1), (1,1))
+        @test axes(A) isa NTuple{2,BlockedUnitRange{<:RangeCumsum}}
     end
 end
 

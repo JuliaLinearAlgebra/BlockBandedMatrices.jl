@@ -29,7 +29,7 @@ import ArrayLayouts: BlasMatLmulVec, MatLmulVec, MatLmulMat,
                     _qr, _factorize, _copyto!, zero!, layout_replace_in_print_matrix
 
 import BlockArrays: blocksize, blockcheckbounds, BlockedUnitRange, blockisequal, DefaultBlockAxis,
-                        Block, BlockSlice, getblock, unblock, setblock!, block, blockindex,
+                        Block, BlockSlice, unblock, block, blockindex,
                         _blocklengths2blocklasts, BlockIndexRange, sizes_from_blocks, BlockSlice1,
                         blockcolsupport, blockrowsupport, blockcolstart, blockcolstop, blockrowstart, blockrowstop,
                         AbstractBlockLayout, BlockLayout, blocks, hasmatchingblocks, BlockStyle

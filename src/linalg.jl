@@ -1,6 +1,6 @@
 # BlockBandedMatrix with block range indexes is also block-banded
 const SubBlockSkylineMatrix{T,LL,UU,R1,R2} =
-    SubArray{T,2,BlockSkylineMatrix{T,LL,UU},<:Tuple{<:BlockSlice{R1},<:BlockSlice{R2}}}
+    SubArray{T,2,BlockSkylineMatrix{T,LL,UU},<:Tuple{BlockSlice{<:R1},BlockSlice{<:R2}}}
 
 
 

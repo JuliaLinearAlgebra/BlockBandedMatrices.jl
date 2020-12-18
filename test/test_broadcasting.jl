@@ -150,13 +150,16 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
         @test B == C
 
         N = 10
-        A = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1), (1,1))
+        A = BandedBlockBandedMatrix{Float64}(undef, Base.OneTo(N),Base.OneTo(N), (1,1), (1,1))
             A.data .= randn.()
-        B = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (2,2), (2,2))
+        B = BandedBlockBandedMatrix{Float64}(undef, Base.OneTo(N),Base.OneTo(N), (2,2), (2,2))
             B.data .= randn.()
-        C = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (3,3), (3,3))
+        C = BandedBlockBandedMatrix{Float64}(undef, Base.OneTo(N),Base.OneTo(N), (3,3), (3,3))
         @time C .= A .+ B
         @test C == A + B == A .+ B
+
+        bc = Base.broadcasted(+, A, B)
+        @test @inferred(axes(bc)) === axes(A)
 
         @test A + B isa typeof(A)
         @test A .+ B isa typeof(A)

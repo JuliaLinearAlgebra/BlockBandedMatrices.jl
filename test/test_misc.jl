@@ -12,10 +12,10 @@ import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle, bandeddata
     @test blockbandwidths(PD) == bandwidths(PD) == (0,0)
     @test MemoryLayout(typeof(PD)) isa DiagonalLayout{DenseColumnMajor}
     @test bandeddata(PD) == bandeddata(D)
-
     V = view(PD, Block(1,1))
+
     @test bandwidths(V) == (0,0)
-    @test Broadcast.BroadcastStyle(typeof(V)) == BandedStyle()
+    @test_broken Broadcast.BroadcastStyle(typeof(V)) == BandedStyle()
     @test MemoryLayout(typeof(V)) isa BandedColumns{DenseColumnMajor}
     @test bandeddata(V) == bandeddata(PD)[:,1:n]
     @test BandedMatrix(V) == V
@@ -26,7 +26,7 @@ end
     @test blockbandwidths(A) == (0,0)
     @test isblockbanded(A)
     @test A[Block(1,1)] == [1 2]
-    @test @inferred(getblock(A,1,2)) == @inferred(A[Block(1,2)]) == [0 0]
+    @test @inferred(A[Block(1,2)]) == [0 0]
     @test_throws DimensionMismatch A+I
     A = BlockBandedMatrices.BlockDiagonal(fill([1 2; 1 2],3))
     @test A+I == I+A == mortar(Diagonal(fill([2 2; 1 3],3))) == Matrix(A) + I
@@ -41,7 +41,7 @@ end
     @test isblockbanded(Bl)
     @test Bu[Block(1,1)] == Bl[Block(1,1)] == [1 2]
     @test @inferred(Bu[Block(1,2)]) == @inferred(Bl[Block(2,1)]) == [3 4]
-    @test @inferred(getblock(Bu,1,3)) == @inferred(Bu[Block(1,3)]) == [0 0]
+    @test @inferred(view(Bu,Block(1,3))) == @inferred(Bu[Block(1,3)]) == [0 0]
     @test_throws DimensionMismatch Bu+I
     Bu = BlockBidiagonal(fill([1 2; 1 2],4), fill([3 4; 3 4],3), :U)
     Bl = BlockBidiagonal(fill([1 2; 1 2],4), fill([3 4; 3 4],3), :L)
@@ -57,7 +57,7 @@ end
     @test isblockbanded(A)
     @test A[Block(1,1)] == [3 4]
     @test @inferred(A[Block(1,2)]) == [4 5]
-    @test @inferred(getblock(A,1,3)) == @inferred(A[Block(1,3)]) == [0 0]
+    @test @inferred(view(A,Block(1,3))) == @inferred(A[Block(1,3)]) == [0 0]
     @test_throws DimensionMismatch A+I
     A = BlockTridiagonal(fill([1 2; 1 2],3), fill([3 4; 3 4],4), fill([4 5; 4 5],3))
     @test A+I == I+A == mortar(Tridiagonal(fill([1 2; 1 2],3), fill([4 4; 3 5],4), fill([4 5; 4 5],3))) == Matrix(A) + I
