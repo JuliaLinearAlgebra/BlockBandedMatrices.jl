@@ -116,3 +116,11 @@ for op in (:-, :+)
         end
     end
 end
+
+
+###
+# Zeros
+###
+
+blockbandwidths(::Zeros) = (-1,-1)
+subblockbandwidths(::Zeros) = (-1,-1)
