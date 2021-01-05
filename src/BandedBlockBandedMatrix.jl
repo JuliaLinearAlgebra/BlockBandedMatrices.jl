@@ -233,6 +233,17 @@ similar(A::BandedBlockBandedMatrix{T}, axes::NTuple{2,AbstractUnitRange{Int}}) w
 
 axes(A::BandedBlockBandedMatrix) = (A.raxis, axes(A.data,2))
 
+bandedblockbandeddata(A::BandedBlockBandedMatrix) = A.data
+
+function ==(A::BandedBlockBandedMatrix, B::BandedBlockBandedMatrix)
+    axes(A) == axes(B) || return false
+    blockbandwidths(A) == blockbandwidths(B) && subblockbandwidths(A) == subblockbandwidths(B) && return A.data == B.data
+    # allocates for now
+    lu = max.(blockbandwidths(A), blockbandwidths(B))
+    λμ = max.(subblockbandwidths(A), subblockbandwidths(B))
+    BandedBlockBandedMatrix(A, lu, λμ) == BandedBlockBandedMatrix(B, lu, λμ)
+end
+
 function sparse(A::BandedBlockBandedMatrix)
     i = Vector{Int}()
     j = Vector{Int}()
@@ -397,6 +408,24 @@ sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{<:BlockRange
 sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice1,BlockSlice{<:BlockRange1}}}) = BandedBlockBandedColumnMajor()
 sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice1}}) = BandedBlockBandedColumnMajor()
 sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockIndexRange1}}}) = BandedBlockBandedColumnMajor()
+
+sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice1,BlockSlice1}}) = BandedColumns{UnknownLayout}()
+sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice{<:BlockIndexRange1}}}) = BandedColumns{UnknownLayout}()
+sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice1}}) = BandedColumns{UnknownLayout}()
+sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice1,BlockSlice{<:BlockIndexRange1}}}) = BandedColumns{UnknownLayout}()
+sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockRange1}}}) = BandedBlockBandedColumns{UnknownLayout}()
+sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice1,BlockSlice{<:BlockRange1}}}) = BandedBlockBandedColumns{UnknownLayout}()
+sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice1}}) = BandedBlockBandedColumns{UnknownLayout}()
+sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockIndexRange1}}}) = BandedBlockBandedColumns{UnknownLayout}()
+
+blockbandshift(A::BlockSlice, B::BlockSlice) = BandedMatrices.bandshift(Int.(A.block), Int.(B.block))
+blockbandshift(S) = blockbandshift(parentindices(S)[1],parentindices(S)[2])
+
+function bandedblockbandeddata(V::SubArray) 
+    l,u = blockbandwidths(V)
+    L,U = blockbandwidths(parent(V)) .+ (-1,1) .* blockbandshift(V)
+    view(bandedblockbandeddata(parent(V)), Block.(U-u+1:U+l+1), parentindices(V)[2])
+end
 
 sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockSlice1,BlockSlice1}}) = BandedLayout()
 sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice{<:BlockIndexRange1}}}) = BandedLayout()
