@@ -494,6 +494,16 @@ import ArrayLayouts: RangeCumsum
         A = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1), (1,1))
         @test axes(A) isa NTuple{2,BlockedUnitRange{<:RangeCumsum}}
     end
+
+    @testset "change bandwidths" begin
+        l , u = 1,1
+        λ , μ = 1,1
+        N = M = 4
+        cols = rows = 1:N
+        data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
+        @test A == BandedBlockBandedMatrix(A, (2,1), (2,1)) == BandedBlockBandedMatrix{Float64}(A, (2,1), (2,1))
+    end
 end
 
 if false # turned off since tests have check-bounds=yes

@@ -215,9 +215,12 @@ function _copyto!(_, ::BlockLayout{<:AbstractBandedLayout}, dest::AbstractMatrix
 end
 
 function _copyto!(::BandedBlockBandedColumns, ::BandedBlockBandedColumns, dest::AbstractMatrix, src::AbstractMatrix)
-    (blockbandwidths(dest) == blockbandwidths(src) && subblockbandwidths(dest) == subblockbandwidths(src)) || error("Implement")
-    copyto!(bandedblockbandeddata(dest), bandedblockbandeddata(src))
-    dest
+    if blockbandwidths(dest) == blockbandwidths(src) && subblockbandwidths(dest) == subblockbandwidths(src)
+        copyto!(bandedblockbandeddata(dest), bandedblockbandeddata(src))
+        dest
+    else # TODO: if subblockbandwidths match we can still do something better
+        _copyto!(BandedBlockBandedLayout(), BandedBlockBandedLayout(), dest, src)
+    end
 end
 
 

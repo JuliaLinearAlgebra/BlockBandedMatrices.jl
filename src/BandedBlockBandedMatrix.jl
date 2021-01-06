@@ -207,10 +207,11 @@ function BandedBlockBandedMatrix{T,Blocks,RR}(A::AbstractMatrix, axes::NTuple{2,
     ret
 end
 
+BandedBlockBandedMatrix{T}(A::AbstractMatrix, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T = 
+    copyto!(BandedBlockBandedMatrix{T}(undef, axes(A), lu, λμ), A)
+BandedBlockBandedMatrix{T}(A::AbstractMatrix) where T = BandedBlockBandedMatrix{T}(A, blockbandwidths(A), subblockbandwidths(A))
 
-BandedBlockBandedMatrix{T}(A::AbstractMatrix) where T =
-    copyto!(BandedBlockBandedMatrix{T}(undef, axes(A), blockbandwidths(A), subblockbandwidths(A)), A)
-
+BandedBlockBandedMatrix(A::AbstractMatrix{T}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T = BandedBlockBandedMatrix{T}(A, lu, λμ)
 BandedBlockBandedMatrix(A::AbstractMatrix{T}) where T = BandedBlockBandedMatrix{T}(A)
 
 BandedBlockBandedMatrix(A::AbstractMatrix, rdims::AbstractVector{Int}, cdims::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
@@ -227,22 +228,12 @@ similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::NTuple{2,AbstractUnitRange{
     BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
 
 
-
 similar(A::BandedBlockBandedMatrix{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
     similar(Matrix{T}, map(length,axes)...)
 
 axes(A::BandedBlockBandedMatrix) = (A.raxis, axes(A.data,2))
 
 bandedblockbandeddata(A::BandedBlockBandedMatrix) = A.data
-
-function ==(A::BandedBlockBandedMatrix, B::BandedBlockBandedMatrix)
-    axes(A) == axes(B) || return false
-    blockbandwidths(A) == blockbandwidths(B) && subblockbandwidths(A) == subblockbandwidths(B) && return A.data == B.data
-    # allocates for now
-    lu = max.(blockbandwidths(A), blockbandwidths(B))
-    λμ = max.(subblockbandwidths(A), subblockbandwidths(B))
-    BandedBlockBandedMatrix(A, lu, λμ) == BandedBlockBandedMatrix(B, lu, λμ)
-end
 
 function sparse(A::BandedBlockBandedMatrix)
     i = Vector{Int}()
