@@ -10,6 +10,9 @@ function check_data_sizes(data::AbstractMatrix, raxis, (l,u), (λ,μ))
 end
 
 
+abstract type AbstractBandedBlockBandedMatrix{T} <: AbstractBlockBandedMatrix{T} end
+MemoryLayout(::Type{<:AbstractBandedBlockBandedMatrix}) = BandedBlockBandedLayout()
+
 function _BandedBlockBandedMatrix end
 
 
@@ -19,7 +22,7 @@ function _BandedBlockBandedMatrix end
 # BandedMatrix
 #
 
-struct BandedBlockBandedMatrix{T, BLOCKS, RAXIS<:AbstractUnitRange{Int}} <: AbstractBlockBandedMatrix{T}
+struct BandedBlockBandedMatrix{T, BLOCKS, RAXIS<:AbstractUnitRange{Int}} <: AbstractBandedBlockBandedMatrix{T}
     data::BLOCKS
     raxis::RAXIS
 
@@ -398,6 +401,7 @@ sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockS
 sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockRange1}}} = bandedblockbandedcolumns(sublayout(ML(), II))
 sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice1,BlockSlice{<:BlockRange1}}} = bandedblockbandedcolumns(sublayout(ML(), II))
 sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockRange1},BlockSlice1}} = bandedblockbandedcolumns(sublayout(ML(), II))
+sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice{<:BlockRange1}}} = bandedblockbandedcolumns(sublayout(ML(), II))
 sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockIndexRange1}}} = bandedblockbandedcolumns(sublayout(ML(), II))
 
 blockbandshift(A::BlockSlice, B::BlockSlice) = BandedMatrices.bandshift(Int.(A.block), Int.(B.block))
