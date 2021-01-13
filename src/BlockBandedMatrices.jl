@@ -38,7 +38,7 @@ import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrang
                         inbands_setindex!, inbands_getindex, banded_setindex!,
                         banded_generic_axpy!,
                         BlasFloat, banded_dense_axpy!, MemoryLayout,
-                        BandedLayout, BandedColumnMajor, BandedColumns,
+                        BandedLayout, BandedColumnMajor, BandedColumns, bandedcolumns,
                         BandedSubBandedMatrix, bandeddata,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop,
                         BandedStyle, _fill_lmul!, bandshift,

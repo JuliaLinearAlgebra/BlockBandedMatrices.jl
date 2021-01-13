@@ -455,20 +455,20 @@ import ArrayLayouts: RangeCumsum
         A = BandedBlockBandedMatrix{Float64}(undef, 1:2, 1:5,(-1,1), (-1,1))
         A.data .= randn.()
         V = view(A, Block(2,3))
-        @test MemoryLayout(typeof(V)) == BandedMatrices.BandedColumnMajor()
+        @test MemoryLayout(typeof(V)) == BandedMatrices.BandedColumns{ColumnMajor}()
         @test isbanded(V)
         @test bandwidths(V) == (-1,1)
         @test BandedMatrix(V) == A[2:3,4:6]
         V2 = view(V, :, 2:3)
-        @test MemoryLayout(typeof(V2)) == BandedMatrices.BandedColumnMajor()
+        @test MemoryLayout(typeof(V2)) == BandedMatrices.BandedColumns{ColumnMajor}()
         @test bandwidths(V2) == (0,0)
         @test BandedMatrix(V2) == A[2:3,5:6]
         V2 = view(V, 2:2, :)
-        @test MemoryLayout(typeof(V2)) == BandedMatrices.BandedColumnMajor()
+        @test MemoryLayout(typeof(V2)) == BandedMatrices.BandedColumns{ColumnMajor}()
         @test bandwidths(V2) == (-2,2)
         @test BandedMatrix(V2) == A[3:3,4:6]
         V2 = view(V, 2:2, 2:3)
-        @test MemoryLayout(typeof(V2)) == BandedMatrices.BandedColumnMajor()
+        @test MemoryLayout(typeof(V2)) == BandedMatrices.BandedColumns{ColumnMajor}()
         @test bandwidths(V2) == (-1,1)
         @test BandedMatrix(V2) == A[3:3,5:6]
     end

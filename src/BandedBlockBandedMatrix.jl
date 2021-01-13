@@ -391,23 +391,14 @@ const SubBandedBlockBandedMatrix{T,R1,R2} =
     SubArray{T,2,<:BandedBlockBandedMatrix{T},<:Tuple{BlockSlice{R1},BlockSlice{R2}}}
 
 
-sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice1,BlockSlice1}}) = BandedColumnMajor()
-sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice{<:BlockIndexRange1}}}) = BandedColumnMajor()
-sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice1}}) = BandedColumnMajor()
-sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice1,BlockSlice{<:BlockIndexRange1}}}) = BandedColumnMajor()
-sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockRange1}}}) = BandedBlockBandedColumnMajor()
-sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice1,BlockSlice{<:BlockRange1}}}) = BandedBlockBandedColumnMajor()
-sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice1}}) = BandedBlockBandedColumnMajor()
-sublayout(::BandedBlockBandedColumnMajor, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockIndexRange1}}}) = BandedBlockBandedColumnMajor()
-
-sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice1,BlockSlice1}}) = BandedColumns{UnknownLayout}()
-sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice{<:BlockIndexRange1}}}) = BandedColumns{UnknownLayout}()
-sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice1}}) = BandedColumns{UnknownLayout}()
-sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice1,BlockSlice{<:BlockIndexRange1}}}) = BandedColumns{UnknownLayout}()
-sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockRange1}}}) = BandedBlockBandedColumns{UnknownLayout}()
-sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice1,BlockSlice{<:BlockRange1}}}) = BandedBlockBandedColumns{UnknownLayout}()
-sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice1}}) = BandedBlockBandedColumns{UnknownLayout}()
-sublayout(::BandedBlockBandedColumns, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockIndexRange1}}}) = BandedBlockBandedColumns{UnknownLayout}()
+sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice1,BlockSlice1}} = bandedcolumns(sublayout(ML(), II))
+sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice{<:BlockIndexRange1}}} = bandedcolumns(sublayout(ML(), II))
+sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice1}} = bandedcolumns(sublayout(ML(), II))
+sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice1,BlockSlice{<:BlockIndexRange1}}} = bandedcolumns(sublayout(ML(), II))
+sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockRange1}}} = bandedblockbandedcolumns(sublayout(ML(), II))
+sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice1,BlockSlice{<:BlockRange1}}} = bandedblockbandedcolumns(sublayout(ML(), II))
+sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockRange1},BlockSlice1}} = bandedblockbandedcolumns(sublayout(ML(), II))
+sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockIndexRange1}}} = bandedblockbandedcolumns(sublayout(ML(), II))
 
 blockbandshift(A::BlockSlice, B::BlockSlice) = BandedMatrices.bandshift(Int.(A.block), Int.(B.block))
 blockbandshift(S) = blockbandshift(parentindices(S)[1],parentindices(S)[2])
@@ -434,8 +425,8 @@ sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{<:AbstractUnitRang
 sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{<:BlockedUnitRange,<:AbstractUnitRange}) = PseudoBlockArray(V)
 
 
-isbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(typeof(A)) == BandedColumnMajor()
-isbandedblockbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(typeof(A)) == BandedBlockBandedColumnMajor()
+isbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(A) isa AbstractBandedLayout
+isbandedblockbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(A) isa AbstractBandedBlockBandedLayout
 
 
 subblockbandwidths(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlice{<:BlockRange1},<:BlockSlice{<:BlockRange1}}}) =
