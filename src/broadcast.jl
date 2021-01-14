@@ -214,6 +214,15 @@ function _copyto!(_, ::BlockLayout{<:AbstractBandedLayout}, dest::AbstractMatrix
     dest
 end
 
+function _copyto!(::BandedBlockBandedColumns, ::BandedBlockBandedColumns, dest::AbstractMatrix, src::AbstractMatrix)
+    if blockbandwidths(dest) == blockbandwidths(src) && subblockbandwidths(dest) == subblockbandwidths(src)
+        copyto!(bandedblockbandeddata(dest), bandedblockbandeddata(src))
+        dest
+    else # TODO: if subblockbandwidths match we can still do something better
+        _copyto!(BandedBlockBandedLayout(), BandedBlockBandedLayout(), dest, src)
+    end
+end
+
 
 function copyto!(dest::AbstractArray, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof(identity)})
     (A,) = bc.args

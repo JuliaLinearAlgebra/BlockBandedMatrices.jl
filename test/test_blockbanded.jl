@@ -47,7 +47,7 @@ import Base.Broadcast: materialize!
 
 
         @test A[Block(1), Block(1)] isa Matrix
-        @test A[Block(1), Block(1)] == A[Block(1,1)] == BlockArrays.getblock(A, 1, 1) == Matrix(view(A, Block(1,1)))
+        @test A[Block(1), Block(1)] == A[Block(1,1)] == view(A, Block(1, 1)) == Matrix(view(A, Block(1,1)))
         @test A[1,1] == view(A,Block(1),Block(1))[1,1] == view(A,Block(1,1))[1,1] == A[Block(1,1)][1,1]  == A[Block(1),Block(1)][1,1] == 1
         @test A[2,1] == view(A,Block(2),Block(1))[1,1] == view(A,Block(2,1))[1,1] == 2
         @test A[3,1] == view(A,Block(2),Block(1))[2,1] == 3

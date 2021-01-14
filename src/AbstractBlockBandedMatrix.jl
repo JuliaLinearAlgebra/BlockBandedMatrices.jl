@@ -172,3 +172,15 @@ function fill!(A::AbstractBlockBandedMatrix, val::Any)
   fill!(A.data, val)
   A
 end
+
+
+function ==(A::AbstractBlockBandedMatrix, B::AbstractBlockBandedMatrix)
+    axes(A) == axes(B) || return false
+    blockisequal(axes(A), axes(B)) || return Base.invoke(==, Tuple{AbstractArray,AbstractArray}, A, B)
+    l,u = max.(blockbandwidths(A), blockbandwidths(B))
+    N = blocksize(A,1)
+    for J = blockaxes(A,2), K = max(Block(1),J-u):min(J+l,Block(N))
+        view(A, K, J) == view(B, K, J) || return false
+    end
+    return true 
+end

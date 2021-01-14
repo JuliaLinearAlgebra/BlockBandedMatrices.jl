@@ -66,14 +66,16 @@ end
 blockbandwidths(A::BlockArray) = bandwidths(A.blocks)
 isblockbanded(A::BlockArray) = isbanded(A.blocks)
 
-@inline function getblock(block_arr::BlockBidiagonal{T,VT}, K::Int, J::Int) where {T,VT<:AbstractMatrix}
+@inline function BlockArrays.viewblock(block_arr::BlockBidiagonal{T,VT}, KJ::Block{2}) where {T,VT<:AbstractMatrix}
+    K,J = KJ.n
     @boundscheck blockcheckbounds(block_arr, K, J)
     l,u = blockbandwidths(block_arr)
     -l ≤ (J-K) ≤ u || return convert(VT, Zeros{T}(length.(getindex.(axes(block_arr),(Block(K),Block(J))))...))
     block_arr.blocks[K,J]
 end
 
-@inline function getblock(block_arr::BlockTridiagonal{T,VT}, K::Int, J::Int) where {T,VT<:AbstractMatrix}
+@inline function BlockArrays.viewblock(block_arr::BlockTridiagonal{T,VT}, KJ::Block{2}) where {T,VT<:AbstractMatrix}
+    K,J = KJ.n
     @boundscheck blockcheckbounds(block_arr, K, J)
     abs(J-K) ≥ 2 && return convert(VT, Zeros{T}(length.(getindex.(axes(block_arr),(Block(K),Block(J))))...))
     block_arr.blocks[K,J]
@@ -114,3 +116,11 @@ for op in (:-, :+)
         end
     end
 end
+
+
+###
+# Zeros
+###
+
+blockbandwidths(::Zeros) = (-1,-1)
+subblockbandwidths(::Zeros) = (-1,-1)

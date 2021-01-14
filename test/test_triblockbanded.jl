@@ -57,7 +57,7 @@ import BlockArrays: BlockedUnitRange, blockisequal
 
         @test blocksize(V) == (3,1)
         V2 = view(V, Block(1), Block(1))
-        @test MemoryLayout(typeof(V2)) == BandedColumnMajor()
+        @test MemoryLayout(V2) isa BandedMatrices.BandedColumns{ColumnMajor}
 
         b = rand(size(V,2))
         @test (similar(b, size(V,1)) .= MulAdd(V, b)) ≈ V*b

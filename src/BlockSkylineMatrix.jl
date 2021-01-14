@@ -300,23 +300,6 @@ BroadcastStyle(::Type{<:BlockBandedMatrix}) = BlockBandedStyle()
 zeroblock(A::BlockSkylineMatrix, K::Int, J::Int) =
     Matrix(Zeros{eltype(A)}(length.(getindex.(axes(A),(Block(K),Block(J))))))
 
-@inline function getblock(A::BlockSkylineMatrix, K::Int, J::Int)
-    @boundscheck blockcheckbounds(A, K, J)
-    if -A.block_sizes.l[J] ≤ J - K ≤ A.block_sizes.u[J]
-        convert(Matrix, view(A, Block(K, J)))
-    else
-        zeroblock(A, K, J)
-    end
-end
-
-# @inline function Base.getindex(block_arr::BlockArray{T,N}, blockindex::BlockIndex{N}) where {T,N}
-#     @boundscheck checkbounds(block_arr.blocks, blockindex.I...)
-#     @inbounds block = block_arr.blocks[blockindex.I...]
-#     @boundscheck checkbounds(block, blockindex.α...)
-#     @inbounds v = block[blockindex.α...]
-#     return v
-# end
-
 
 ###########################
 # AbstractArray Interface #
@@ -366,48 +349,7 @@ end
     return A
 end
 
-# @propagate_inbounds function Base.setindex!(block_array::BlockArray{T, N}, v, block_index::BlockIndex{N}) where {T,N}
-#     getblock(block_array, block_index.I...)[block_index.α...] = v
-# end
 
-########
-# Misc #
-########
-
-# @generated function Base.Array(block_array::BlockArray{T, N, R}) where {T,N,R}
-#     # TODO: This will fail for empty block array
-#     return quote
-#         block_sizes = block_array.block_sizes
-#         arr = similar(block_array.blocks[1], size(block_array)...)
-#         @nloops $N i i->(1:nblocks(block_sizes, i)) begin
-#             block_index = @ntuple $N i
-#             indices = globalrange(block_sizes, block_index)
-#             arr[indices...] = getblock(block_array, block_index...)
-#         end
-#
-#         return arr
-#     end
-# end
-#
-# @generated function Base.copyto!(block_array::BlockArray{T, N, R}, arr::R) where {T,N,R <: AbstractArray}
-#     return quote
-#         block_sizes = block_array.block_sizes
-#
-#         @nloops $N i i->(1:nblocks(block_sizes, i)) begin
-#             block_index = @ntuple $N i
-#             indices = globalrange(block_sizes, block_index)
-#             copyto!(getblock(block_array, block_index...), arr[indices...])
-#         end
-#
-#         return block_array
-#     end
-# end
-#
-# function Base.fill!(block_array::BlockArray, v)
-#     for block in block_array.blocks
-#         fill!(block, v)
-#     end
-# end
 
 
 ##################
@@ -417,7 +359,7 @@ end
 #   with StridedMatrix.
 ##################
 
-const BlockBandedBlock{T} = SubArray{T,2,<:BlockSkylineMatrix,<:Tuple{<:BlockSlice1,<:BlockSlice1},false}
+const BlockBandedBlock{T} = SubArray{T,2,<:BlockSkylineMatrix,<:Tuple{BlockSlice1,BlockSlice1},false}
 
 
 

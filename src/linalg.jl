@@ -1,6 +1,6 @@
 # BlockBandedMatrix with block range indexes is also block-banded
 const SubBlockSkylineMatrix{T,LL,UU,R1,R2} =
-    SubArray{T,2,BlockSkylineMatrix{T,LL,UU},<:Tuple{<:BlockSlice{R1},<:BlockSlice{R2}}}
+    SubArray{T,2,BlockSkylineMatrix{T,LL,UU},<:Tuple{BlockSlice{<:R1},BlockSlice{<:R2}}}
 
 
 
@@ -71,7 +71,7 @@ similar(M::MulAdd{<:AbstractBlockBandedLayout,<:DiagonalLayout}, ::Type{T}) wher
 
 
 
-function blockbandwidths(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockRange1}) where {LL,UU}
+function blockbandwidths(V::SubBlockSkylineMatrix{<:Any,LL,UU,<:BlockRange1,<:BlockRange1}) where {LL,UU}
     A = parent(V)
 
     KR = parentindices(V)[1].block.indices[1]
@@ -87,13 +87,14 @@ end
 # BlockIndexRange subblocks
 ####
 
+sublayout(::AbstractBlockBandedLayout, ::Type{<:Tuple{<:BlockSlice{<:BlockRange1}, <:BlockSlice{<:BlockRange1}}}) = BlockBandedLayout()
 
-sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{BlockRange1}}}) = BlockBandedColumnMajor()
-sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{Block1}}}) = ColumnMajor()
-sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{BlockIndexRange1}}}) = ColumnMajor()
-sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{BlockIndexRange1}, <:BlockSlice{BlockIndexRange1}}}) = ColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{<:BlockRange1}, <:BlockSlice{<:BlockRange1}}}) = BlockBandedColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{<:BlockRange1}, <:BlockSlice{Block1}}}) = ColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{<:BlockRange1}, <:BlockSlice{<:BlockIndexRange1}}}) = ColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{<:BlockIndexRange1}, <:BlockSlice{<:BlockIndexRange1}}}) = ColumnMajor()
 
-isblockbanded(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlice{BlockRange1}, <:BlockSlice{BlockRange1}}}) =
+isblockbanded(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlice{<:BlockRange1}, <:BlockSlice{<:BlockRange1}}}) =
     isblockbanded(parent(V))
 
 sub_materialize(::AbstractBlockBandedLayout, V, _) = BlockBandedMatrix(V)
@@ -113,10 +114,10 @@ function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:Union
     p = unsafe_convert(Ptr{T}, view(A, first(KR), J))
 end
 
-strides(V::SubBlockSkylineMatrix{<:Any,LL,UU,BlockRange1,BlockIndexRange1}) where {LL,UU} =
+strides(V::SubBlockSkylineMatrix{<:Any,LL,UU,<:BlockRange1,<:BlockIndexRange1}) where {LL,UU} =
     (1,parent(V).block_sizes.block_strides[Int(Block(parentindices(V)[2]))])
 
-function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,BlockRange1,BlockIndexRange1}) where {T,LL,UU}
+function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:BlockRange1,<:BlockIndexRange1}) where {T,LL,UU}
     A = parent(V)
     JR = parentindices(V)[2]
     K = first(parentindices(V)[1].block)
