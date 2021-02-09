@@ -220,6 +220,8 @@ BandedBlockBandedMatrix(A::AbstractMatrix{T}) where T = BandedBlockBandedMatrix{
 BandedBlockBandedMatrix(A::AbstractMatrix, rdims::AbstractVector{Int}, cdims::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
     BandedBlockBandedMatrix(A, (blockedrange(rdims), blockedrange(cdims)), lu, λμ)
 
+copy(B::BandedBlockBandedMatrix) = _BandedBlockBandedMatrix(copy(B.data), B.raxis, blockbandwidths(B), subblockbandwidths(B))
+
 similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
     BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
 
