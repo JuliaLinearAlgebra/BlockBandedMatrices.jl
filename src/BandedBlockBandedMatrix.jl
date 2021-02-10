@@ -220,6 +220,15 @@ BandedBlockBandedMatrix(A::AbstractMatrix{T}) where T = BandedBlockBandedMatrix{
 BandedBlockBandedMatrix(A::AbstractMatrix, rdims::AbstractVector{Int}, cdims::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
     BandedBlockBandedMatrix(A, (blockedrange(rdims), blockedrange(cdims)), lu, λμ)
 
+copy(B::BandedBlockBandedMatrix) = _BandedBlockBandedMatrix(copy(B.data), B.raxis, blockbandwidths(B), subblockbandwidths(B))
+AbstractArray{T}(B::BandedBlockBandedMatrix) where T = _BandedBlockBandedMatrix(AbstractArray{T}(B.data), B.raxis, blockbandwidths(B), subblockbandwidths(B))
+AbstractMatrix{T}(B::BandedBlockBandedMatrix) where T = _BandedBlockBandedMatrix(AbstractMatrix{T}(B.data), B.raxis, blockbandwidths(B), subblockbandwidths(B))
+convert(::Type{AbstractArray{T}}, B::BandedBlockBandedMatrix) where T = _BandedBlockBandedMatrix(convert(AbstractArray{T},B.data), B.raxis, blockbandwidths(B), subblockbandwidths(B))
+convert(::Type{AbstractMatrix{T}}, B::BandedBlockBandedMatrix) where T = _BandedBlockBandedMatrix(convert(AbstractMatrix{T},B.data), B.raxis, blockbandwidths(B), subblockbandwidths(B))
+convert(::Type{AbstractArray{T}}, B::BandedBlockBandedMatrix{T}) where T = B
+convert(::Type{AbstractMatrix{T}}, B::BandedBlockBandedMatrix{T}) where T = B
+
+
 similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
     BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
 
