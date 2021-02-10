@@ -1,5 +1,5 @@
 using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays, Test, ArrayLayouts , LinearAlgebra
-import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolsupport, blockrowsupport, colsupport, rowsupport, 
+import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolsupport, blockrowsupport, colsupport, rowsupport,
                             isbandedblockbanded, bandeddata, BandedBlockBandedColumns
 import ArrayLayouts: RangeCumsum
 
@@ -300,7 +300,7 @@ import ArrayLayouts: RangeCumsum
         @test B isa BandedBlockBandedMatrix
         @test blockbandwidths(V) == blockbandwidths(B) == (2,0)
         @test subblockbandwidths(V) == subblockbandwidths(B) == subblockbandwidths(A) == (λ,μ)
-        @test B == V == A[Block.(2:3), Block.(3:4)] 
+        @test B == V == A[Block.(2:3), Block.(3:4)]
 
         @test A[Block.(2:3), Block.(3:4)] isa BandedBlockBandedMatrix
 
@@ -503,6 +503,18 @@ import ArrayLayouts: RangeCumsum
         data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
         A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
         @test A == BandedBlockBandedMatrix(A, (2,1), (2,1)) == BandedBlockBandedMatrix{Float64}(A, (2,1), (2,1))
+    end
+
+    @testset "convert" beginm
+        l , u = 1,1
+        λ , μ = 1,1
+        N = M = 4
+        cols = rows = 1:N
+        data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
+        @test AbstractArray{Float64}(A) == AbstractMatrix{Float64}(A) == AbstractArray{Int}(A) == AbstractMatrix{Int}(A) == copy(A) == A
+        @test convert(AbstractArray{Float64}, A) == convert(AbstractMatrix{Float64}, A) == A
+        @test convert(AbstractArray{Int}, A) ≡ convert(AbstractMatrix{Int}, A) ≡ A
     end
 end
 
