@@ -14,10 +14,4 @@ makedocs(modules=[BlockBandedMatrices],
 
 deploydocs(
     repo   = "github.com/JuliaMatrices/BlockBandedMatrices.jl.git",
-    latest = "master",
-    julia  = "0.6",
-    osname = "linux",
-    target = "build",
-    deps   = nothing,
-    make   = nothing
     )
