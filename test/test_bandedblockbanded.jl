@@ -505,7 +505,7 @@ import ArrayLayouts: RangeCumsum
         @test A == BandedBlockBandedMatrix(A, (2,1), (2,1)) == BandedBlockBandedMatrix{Float64}(A, (2,1), (2,1))
     end
 
-    @testset "convert" beginm
+    @testset "convert" begin
         l , u = 1,1
         λ , μ = 1,1
         N = M = 4
