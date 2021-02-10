@@ -1,8 +1,7 @@
 # BlockBandedMatrices.jl
 A Julia package for representing block-banded matrices and banded-block-banded matrices
 
-[![Travis](https://travis-ci.org/JuliaMatrices/BlockBandedMatrices.jl.svg?branch=master)](https://travis-ci.org/JuliaMatrices/BlockBandedMatrices.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/a300xe23ltjbebbf?svg=true)](https://ci.appveyor.com/project/dlfivefifty/blockbandedmatrices-jl)
+[![Build Status](https://github.com/JuliaMatrices/BlockBandedMatrices.jl/workflows/CI/badge.svg)](https://github.com/JuliaMatrices/BlockBandedMatrices.jl/actions)
 [![codecov](https://codecov.io/gh/JuliaMatrices/BlockBandedMatrices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaMatrices/BlockBandedMatrices.jl)
 
 
