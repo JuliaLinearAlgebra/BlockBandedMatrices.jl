@@ -12,6 +12,7 @@ function blockbandwidths(P::PseudoBlockMatrix{<:Any,<:Diagonal})
     (0,0)
 end
 
+blockbandwidths(::Diagonal) = (0,0)
 bandeddata(P::PseudoBlockMatrix) = bandeddata(P.blocks)
 bandwidths(P::PseudoBlockMatrix) = bandwidths(P.blocks)
 
