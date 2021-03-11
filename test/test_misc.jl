@@ -105,4 +105,23 @@ end
         @test A-I == mortar(Tridiagonal(fill([1 2; 1 2],3), fill([2 4; 3 3],4), fill([4 5; 4 5],3))) == Matrix(A) - I
         @test I-A == mortar(Tridiagonal(fill(-[1 2; 1 2],3), fill([-2 -4; -3 -3],4), fill(-[4 5; 4 5],3))) == I - Matrix(A)
     end
+
+    @testset "DiagonalBlock" begin
+        D = Diagonal(PseudoBlockVector(randn(6), 1:3))
+        D̃ = BandedBlockBandedMatrix(D)
+        @test D̃ == D
+        @test blockbandwidths(D) == blockbandwidths(D̃) == subblockbandwidths(D) == subblockbandwidths(D̃) == (0,0)
+
+        @test @inferred(D[Block(2,2)]) isa BandedMatrix
+        @test D[Block(2,3)] isa BandedMatrix
+        @test bandwidths(D[Block(2,2)]) == (0,0)
+        @test bandwidths(D[Block(2,3)]) == (-720,-720)
+        @test D[Block(2,2)] == D[2:3,2:3]
+        @test D[Block(2,3)] == zeros(2,3)
+
+        @test D[Block.(1:2),Block.(2:3)] isa BandedBlockBandedMatrix
+        @test D[Block.(1:2),Block.(2:3)] == D[1:3,2:6]
+        @test blockbandwidths(D[Block.(1:2),Block.(2:3)]) == (1,-1)
+        @test subblockbandwidths(D[Block.(1:2),Block.(2:3)]) == (0,0)
+    end
 end

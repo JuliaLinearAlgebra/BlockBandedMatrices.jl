@@ -294,8 +294,14 @@ bandwidths given by `subblockbandwidths(A)`.
 """
 subblockbandwidths(A::BandedBlockBandedMatrix) = (A.λ, A.μ)
 
-# default is to use bandwidth
-subblockbandwidths(A::AbstractMatrix) = bandwidths(A)
+# default is to use whole block
+_subblockbandwidths(A::AbstractMatrix, ::NTuple{2,OneTo{Int}}) = bandwidths(A)
+function _subblockbandwidths(A::AbstractMatrix, _)
+    M,N = map(maximum, blocksizes(A))
+    M-1,N-1
+end
+
+subblockbandwidths(A::AbstractMatrix) = _subblockbandwidths(A, axes(A))
 
 """
     subblockbandwidth(A, i)

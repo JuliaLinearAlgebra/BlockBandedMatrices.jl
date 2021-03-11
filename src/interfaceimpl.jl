@@ -125,3 +125,12 @@ end
 
 blockbandwidths(::Zeros) = (-1,-1)
 subblockbandwidths(::Zeros) = (-1,-1)
+
+
+###
+# DiagonalBlockMatrix
+###
+
+sublayout(::DiagonalLayout{L}, inds::Type{<:NTuple{2,BS}}) where {L,BS<:BlockSlice{<:BlockRange1}} = bandedblockbandedcolumns(sublayout(L(),Tuple{BS}))
+subblockbandwidths(::Diagonal) = (0,0)
+bandedblockbandeddata(D::Diagonal) = permutedims(D.diag)
