@@ -294,8 +294,14 @@ bandwidths given by `subblockbandwidths(A)`.
 """
 subblockbandwidths(A::BandedBlockBandedMatrix) = (A.λ, A.μ)
 
-# default is to use bandwidth
-subblockbandwidths(A::AbstractMatrix) = bandwidths(A)
+# default is to use whole block
+_subblockbandwidths(A::AbstractMatrix, ::NTuple{2,OneTo{Int}}) = bandwidths(A)
+function _subblockbandwidths(A::AbstractMatrix, _)
+    M,N = map(maximum, blocksizes(A))
+    M-1,N-1
+end
+
+subblockbandwidths(A::AbstractMatrix) = _subblockbandwidths(A, axes(A))
 
 """
     subblockbandwidth(A, i)
@@ -436,6 +442,9 @@ sub_materialize(::AbstractBandedBlockBandedLayout, V, _) = BandedBlockBandedMatr
 sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{<:BlockedUnitRange,<:BlockedUnitRange}) = BandedBlockBandedMatrix(V)
 sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{<:AbstractUnitRange,<:BlockedUnitRange}) = PseudoBlockArray(V)
 sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{<:BlockedUnitRange,<:AbstractUnitRange}) = PseudoBlockArray(V)
+
+
+sub_materialize(::AbstractBandedLayout, V, ::Tuple{<:BlockedUnitRange,<:BlockedUnitRange}) = BandedMatrix(V)
 
 
 isbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(A) isa AbstractBandedLayout
