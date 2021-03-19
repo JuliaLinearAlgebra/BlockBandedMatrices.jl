@@ -3,8 +3,8 @@ checkbandwidths(N, M, l::AbstractVector{Int}, u::AbstractVector{Int}) =
     throw(DimensionMismatch("For a matrix of $(N)×$(M) blocks, $(M) lower and upper column bandwidths are required"))
 
 #### Routines for BandedSizes
-function bb_blockstarts(axes, l::AbstractVector{Int}, u::AbstractVector{Int})
-    N,M = blocksize.(axes,1)
+function bb_blockstarts(ax, l::AbstractVector{Int}, u::AbstractVector{Int})
+    N,M = blocksize.(ax,1)
     L,U = maximum(l), maximum(u)
     b_start = BandedMatrix{Int}(undef, (N, M), (L, U))
     -L > U && return b_start
@@ -15,10 +15,10 @@ function bb_blockstarts(axes, l::AbstractVector{Int}, u::AbstractVector{Int})
     for J = 1:M
         KR = Block.(max(1,J-u[J]):min(J+l[J],N))
         if !isempty(KR)
-            b_start[Int.(KR),J] .= ind_shift .+ first.(getindex.(Ref(axes[1]),KR)) .- first(axes[1][KR[1]]) .+ 1
+            b_start[Int.(KR),J] .= ind_shift .+ first.(getindex.(Ref(ax[1]),KR)) .- first(ax[1][KR[1]]) .+ 1
 
-            num_rows = length(axes[1][KR])
-            num_cols = length(axes[2][Block(J)])
+            num_rows = length(ax[1][KR])
+            num_cols = length(ax[2][Block(J)])
             ind_shift += num_rows*num_cols
         end
     end

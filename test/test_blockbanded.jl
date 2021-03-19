@@ -35,7 +35,7 @@ import Base.Broadcast: materialize!
         N = M = 4
         cols = rows = 1:N
         A = BlockBandedMatrix{Int}(undef, rows,cols, (l,u))
-        A.data .= 1:length(A.data)
+        A.data .= 1:70
 
         @test A[1,1] == 1
         @test A[1,3] == 10
