@@ -81,8 +81,8 @@ blockbanded_blockrowstop(A, i::BlockRange) = blockbanded_blockrowstop(A, maximum
 
 const AllBlockBandedLayout{UPLO,UNIT} = Union{AbstractBlockBandedLayout,TriangularLayout{UPLO,UNIT,<:AbstractBlockBandedLayout}}
 
-@inline blockcolsupport(::AllBlockBandedLayout, A, i) = blockbanded_blockcolstart(A,i):blockbanded_blockcolstop(A,i)
-@inline blockrowsupport(::AllBlockBandedLayout, A, i) = blockbanded_blockrowstart(A,i):blockbanded_blockrowstop(A,i)
+@inline blockcolsupport(::AllBlockBandedLayout, A, i) = isempty(i) ? (Block(1):Block(0)) : blockbanded_blockcolstart(A,i):blockbanded_blockcolstop(A,i)
+@inline blockrowsupport(::AllBlockBandedLayout, A, i) = isempty(i) ? (Block(1):Block(0)) : blockbanded_blockrowstart(A,i):blockbanded_blockrowstop(A,i)
 
 
 # length of i-the column/row
