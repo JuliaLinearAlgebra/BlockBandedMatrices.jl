@@ -47,7 +47,7 @@ function similar(M::MulAdd{<:AbstractBlockBandedLayout,<:AbstractBlockBandedLayo
     BlockSkylineMatrix{T}(undef, (axes(A,1),axes(B,2)), (l,u))
 end
 
-function similar(M::MulAdd{BandedBlockBandedColumnMajor,BandedBlockBandedColumnMajor}, ::Type{T}) where T
+function similar(M::MulAdd{<:AbstractBandedBlockBandedLayout,<:AbstractBandedBlockBandedLayout}, ::Type{T}) where T
     A,B = M.A, M.B
 
     if !blockisequal(axes(A,2), axes(B,1))
@@ -62,8 +62,12 @@ function similar(M::MulAdd{BandedBlockBandedColumnMajor,BandedBlockBandedColumnM
         end
     end
     n,m = size(A,1), size(B,2)
+    Al,Au = blockbandwidths(A)
+    Bl,Bu = blockbandwidths(B)
+    Aλ,Aμ = subblockbandwidths(A)
+    Bλ,Bμ = subblockbandwidths(B)
 
-    BandedBlockBandedMatrix{T}(undef, (axes(A,1),axes(B,2)), (A.l+B.l, A.u+B.u), (A.λ+B.λ, A.μ+B.μ))
+    BandedBlockBandedMatrix{T}(undef, (axes(A,1),axes(B,2)), (Al+Bl, Au+Bu), (Aλ+Bλ, Aμ+Bμ))
 end
 
 similar(M::MulAdd{<:DiagonalLayout,<:AbstractBlockBandedLayout}, ::Type{T}) where T = similar(M.B,T)
