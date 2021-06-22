@@ -88,7 +88,7 @@ import ArrayLayouts: RangeCumsum
         λ , μ = 1,2
         N = M = 4
         cols = rows = 1:N
-        data = reshape(Vector(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
+        data = reshape(Vector(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
         A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
 
         @test A.l == l == blockbandwidth(A,1)
@@ -265,7 +265,7 @@ import ArrayLayouts: RangeCumsum
         λ , μ = 1,2
         N = M = 4
         cols = rows = 1:N
-        data = reshape(Vector(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
+        data = reshape(Vector(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
         A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
 
         @test_throws BandError A[1,4] = 5
@@ -276,7 +276,7 @@ import ArrayLayouts: RangeCumsum
         rows = 1:5
         cols = 1:6
 
-        data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), (λ+μ+1, (l+u+1)*sum(cols)))
+        data = reshape(Vector{Float64}(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
         A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
         @test_throws BandError A[1,1] = 5
 
