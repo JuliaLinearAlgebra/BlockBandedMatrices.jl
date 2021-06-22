@@ -80,9 +80,9 @@ function materialize!(Mul::MatLmulVec{<:AdjQRPackedQLayout{<:AbstractBlockBanded
     l,u = blockbandwidths(A)
     N,M = blocksize(A)
     # impose block structure
-    ax1 = (axes(A,1),)
-    τ  = PseudoBlockArray(Q.τ, ax1)
-    B = PseudoBlockArray(Bin, ax1)
+    ax1,ax2 = axes(A)
+    τ  = PseudoBlockArray(Q.τ, (length(ax1) ≤ length(ax2) ? ax1 : ax2,))
+    B = PseudoBlockArray(Bin, (ax1,))
     for K = 1:min(N,M)
         KR = Block.(K:min(K+l,N))
         V = view(A,KR,Block(K))
@@ -97,9 +97,9 @@ function materialize!(Mul::MatLmulVec{<:AdjQLPackedQLayout{<:AbstractBlockBanded
     l,u = blockbandwidths(A)
     N,M = blocksize(A)
     # impose block structure
-    ax1 = (axes(A,1),)
-    τ  = PseudoBlockArray(Q.τ, ax1)
-    B = PseudoBlockArray(Mul.B, ax1)
+    ax1,ax2 = axes(A)
+    τ  = PseudoBlockArray(Q.τ, (length(ax1) ≤ length(ax2) ? ax1 : ax2,))
+    B = PseudoBlockArray(Mul.B, (ax1,))
     for K = N:-1:1
         KR = Block.(max(1,K-u):K)
         V = view(A,KR,Block(K))
@@ -116,9 +116,9 @@ function materialize!(Mul::MatLmulMat{<:AdjQRPackedQLayout{<:AbstractBlockBanded
     l,u = blockbandwidths(A)
     N,M = blocksize(A)
     # impose block structure
-    ax1 = (axes(A,1),)
-    τ  = PseudoBlockArray(Q.τ, ax1)
-    B = PseudoBlockArray(Bin, (axes(A,1),axes(Bin,2)))
+    ax1,ax2 = axes(A)
+    τ  = PseudoBlockArray(Q.τ, (length(ax1) ≤ length(ax2) ? ax1 : ax2,))
+    B = PseudoBlockArray(Bin, (ax1,axes(Bin,2)))
     for K = 1:min(N,M), J = 1:blocksize(Bin,2)
         KR = Block.(K:min(K+l,N))
         V = view(A,KR,Block(K))
