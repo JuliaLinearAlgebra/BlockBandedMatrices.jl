@@ -1,6 +1,6 @@
 using ArrayLayouts, BlockBandedMatrices, BandedMatrices, BlockArrays, LinearAlgebra, Test
-import BlockBandedMatrices: AbstractBandedBlockBandedMatrix, block, blockindex
-import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle, bandeddata, BandedColumns
+import BlockBandedMatrices: AbstractBandedBlockBandedMatrix, block, blockindex, blockcolsupport, blockrowsupport
+import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle, bandeddata, BandedColumns, _BandedMatrix
 
 struct MyBandedBlockBandedMatrix <: AbstractBandedBlockBandedMatrix{Float64}
     A::BlockMatrix{Float64}
@@ -123,5 +123,22 @@ end
         @test D[Block.(1:2),Block.(2:3)] == D[1:3,2:6]
         @test blockbandwidths(D[Block.(1:2),Block.(2:3)]) == (1,-1)
         @test subblockbandwidths(D[Block.(1:2),Block.(2:3)]) == (0,0)
+    end
+
+    @testset "Block-BandedMatrix" begin
+        a = blockedrange(1:5)
+        B = _BandedMatrix(PseudoBlockArray(randn(5,length(a)),(Base.OneTo(5),a)), a, 3, 1)
+        @test blockcolsupport(B,1) == Block.(1:3)
+        @test blockcolsupport(B,3) == Block.(2:4)
+        @test blockrowsupport(B,1) == Block.(1:2)
+        @test blockrowsupport(B,4) == Block.(3:5)
+
+        Q = Eye((a,))[:,Block(2)]
+        @test Q isa BandedMatrix
+        @test blockcolsupport(Q,1) == Block.(2:2)
+
+        Q = Eye((a,))[Block(2),:]
+        @test Q isa BandedMatrix
+        @test blockrowsupport(Q,1) == Block.(2:2)
     end
 end
