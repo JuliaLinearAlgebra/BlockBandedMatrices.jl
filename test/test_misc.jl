@@ -132,5 +132,13 @@ end
         @test blockcolsupport(B,3) == Block.(2:4)
         @test blockrowsupport(B,1) == Block.(1:2)
         @test blockrowsupport(B,4) == Block.(3:5)
+
+        Q = Eye((a,))[:,Block(2)]
+        @test Q isa BandedMatrix
+        @test blockcolsupport(Q,1) == Block.(2:2)
+
+        Q = Eye((a,))[Block(2),:]
+        @test Q isa BandedMatrix
+        @test blockrowsupport(Q,1) == Block.(2:2)
     end
 end

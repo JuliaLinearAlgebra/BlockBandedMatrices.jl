@@ -150,3 +150,7 @@ function blockrowsupport(::AbstractBandedLayout, B, k)
     rs = rowsupport(B,m[Block.(k)])
     findblock(n,first(rs)):findblock(n,last(rs))
 end
+
+# ambiguity
+sub_materialize(::AbstractBandedLayout, V, ::Tuple{BlockedUnitRange,Base.OneTo{Int}}) = BandedMatrix(V)
+sub_materialize(::AbstractBandedLayout, V, ::Tuple{Base.OneTo{Int},BlockedUnitRange}) = BandedMatrix(V)
