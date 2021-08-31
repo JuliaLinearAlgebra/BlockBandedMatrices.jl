@@ -134,3 +134,19 @@ subblockbandwidths(::Zeros) = (-1,-1)
 sublayout(::DiagonalLayout{L}, inds::Type{<:NTuple{2,BS}}) where {L,BS<:BlockSlice{<:BlockRange1}} = bandedblockbandedcolumns(sublayout(L(),Tuple{BS}))
 subblockbandwidths(::Diagonal) = (0,0)
 bandedblockbandeddata(D::Diagonal) = permutedims(D.diag)
+
+###
+# Block-BandedMatrix
+###
+
+function blockcolsupport(::AbstractBandedLayout, B, j)
+    m,n = axes(B)
+    cs = colsupport(B,n[Block.(j)])
+    findblock(m,first(cs)):findblock(m,last(cs))
+end
+
+function blockrowsupport(::AbstractBandedLayout, B, k)
+    m,n = axes(B)
+    rs = rowsupport(B,m[Block.(k)])
+    findblock(n,first(rs)):findblock(n,last(rs))
+end
