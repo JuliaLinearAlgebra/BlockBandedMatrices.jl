@@ -26,7 +26,8 @@ import ArrayLayouts: BlasMatLmulVec, MatLmulVec, MatLmulMat,
                     triangulardata, sublayout, sub_materialize,
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
                     DiagonalLayout, MulAdd, mul, colsupport, rowsupport,
-                    _qr, _factorize, _copyto!, zero!, layout_replace_in_print_matrix
+                    _qr, _factorize, _copyto!, zero!, layout_replace_in_print_matrix,
+                    transposelayout
 
 import BlockArrays: blocksize, blockcheckbounds, BlockedUnitRange, blockisequal, DefaultBlockAxis,
                         Block, BlockSlice, unblock, block, blockindex,
