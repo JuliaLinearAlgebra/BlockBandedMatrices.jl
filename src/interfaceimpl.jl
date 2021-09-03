@@ -151,6 +151,12 @@ function blockrowsupport(::AbstractBandedLayout, B, k)
     findblock(n,first(rs)):findblock(n,last(rs))
 end
 
+# fixed block sizes, we can figure out how far we encroach other blocks by looking at last column
+function blockbandwidths(::AbstractBandedLayout, (a,b)::Tuple{BlockedUnitRange{<:AbstractRange}, OneTo{Int}}, A)
+    l,u = bandwidths(A)
+    Int(findblock(a,l + length(b)))-1,0
+end
+
 # ambiguity
 sub_materialize(::AbstractBandedLayout, V, ::Tuple{BlockedUnitRange,Base.OneTo{Int}}) = BandedMatrix(V)
 sub_materialize(::AbstractBandedLayout, V, ::Tuple{Base.OneTo{Int},BlockedUnitRange}) = BandedMatrix(V)

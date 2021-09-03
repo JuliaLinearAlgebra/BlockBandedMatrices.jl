@@ -47,7 +47,8 @@ abstract type AbstractBlockBandedMatrix{T} <: AbstractBlockMatrix{T} end
 
 Returns a tuple containing the upper and lower blockbandwidth of `A`.
 """
-blockbandwidths(A::AbstractVecOrMat) = (blocksize(A,1)-1 , blocksize(A,2)-1)
+blockbandwidths(A::AbstractVecOrMat) = blockbandwidths(MemoryLayout(A), axes(A), A)
+blockbandwidths(_, _, A) = (blocksize(A,1)-1 , blocksize(A,2)-1)
 
 """
     blockbandwidth(A,i)
