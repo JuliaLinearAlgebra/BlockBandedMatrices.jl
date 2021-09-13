@@ -154,10 +154,11 @@ end
 # fixed block sizes, we can figure out how far we encroach other blocks by looking at last column
 function blockbandwidths(::AbstractBandedLayout, (a,b)::Tuple{BlockedUnitRange{<:AbstractRange}, OneTo{Int}}, A)
     l,u = bandwidths(A)
+    m = min(length(a), l + length(b))
     if u ≥ 0
-        Int(findblock(a,l + length(b)))-1,0
+        Int(findblock(a,m))-1,0
     else
-        Int(findblock(a,l + length(b)))-1,1-Int(findblock(a,1-u))
+        Int(findblock(a,m))-1,1-Int(findblock(a,min(length(a),1-u)))
     end
 end
 

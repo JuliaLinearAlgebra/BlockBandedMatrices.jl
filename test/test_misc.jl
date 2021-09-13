@@ -1,5 +1,5 @@
 using ArrayLayouts, BlockBandedMatrices, BandedMatrices, BlockArrays, LinearAlgebra, Test
-import BlockBandedMatrices: AbstractBandedBlockBandedMatrix, block, blockindex, blockcolsupport, blockrowsupport
+import BlockBandedMatrices: AbstractBandedBlockBandedMatrix, AbstractBlockBandedMatrix, block, blockindex, blockcolsupport, blockrowsupport
 import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle, bandeddata, BandedColumns, _BandedMatrix
 
 struct MyBandedBlockBandedMatrix <: AbstractBandedBlockBandedMatrix{Float64}
@@ -17,6 +17,19 @@ function Base.getindex(A::MyBandedBlockBandedMatrix, k::Int, j::Int)
 end
 
 
+struct MyBlockBandedMatrix <: AbstractBlockBandedMatrix{Float64}
+    A::BlockMatrix{Float64}
+end
+
+BlockBandedMatrices.blockbandwidths(::MyBlockBandedMatrix) = (1,1)
+Base.axes(A::MyBlockBandedMatrix) = axes(A.A)
+function Base.getindex(A::MyBlockBandedMatrix, k::Int, j::Int)
+    Kk, Jj = findblockindex(axes(A,1), k), findblockindex(axes(A,2), j)
+    -1 ≤ Int(block(Kk)-block(Jj)) ≤ 1 || return 0.0
+    A.A[k,j]
+end
+
+
 @testset "Interfaces" begin
     @testset "MyBandedBlockBandedMatrix" begin
         A = MyBandedBlockBandedMatrix(BlockMatrix(randn(6,6), 1:3, 1:3))
@@ -29,6 +42,23 @@ end
         @test A[Block(3)[2:3],Block(3)] isa BandedMatrix
         @test A[Block(3),Block(3)[1:2]] isa BandedMatrix
         @test A[Block.(1:3),Block.(1:3)] isa BandedBlockBandedMatrix
+        @test A[Block(1),Block.(2:3)] isa PseudoBlockArray
+        @test A[Block.(2:3),Block(1)] isa PseudoBlockArray
+        @test A[Block.(2:3),Block(2)[1:2]] isa PseudoBlockArray
+        @test A[Block(2)[1:2],Block.(2:3)] isa PseudoBlockArray
+    end
+
+    @testset "MyBlockBandedMatrix" begin
+        A = MyBlockBandedMatrix(BlockMatrix(randn(6,6), 1:3, 1:3))
+        @test MemoryLayout(A) isa BlockBandedMatrices.BlockBandedLayout
+        @test A[Block(3,3)] == A.A[Block(3,3)]
+        @test A[Block.(1:3),Block.(1:3)] == A
+
+        @test A[Block(3,3)] isa Matrix
+        @test A[Block(3)[2:3],Block(3)[1:2]] isa Matrix
+        @test A[Block(3)[2:3],Block(3)] isa Matrix
+        @test A[Block(3),Block(3)[1:2]] isa Matrix
+        @test A[Block.(1:3),Block.(1:3)] isa BlockBandedMatrix
         @test A[Block(1),Block.(2:3)] isa PseudoBlockArray
         @test A[Block.(2:3),Block(1)] isa PseudoBlockArray
         @test A[Block.(2:3),Block(2)[1:2]] isa PseudoBlockArray
@@ -140,5 +170,14 @@ end
         Q = Eye((a,))[Block(2),:]
         @test Q isa BandedMatrix
         @test blockrowsupport(Q,1) == Block.(2:2)
+
+        @testset "constant blocks" begin
+            a = blockedrange(Fill(2,5))
+            Q = Eye((a,))[:,Block(2)]
+            @test blockbandwidths(Q) == (1,-1)
+
+            B = _BandedMatrix(randn(5,length(a)), a, 3, 1)
+            @test blockbandwidths(B) == (4,0)
+        end
     end
 end

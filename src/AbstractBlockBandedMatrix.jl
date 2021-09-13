@@ -44,6 +44,7 @@ conjlayout(::Type{T}, ::BlockBandedRows{Lay}) where {T<:Complex,Lay} = BlockBand
 
 # A BlockBandedMatrix is a BlockMatrix, but is not a BandedMatrix
 abstract type AbstractBlockBandedMatrix{T} <: AbstractBlockMatrix{T} end
+MemoryLayout(::Type{<:AbstractBlockBandedMatrix}) = BlockBandedLayout()
 
 
 """
