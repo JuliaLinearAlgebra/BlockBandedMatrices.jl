@@ -90,15 +90,14 @@ end
 ####
 # BlockIndexRange subblocks
 ####
+sublayout(::AbstractBlockBandedLayout, ::Type{<:Tuple{<:BlockSlices, <:BlockSlices}}) = BlockBandedLayout()
 
-sublayout(::AbstractBlockBandedLayout, ::Type{<:Tuple{<:BlockSlice{<:BlockRange1}, <:BlockSlice{<:BlockRange1}}}) = BlockBandedLayout()
-
-sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{<:BlockRange1}, <:BlockSlice{<:BlockRange1}}}) = BlockBandedColumnMajor()
-sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{<:BlockRange1}, <:BlockSlice{Block1}}}) = ColumnMajor()
-sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{<:BlockRange1}, <:BlockSlice{<:BlockIndexRange1}}}) = ColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlices, <:BlockSlices}}) = BlockBandedColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlices, <:BlockSlice{Block1}}}) = ColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlices, <:BlockSlice{<:BlockIndexRange1}}}) = ColumnMajor()
 sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{<:BlockIndexRange1}, <:BlockSlice{<:BlockIndexRange1}}}) = ColumnMajor()
 
-isblockbanded(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlice{<:BlockRange1}, <:BlockSlice{<:BlockRange1}}}) =
+isblockbanded(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlices, <:BlockSlices}}) =
     isblockbanded(parent(V))
 
 sub_materialize(::AbstractBlockBandedLayout, V, _) = BlockBandedMatrix(V)

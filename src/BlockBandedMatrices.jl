@@ -26,13 +26,14 @@ import ArrayLayouts: BlasMatLmulVec, MatLmulVec, MatLmulMat,
                     triangulardata, sublayout, sub_materialize,
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
                     DiagonalLayout, MulAdd, mul, colsupport, rowsupport,
-                    _qr, _factorize, _copyto!, zero!, layout_replace_in_print_matrix
+                    _qr, _factorize, _copyto!, zero!, layout_replace_in_print_matrix,
+                    transposelayout, conjlayout
 
 import BlockArrays: blocksize, blockcheckbounds, BlockedUnitRange, blockisequal, DefaultBlockAxis,
                         Block, BlockSlice, unblock, block, blockindex,
                         _blocklengths2blocklasts, BlockIndexRange, sizes_from_blocks, BlockSlice1,
                         blockcolsupport, blockrowsupport, blockcolstart, blockcolstop, blockrowstart, blockrowstop,
-                        AbstractBlockLayout, BlockLayout, blocks, hasmatchingblocks, BlockStyle
+                        AbstractBlockLayout, BlockLayout, blocks, hasmatchingblocks, BlockStyle, BlockSlices
 
 import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrange,
                         inbands_setindex!, inbands_getindex, banded_setindex!,

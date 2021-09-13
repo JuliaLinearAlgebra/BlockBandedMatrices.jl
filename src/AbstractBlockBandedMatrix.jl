@@ -25,21 +25,26 @@ struct BlockBandedColumns{LAY} <: AbstractBlockBandedLayout end
 struct BlockBandedRows{LAY} <: AbstractBlockBandedLayout end
 
 const BandedBlockBandedColumnMajor = BandedBlockBandedColumns{ColumnMajor}
-const BandedBlockBandedRowMajor = BandedBlockBandedColumns{RowMajor}
+const BandedBlockBandedRowMajor = BandedBlockBandedRows{ColumnMajor}
 const BlockBandedColumnMajor = BlockBandedColumns{ColumnMajor}
-const BlockBandedRowMajor = BlockBandedColumns{RowMajor}
+const BlockBandedRowMajor = BlockBandedRows{ColumnMajor}
 
-transposelayout(::BandedBlockBandedColumnMajor) = BandedBlockBandedRowMajor()
-transposelayout(::BandedBlockBandedRowMajor) = BandedBlockBandedColumnMajor()
-transposelayout(::BlockBandedColumnMajor) = BlockBandedRowMajor()
-transposelayout(::BlockBandedRowMajor) = BlockBandedColumnMajor()
+transposelayout(::BandedBlockBandedColumns{Lay}) where Lay = BandedBlockBandedRows{Lay}()
+transposelayout(::BandedBlockBandedRows{Lay}) where Lay = BandedBlockBandedColumns{Lay}()
+transposelayout(::BlockBandedColumns{Lay}) where Lay = BlockBandedRows{Lay}()
+transposelayout(::BlockBandedRows{Lay}) where Lay = BlockBandedColumns{Lay}()
 
+conjlayout(::Type{T}, ::BandedBlockBandedColumns{Lay}) where {T<:Complex,Lay} = BandedBlockBandedColumns{typeof(conjlayout(T,Lay))}()
+conjlayout(::Type{T}, ::BandedBlockBandedRows{Lay}) where {T<:Complex,Lay} = BandedBlockBandedRows{typeof(conjlayout(T,Lay))}()
+conjlayout(::Type{T}, ::BlockBandedColumns{Lay}) where {T<:Complex,Lay} = BlockBandedColumns{typeof(conjlayout(T,Lay))}()
+conjlayout(::Type{T}, ::BlockBandedRows{Lay}) where {T<:Complex,Lay} = BlockBandedRows{typeof(conjlayout(T,Lay))}()
 
 
 # AbstractBandedMatrix must implement
 
 # A BlockBandedMatrix is a BlockMatrix, but is not a BandedMatrix
 abstract type AbstractBlockBandedMatrix{T} <: AbstractBlockMatrix{T} end
+MemoryLayout(::Type{<:AbstractBlockBandedMatrix}) = BlockBandedLayout()
 
 
 """
@@ -47,7 +52,8 @@ abstract type AbstractBlockBandedMatrix{T} <: AbstractBlockMatrix{T} end
 
 Returns a tuple containing the upper and lower blockbandwidth of `A`.
 """
-blockbandwidths(A::AbstractVecOrMat) = (blocksize(A,1)-1 , blocksize(A,2)-1)
+blockbandwidths(A::AbstractVecOrMat) = blockbandwidths(MemoryLayout(A), axes(A), A)
+blockbandwidths(_, _, A) = (blocksize(A,1)-1 , blocksize(A,2)-1)
 
 """
     blockbandwidth(A,i)
