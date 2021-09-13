@@ -51,6 +51,8 @@ end
     @testset "MyBlockBandedMatrix" begin
         A = MyBlockBandedMatrix(BlockMatrix(randn(6,6), 1:3, 1:3))
         @test MemoryLayout(A) isa BlockBandedMatrices.BlockBandedLayout
+        @test MemoryLayout(A') isa BlockBandedMatrices.BlockBandedLayout
+        @test MemoryLayout(transpose(A)) isa BlockBandedMatrices.BlockBandedLayout
         @test A[Block(3,3)] == A.A[Block(3,3)]
         @test A[Block.(1:3),Block.(1:3)] == A
 
