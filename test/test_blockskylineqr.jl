@@ -177,6 +177,15 @@ import BlockBandedMatrices: blockcolsupport
         B = [Matrix(I,2,2); zeros(size(T,1)-2,2)]
         @test ((T - z*I)\b)[1] ≈ (F\b)[1] ≈ (F \ B)[1,1] ≈ ((T - z*I)\B)[1,1] ≈ -0.1309123477325813 + 0.28471699370329884im 
     end
+
+    @testset "BigFloat QR" begin
+        N = 5
+        A = BlockBandedMatrix{BigFloat}(undef, 1:N,1:N, (2,1))
+        A.data .= randn.()
+        @test qr(A).Q ≈ qr(Float64.(A)).Q
+        b = randn(size(A,1))
+        @test qr(A .+ 0im)\b ≈ qr(A)\b ≈ A\b
+    end
 end
 
 

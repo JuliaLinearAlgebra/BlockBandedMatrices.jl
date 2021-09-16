@@ -39,7 +39,7 @@ end
 function qr!(A::BlockBandedMatrix{T}) where T 
     M,N = blocksize(A)
     ax1 = M < N ? axes(A,1) : axes(A,2)
-    _blockbanded_qr!(A, PseudoBlockVector{T}(undef, (ax1,)))
+    _blockbanded_qr!(A, PseudoBlockVector(zeros(T,length(ax1)), (ax1,)))
 end
 
 function ql!(A::BlockBandedMatrix{T}) where T
