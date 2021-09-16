@@ -1,10 +1,8 @@
-qrf!(A,τ) = _qrf!(MemoryLayout(A),MemoryLayout(τ),A,τ)
-_qrf!(::AbstractColumnMajor,::AbstractStridedLayout,A::AbstractMatrix{T},τ::AbstractVector{T}) where T<:BlasFloat =
-    LAPACK.geqrf!(A,τ)
 _apply_qr!(::AbstractColumnMajor, ::AbstractStridedLayout, ::AbstractStridedLayout, A::AbstractMatrix{T}, τ::AbstractVector{T}, B::AbstractVecOrMat{T}) where T<:BlasReal =
     LAPACK.ormqr!('L','T',A,τ,B)
 _apply_qr!(::AbstractColumnMajor, ::AbstractStridedLayout, ::AbstractStridedLayout, A::AbstractMatrix{T}, τ::AbstractVector{T}, B::AbstractVecOrMat{T}) where T<:BlasComplex =
     LAPACK.ormqr!('L','C',A,τ,B)
+_apply_qr!(_, _, _, A::AbstractMatrix, τ::AbstractVector, B::AbstractVecOrMat) = lmul!(MatrixFactorizations.QRPackedQ(A, τ)', B)
 apply_qr!(A, τ, B) = _apply_qr!(MemoryLayout(A), MemoryLayout(τ), MemoryLayout(B), A, τ, B)
 
 qlf!(A,τ) = _qlf!(MemoryLayout(A),MemoryLayout(τ),A,τ)
@@ -30,7 +28,7 @@ function _blockbanded_qr!(A::AbstractMatrix, τ::AbstractVector, NCOLS::Block{1}
         KR = K:min(K+l,M)
         V = view(A,KR,K)
         t = view(τ,K)
-        qrf!(V,t)
+        MatrixFactorizations.qrfactUnblocked!(V,t)
         for J = K+1:min(K+u,N)
             apply_qr!(V, t, view(A,KR,J))
         end
@@ -41,7 +39,7 @@ end
 function qr!(A::BlockBandedMatrix{T}) where T 
     M,N = blocksize(A)
     ax1 = M < N ? axes(A,1) : axes(A,2)
-    _blockbanded_qr!(A, PseudoBlockVector{T}(undef, (ax1,)))
+    _blockbanded_qr!(A, PseudoBlockVector(zeros(T,length(ax1)), (ax1,)))
 end
 
 function ql!(A::BlockBandedMatrix{T}) where T
