@@ -176,6 +176,10 @@ BandedBlockBandedMatrix{T,B,R}(m::Union{AbstractMatrix, UniformScaling},
                            lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B,R<:AbstractUnitRange{Int}} =
   BandedBlockBandedMatrix{T,B,R}(m, (blockedrange(rdims),blockedrange(cdims)), lu, λμ)
 
+BandedBlockBandedMatrix{T,B,R}(m::Union{AbstractMatrix, UniformScaling}) where {T,B,R} =
+    BandedBlockBandedMatrix{T,B,R}(m, axes(m), blockbandwidths(m), subblockbandwidths(m))
+DefaultBandedBlockBandedMatrix(m::Union{AbstractMatrix, UniformScaling}) = DefaultBandedBlockBandedMatrix{eltype(m)}(m)
+
 BandedBlockBandedMatrix{T,B}(m::Union{AbstractMatrix, UniformScaling},
                             rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
                            lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B} =
