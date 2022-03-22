@@ -1,4 +1,5 @@
 using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayouts, Test
+import Base: oneto
 
 @testset "broadcasting" begin
     @testset "general" begin
@@ -24,9 +25,9 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
 
     @testset "lmul!/rmul!" begin
         N = 10
-        A = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1))
+        A = BlockBandedMatrix{Float64}(undef, oneto(N),oneto(N), (1,1))
             A.data .= randn.()
-        B = BlockBandedMatrix{Float64}(undef, 1:N,1:N, (2,2))
+        B = BlockBandedMatrix{Float64}(undef, oneto(N),oneto(N), (2,2))
         B .= (-).(A)
         @test similar(A) isa typeof(A)
         @test similar(A,Float64) isa typeof(A)
@@ -71,9 +72,9 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayo
         @test 2.0 .\ A isa typeof(A)
         @test blockbandwidths(2\A) == blockbandwidths(2.0 .\ A) == blockbandwidths(A)
 
-        A = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1),(1,1))
+        A = BandedBlockBandedMatrix{Float64}(undef, oneto(N),oneto(N), (1,1),(1,1))
             A.data .= randn.()
-        B = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (2,2),(2,2))
+        B = BandedBlockBandedMatrix{Float64}(undef, oneto(N),oneto(N), (2,2),(2,2))
         B .= (-).(A)
         @test similar(A) isa typeof(A)
         @test similar(A,Float64) isa typeof(A)
