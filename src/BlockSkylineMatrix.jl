@@ -194,7 +194,7 @@ BlockSkylineMatrix
 
 function BlockSkylineMatrix{T}(A::AbstractMatrix, block_sizes::BlockSkylineSizes) where T
     ret = BlockSkylineMatrix(Zeros{T}(size(A)), block_sizes)
-    for J = blockaxes(ret,2), K = blockcolsupport(ret, Int(J))
+    for J = blockaxes(ret,2), K = blockcolsupport(ret, J)
         kr, jr = getindex.(block_sizes.axes, (K, J))
         view(ret, K, J) .= view(A, kr, jr)
     end

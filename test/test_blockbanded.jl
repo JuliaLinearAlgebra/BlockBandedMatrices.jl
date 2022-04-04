@@ -97,20 +97,19 @@ import Base.Broadcast: materialize!
         A = BlockBandedMatrix{Int}(undef, rows,cols, (l,u))
         A.data .= 1:length(A.data)
         
-        @test @inferred(blockrowsupport(A, 1)) == Block.(1:3)
-        @test blockrowsupport(A, 2) == Block.(1:4)
-        @test blockrowsupport(A, 3) == Block.(2:4)
+        @test @inferred(blockrowsupport(A, Block(1))) == Block.(1:3)
+        @test blockrowsupport(A, Block(2)) == Block.(1:4)
+        @test blockrowsupport(A, Block(3)) == Block.(2:4)
 
-        @test @inferred(blockcolsupport(A, 1)) == Block.(1:2)
-        @test blockcolsupport(A, 2) == Block.(1:3)
-        @test blockcolsupport(A, 3) == Block.(1:4)
-        @test blockcolsupport(A, 4) == Block.(2:4)
+        @test @inferred(blockcolsupport(A, Block(1))) == Block.(1:2)
+        @test blockcolsupport(A, Block(2)) == Block.(1:3)
+        @test blockcolsupport(A, Block(3)) == Block.(1:4)
+        @test blockcolsupport(A, Block(4)) == Block.(2:4)
 
         @test @inferred(blockrowsupport(A, Block.(3:4))) == Block.(2:4)
         @test @inferred(blockcolsupport(A, Block.(1:2))) == Block.(1:3)
         
         @test @inferred(blockcolsupport(A, Block.(1:0))) == Block.(1:0)
-        @test @inferred(blockcolsupport(A, 1:0)) == Block.(1:0)
     end
 
     @testset "block-banded matrix interface for blockranges" begin

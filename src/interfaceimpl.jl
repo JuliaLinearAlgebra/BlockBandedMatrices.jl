@@ -141,13 +141,13 @@ bandedblockbandeddata(D::Diagonal) = permutedims(D.diag)
 
 function blockcolsupport(::AbstractBandedLayout, B, j)
     m,n = axes(B)
-    cs = colsupport(B,n[Block.(j)])
+    cs = colsupport(B,n[j])
     findblock(m,first(cs)):findblock(m,last(cs))
 end
 
 function blockrowsupport(::AbstractBandedLayout, B, k)
     m,n = axes(B)
-    rs = rowsupport(B,m[Block.(k)])
+    rs = rowsupport(B,m[k])
     findblock(n,first(rs)):findblock(n,last(rs))
 end
 

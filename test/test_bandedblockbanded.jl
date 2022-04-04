@@ -64,13 +64,13 @@ import ArrayLayouts: RangeCumsum
         @test BlockBandedMatrices.subblockbandwidths(A) == (l,u)
 
 
-        @test blockrowsupport(A, 1) == Block.(1:2)
-        @test blockrowsupport(A, 2) == Block.(1:3)
-        @test blockrowsupport(A, 3) == Block.(2:4)
+        @test blockrowsupport(A, Block(1)) == Block.(1:2)
+        @test blockrowsupport(A, Block(2)) == Block.(1:3)
+        @test blockrowsupport(A, Block(3)) == Block.(2:4)
 
-        @test blockcolsupport(A, 1) == Block.(1:2)
-        @test blockcolsupport(A, 2) == Block.(1:3)
-        @test blockcolsupport(A, 3) == Block.(2:4)
+        @test blockcolsupport(A, Block(1)) == Block.(1:2)
+        @test blockcolsupport(A, Block(2)) == Block.(1:3)
+        @test blockcolsupport(A, Block(3)) == Block.(2:4)
 
         @test rowsupport(A,1) == 1:3
         @test rowsupport(A,2) == 1:6
@@ -99,16 +99,16 @@ import ArrayLayouts: RangeCumsum
         @test A.μ == μ == subblockbandwidth(A,2)
         @test subblockbandwidths(A) == (λ, μ)
 
-        @test blockrowsupport(A, 1) == Block.(1:2)
-        @test blockrowsupport(A, 2) == Block.(1:3)
-        @test blockrowsupport(A, 3) == Block.(1:4)
-        @test blockrowsupport(A, 4) == Block.(2:4)
+        @test blockrowsupport(A, Block(1)) == Block.(1:2)
+        @test blockrowsupport(A, Block(2)) == Block.(1:3)
+        @test blockrowsupport(A, Block(3)) == Block.(1:4)
+        @test blockrowsupport(A, Block(4)) == Block.(2:4)
 
 
-        @test blockcolsupport(A, 1) == Block.(1:3)
-        @test blockcolsupport(A, 2) == Block.(1:4)
-        @test blockcolsupport(A, 3) == Block.(2:4)
-        @test blockcolsupport(A, 4) == Block.(3:4)
+        @test blockcolsupport(A, Block(1)) == Block.(1:3)
+        @test blockcolsupport(A, Block(2)) == Block.(1:4)
+        @test blockcolsupport(A, Block(3)) == Block.(2:4)
+        @test blockcolsupport(A, Block(4)) == Block.(3:4)
 
         @test rowsupport(A,1) == 1:3
         @test rowsupport(A,2) == 1:6
@@ -134,14 +134,14 @@ import ArrayLayouts: RangeCumsum
         @test A[Block(2,3)]  == [8.0 9.0 0.0; 0.0 10.0 11.0]
         @test bandwidths(view(A,Block(2,3))) == bandwidths(A[Block(2,3)]) == (0,1)
 
-        @test blockrowsupport(A, 1) == Block.(2:2)
-        @test blockrowsupport(A, 2) == Block.(3:3)
-        @test blockrowsupport(A, 3) == Block.(4:4)
-        @test blockrowsupport(A, 4) == Block.(5:5)
+        @test blockrowsupport(A, Block(1)) == Block.(2:2)
+        @test blockrowsupport(A, Block(2)) == Block.(3:3)
+        @test blockrowsupport(A, Block(3)) == Block.(4:4)
+        @test blockrowsupport(A, Block(4)) == Block.(5:5)
 
-        @test blockcolsupport(A, 1) == Block.(1:0)
-        @test blockcolsupport(A, 2) == Block.(1:1)
-        @test blockcolsupport(A, 3) == Block.(2:2)
+        @test blockcolsupport(A, Block(1)) == Block.(1:0)
+        @test blockcolsupport(A, Block(2)) == Block.(1:1)
+        @test blockcolsupport(A, Block(3)) == Block.(2:2)
 
         @test rowsupport(A,1) == 2:3
         @test rowsupport(A,2) == 4:6
@@ -163,9 +163,9 @@ import ArrayLayouts: RangeCumsum
         A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
         @test_throws BandError A[1,1] = 5
 
-        @test blockcolsupport(A, 1) == Block.(1:0)
-        @test blockcolsupport(A, 2) == Block.(1:1)
-        @test blockcolsupport(A, 3) == Block.(2:2)
+        @test blockcolsupport(A, Block(1)) == Block.(1:0)
+        @test blockcolsupport(A, Block(2)) == Block.(1:1)
+        @test blockcolsupport(A, Block(3)) == Block.(2:2)
 
         @test colsupport(A,1) == 1:0
         @test colsupport(A,2) == 1:1
