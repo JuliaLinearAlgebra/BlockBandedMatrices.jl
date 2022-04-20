@@ -27,7 +27,7 @@ import ArrayLayouts: BlasMatLmulVec, MatLmulVec, MatLmulMat,
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
                     DiagonalLayout, MulAdd, mul, colsupport, rowsupport,
                     _qr, _factorize, _copyto!, zero!, layout_replace_in_print_matrix,
-                    transposelayout, conjlayout
+                    transposelayout, conjlayout, symmetriclayout, hermitianlayout
 
 import BlockArrays: blocksize, blockcheckbounds, BlockedUnitRange, blockisequal, DefaultBlockAxis,
                         Block, BlockSlice, unblock, block, blockindex,

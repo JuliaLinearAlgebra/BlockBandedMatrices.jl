@@ -39,6 +39,21 @@ conjlayout(::Type{T}, ::BandedBlockBandedRows{Lay}) where {T<:Complex,Lay} = Ban
 conjlayout(::Type{T}, ::BlockBandedColumns{Lay}) where {T<:Complex,Lay} = BlockBandedColumns{typeof(conjlayout(T,Lay))}()
 conjlayout(::Type{T}, ::BlockBandedRows{Lay}) where {T<:Complex,Lay} = BlockBandedRows{typeof(conjlayout(T,Lay))}()
 
+symmetriclayout(::AbstractBandedBlockBandedLayout) = BandedBlockBandedLayout()
+hermitianlayout(_, ::AbstractBandedBlockBandedLayout) = BandedBlockBandedLayout()
+
+function blockbandwidths(S::HermOrSym)
+    l, u = blockbandwidths(parent(S))
+    if S.uplo == 'U'
+        (u, u)
+    else
+        (l, l)
+    end
+end
+function subblockbandwidths(S::HermOrSym)
+    m = max(subblockbandwidths(parent(S))...)
+    (m,m)
+end
 
 # AbstractBandedMatrix must implement
 
