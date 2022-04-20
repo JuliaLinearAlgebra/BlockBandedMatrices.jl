@@ -516,6 +516,20 @@ import ArrayLayouts: RangeCumsum
         @test convert(AbstractArray{Float64}, A) == convert(AbstractMatrix{Float64}, A) == A
         @test convert(AbstractArray{Int}, A) ≡ convert(AbstractMatrix{Int}, A) ≡ A
     end
+
+    @testset "Symmetric" begin
+        l, u = 2, 1
+        λ, μ = 2, 1
+        N = M = 4
+        cols = rows = 1:N
+        data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ + μ + 1) * (l + u + 1), sum(cols)))
+        A = _BandedBlockBandedMatrix(data, rows, cols, (l, u), (λ, μ))
+
+        @test BandedBlockBandedMatrix(Symmetric(A)) == Symmetric(Matrix(A))
+        @test BandedBlockBandedMatrix(Symmetric(A,:L)) == Symmetric(Matrix(A),:L)
+        @test BandedBlockBandedMatrix(Hermitian(A)) == Hermitian(Matrix(A))
+        @test BandedBlockBandedMatrix(Hermitian(A,:L)) == Hermitian(Matrix(A),:L)
+    end
 end
 
 if false # turned off since tests have check-bounds=yes
