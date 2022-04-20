@@ -40,7 +40,7 @@ conjlayout(::Type{T}, ::BlockBandedColumns{Lay}) where {T<:Complex,Lay} = BlockB
 conjlayout(::Type{T}, ::BlockBandedRows{Lay}) where {T<:Complex,Lay} = BlockBandedRows{typeof(conjlayout(T,Lay))}()
 
 symmetriclayout(::AbstractBandedBlockBandedLayout) = BandedBlockBandedLayout()
-hermitianlayout(::AbstractBandedBlockBandedLayout) = BandedBlockBandedLayout()
+hermitianlayout(_, ::AbstractBandedBlockBandedLayout) = BandedBlockBandedLayout()
 
 function blockbandwidths(S::HermOrSym)
     l, u = blockbandwidths(parent(S))

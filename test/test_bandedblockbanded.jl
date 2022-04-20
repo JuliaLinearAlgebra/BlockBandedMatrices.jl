@@ -524,11 +524,19 @@ import ArrayLayouts: RangeCumsum
         cols = rows = 1:N
         data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ + μ + 1) * (l + u + 1), sum(cols)))
         A = _BandedBlockBandedMatrix(data, rows, cols, (l, u), (λ, μ))
+        
+        @test blockbandwidths(Hermitian(A)) == blockbandwidths(Symmetric(A)) == (1,1)
+        @test blockbandwidths(Hermitian(A,:L)) == blockbandwidths(Symmetric(A,:L)) == (2,2)
+        @test subblockbandwidths(Hermitian(A)) == subblockbandwidths(Symmetric(A)) == (2,2)
+        @test subblockbandwidths(Hermitian(A,:L)) == subblockbandwidths(Symmetric(A,:L)) == (2,2)
 
         @test BandedBlockBandedMatrix(Symmetric(A)) == Symmetric(Matrix(A))
         @test BandedBlockBandedMatrix(Symmetric(A,:L)) == Symmetric(Matrix(A),:L)
         @test BandedBlockBandedMatrix(Hermitian(A)) == Hermitian(Matrix(A))
         @test BandedBlockBandedMatrix(Hermitian(A,:L)) == Hermitian(Matrix(A),:L)
+
+        @test Symmetric(A)[Block.(1:3),Block.(1:3)] isa BandedBlockBandedMatrix
+        @test Hermitian(A)[Block.(1:3),Block.(1:3)] isa BandedBlockBandedMatrix
     end
 end
 
