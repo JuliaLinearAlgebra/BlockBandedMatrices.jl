@@ -160,18 +160,18 @@ end
     @testset "Block-BandedMatrix" begin
         a = blockedrange(1:5)
         B = _BandedMatrix(PseudoBlockArray(randn(5,length(a)),(Base.OneTo(5),a)), a, 3, 1)
-        @test blockcolsupport(B, Block(1)) == Block.(1:3)
-        @test blockcolsupport(B, Block(3)) == Block.(2:4)
-        @test blockrowsupport(B, Block(1)) == Block.(1:2)
-        @test blockrowsupport(B, Block(4)) == Block.(3:5)
+        @test blockcolsupport(B,Block(1)) == Block.(1:3)
+        @test blockcolsupport(B,Block(3)) == Block.(2:4)
+        @test blockrowsupport(B,Block(1)) == Block.(1:2)
+        @test blockrowsupport(B,Block(4)) == Block.(3:5)
 
         Q = Eye((a,))[:,Block(2)]
         @test Q isa BandedMatrix
-        @test blockcolsupport(Q, Block(1)) == Block.(2:2)
+        @test blockcolsupport(Q,Block(1)) == Block.(2:2)
 
         Q = Eye((a,))[Block(2),:]
         @test Q isa BandedMatrix
-        @test blockrowsupport(Q, Block(1)) == Block.(2:2)
+        @test blockrowsupport(Q,Block(1)) == Block.(2:2)
 
         @testset "constant blocks" begin
             a = blockedrange(Fill(2,5))
