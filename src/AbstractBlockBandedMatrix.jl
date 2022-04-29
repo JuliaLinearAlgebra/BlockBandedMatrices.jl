@@ -87,13 +87,10 @@ blockbandrange(A::AbstractMatrix) = -blockbandwidth(A,1):blockbandwidth(A,2)
 
 
 # start/stop indices of the i-th column/row, bounded by actual matrix size
-@inline blockbanded_blockcolstart(A, i::Integer) = Block(max(i-colblockbandwidth(A,2)[i], 1))
-@inline blockbanded_blockcolstop(A, i::Integer) = Block(max(min(i+colblockbandwidth(A,1)[i], blocksize(A, 1)), 0))
-@inline blockbanded_blockrowstart(A, i::Integer) = Block(max(i-rowblockbandwidth(A,1)[i], 1))
-@inline blockbanded_blockrowstop(A, i::Integer) = Block(max(min(i+rowblockbandwidth(A,2)[i], blocksize(A, 2)), 0))
-for Func in (:blockbanded_blockcolstart, :blockbanded_blockcolstop, :blockbanded_blockrowstart, :blockbanded_blockrowstop)
-    @eval $Func(A, i::Block{1}) = $Func(A, Int(i))
-end
+@inline blockbanded_blockcolstart(A, i::Block{1}) = Block(max(Int(i)-colblockbandwidth(A,2)[Int(i)], 1))
+@inline blockbanded_blockcolstop(A, i::Block{1}) = Block(max(min(Int(i)+colblockbandwidth(A,1)[Int(i)], blocksize(A, 1)), 0))
+@inline blockbanded_blockrowstart(A, i::Block{1}) = Block(max(Int(i)-rowblockbandwidth(A,1)[Int(i)], 1))
+@inline blockbanded_blockrowstop(A, i::Block{1}) = Block(max(min(Int(i)+rowblockbandwidth(A,2)[Int(i)], blocksize(A, 2)), 0))
 
 blockbanded_blockcolstart(A, i::BlockRange) = blockbanded_blockcolstart(A, minimum(i))
 blockbanded_blockrowstart(A, i::BlockRange) = blockbanded_blockrowstart(A, minimum(i))

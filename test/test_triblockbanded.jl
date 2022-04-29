@@ -127,8 +127,8 @@ import BlockArrays: BlockedUnitRange, blockisequal
 
         V = view(A, Block.(1:3), Block.(1:3))
 
-        @test blockrowstop(V,1) == Block(2)
-        @test blockcolstop(V,1) == Block(2)
+        @test blockrowstop(V,Block(1)) == Block(2)
+        @test blockcolstop(V,Block(1)) == Block(2)
 
         @test blockisequal(axes(V), blockedrange.((1:3, 1:3)))
 
