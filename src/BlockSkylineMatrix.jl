@@ -139,7 +139,7 @@ const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, BlockBandedSizes}
     BlockSkylineMatrix{T,LL,UU}(M::Union{UndefInitializer,UniformScaling,AbstractMatrix},
                                 rows, cols, (l::LL, u::UU))
 
-returns a `sum(rows)`×`sum(cols)` block-banded matrix `A` of type `T`
+returns a `sum(rows)`×`sum(cols)` block-banded matrix `A` having elements of type `T`,
 with block-bandwidths `(l,u)` and where `A[Block(K,J)]` is a
 `Matrix{T}` of size `rows[K]`×`cols[J]`.
 
