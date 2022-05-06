@@ -1,4 +1,4 @@
-# BandedMatrices.jl Documentation
+# BlockBandedMatrices.jl Documentation
 
 
 ## Creating block-banded and banded-block-banded matrices
