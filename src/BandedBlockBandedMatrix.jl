@@ -70,8 +70,8 @@ BandedBlockBandedMatrix{T}(::UndefInitializer, rblocksizes::AbstractVector{Int},
     BandedBlockBandedMatrix{T}(M::Union{UndefInitializer,UniformScaling,AbstractMatrix},
                                rows, cols, (l, u), (λ, μ))
 
-returns a `sum(rows)`×`sum(cols)` banded-block-banded matrix `A` of
-type `T` with block-bandwidths `(l,u)` and where `A[Block(K,J)]` is a
+returns a `sum(rows)`×`sum(cols)` banded-block-banded matrix `A` having elements of
+type `T`, with block-bandwidths `(l,u)` and where `A[Block(K,J)]` is a
 `BandedMatrix{T}` of size `rows[K]`×`cols[J]` with bandwidths `(λ,μ)`.
 
 # Examples
