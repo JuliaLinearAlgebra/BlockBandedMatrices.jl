@@ -145,3 +145,11 @@ strides(V::SubBlockSkylineMatrix{T,LL,UU,BlockIndexRange1,BlockIndexRange1}) whe
     (1,parent(V).block_sizes.block_strides[Int(parentindices(V)[2].block.block)])
 
 MemoryLayout(V::SubBlockSkylineMatrix{T,LL,UU,BlockIndexRange1,BlockIndexRange1}) where {T,LL,UU} = ColumnMajor()
+
+
+
+###
+# cholesky
+##
+
+ArrayLayouts._cholesky(::AbstractBandedBlockBandedLayout, axes, A::Symmetric, piv::ArrayLayouts.CNoPivot=ArrayLayouts.CNoPivot(); check::Bool = true) = cholesky!(Symmetric(BlockBandedMatrix(parent(A)), Symbol(A.uplo)), piv; check = check)

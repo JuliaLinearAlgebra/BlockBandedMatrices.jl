@@ -175,3 +175,14 @@ end
     B.data .= randn.()
     @test A*B ≈ Matrix(A)*Matrix(B)
 end
+
+
+@testset "Cholesky" begin
+    n = 5
+    D² = SymTridiagonal(fill(2.0,n), -ones(n-1))
+    Δ = blockkron(D²,I(n)) + blockkron(I(n),D²)
+    @test Δ isa BandedBlockBandedMatrix
+    @test cholesky(Symmetric(Δ)).U ≈ cholesky(Matrix(Δ)).U
+    @test cholesky(Symmetric(Δ,:L)).U ≈ cholesky(Matrix(Δ)).U
+
+end

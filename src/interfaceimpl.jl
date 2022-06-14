@@ -165,3 +165,16 @@ end
 # ambiguity
 sub_materialize(::AbstractBandedLayout, V, ::Tuple{BlockedUnitRange,Base.OneTo{Int}}) = BandedMatrix(V)
 sub_materialize(::AbstractBandedLayout, V, ::Tuple{Base.OneTo{Int},BlockedUnitRange}) = BandedMatrix(V)
+
+
+
+#####
+# BlockKron
+#####
+
+isblockbanded(K::BlockKron) = isbanded(first(K.args))
+isbandedblockbanded(K::BlockKron) = all(isbanded, K.args)
+blockbandwidths(K::BlockKron) = bandwidths(first(K.args))
+subblockbandwidths(K::BlockKron) = bandwidths(last(K.args))
+
+_blockkron(::Tuple{Vararg{AbstractBandedLayout}}, A) = BandedBlockBandedMatrix(BlockKron(A...))
