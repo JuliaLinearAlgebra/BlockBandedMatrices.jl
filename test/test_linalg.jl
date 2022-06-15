@@ -184,5 +184,4 @@ end
     @test Δ isa BandedBlockBandedMatrix
     @test cholesky(Symmetric(Δ)).U ≈ cholesky(Matrix(Δ)).U
     @test cholesky(Symmetric(Δ,:L)).U ≈ cholesky(Matrix(Δ)).U
-
 end
