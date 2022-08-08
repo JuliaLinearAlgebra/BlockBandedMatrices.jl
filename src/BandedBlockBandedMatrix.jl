@@ -1,5 +1,5 @@
 function check_data_sizes(data::AbstractMatrix, raxis, (l,u), (λ,μ))
-    if blocksize(data,1) ≠ l + u + 1 && !(blocksize(data,1) == 0 && (-l > u || -λ > μ))
+    if blocksize(data,1) ≠ l + u + 1 && !(blocksize(data,1) == 0 && (-l > u || -λ > μ))
         throw(ArgumentError("Data matrix must have number of row blocks equal to number of block bands"))
     end
     for K = blockaxes(data,1)
@@ -60,9 +60,9 @@ BandedBlockBandedMatrix{T,B}(::UndefInitializer, axes::NTuple{2,AbstractUnitRang
 BandedBlockBandedMatrix{T,B}(::UndefInitializer, rblocksizes::AbstractVector{Int}, cblocksizes::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B} =
     BandedBlockBandedMatrix{T,B}(undef, (blockedrange(rblocksizes),blockedrange(cblocksizes)), lu, λμ)
 
-BandedBlockBandedMatrix{T}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T = 
+BandedBlockBandedMatrix{T}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
     _BandedBlockBandedMatrix(PseudoBlockMatrix{T}(undef, _bbb_data_axes(axes[2],lu,λμ)), axes[1], lu, λμ)
-BandedBlockBandedMatrix{T}(::UndefInitializer, rblocksizes::AbstractVector{Int}, cblocksizes::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T = 
+BandedBlockBandedMatrix{T}(::UndefInitializer, rblocksizes::AbstractVector{Int}, cblocksizes::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
     BandedBlockBandedMatrix{T}(undef, (blockedrange(rblocksizes),blockedrange(cblocksizes)), lu, λμ)
 
 
@@ -210,7 +210,7 @@ function BandedBlockBandedMatrix{T,Blocks,RR}(A::AbstractMatrix, axes::NTuple{2,
     ret
 end
 
-BandedBlockBandedMatrix{T}(A::AbstractMatrix, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T = 
+BandedBlockBandedMatrix{T}(A::AbstractMatrix, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
     copyto!(BandedBlockBandedMatrix{T}(undef, axes(A), lu, λμ), A)
 BandedBlockBandedMatrix{T}(A::AbstractMatrix) where T = BandedBlockBandedMatrix{T}(A, blockbandwidths(A), subblockbandwidths(A))
 
@@ -354,7 +354,7 @@ end
 @inline function setindex!(A::BandedBlockBandedMatrix{T}, v, i::Int, j::Int) where T
     @boundscheck checkbounds(A, i, j)
     BI,BJ = findblockindex.(axes(A), (i,j))
-    if -A.l ≤ Int(block(BJ)-block(BI)) ≤ A.u
+    if -A.l ≤ Int(block(BJ)-block(BI)) ≤ A.u
         V = view(A, block(BI),block(BJ))
          @inbounds V[blockindex(BI),blockindex(BJ)] = convert(T, v)::T
     elseif !iszero(v)
@@ -370,7 +370,7 @@ function layout_replace_in_print_matrix(::AbstractBandedBlockBandedLayout, A, i,
     i,j = blockindex.(bi)
     l,u = blockbandwidths(A)
     λ,μ = subblockbandwidths(A)
-    -l ≤ Int(J-I) ≤ u && -λ ≤ j-i ≤ μ ? s : Base.replace_with_centered_mark(s)
+    -l ≤ Int(J-I) ≤ u && -λ ≤ j-i ≤ μ ? s : Base.replace_with_centered_mark(s)
 end
 
 
@@ -422,7 +422,7 @@ sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockS
 blockbandshift(A::BlockSlice, B::BlockSlice) = BandedMatrices.bandshift(Int.(A.block), Int.(B.block))
 blockbandshift(S) = blockbandshift(parentindices(S)[1],parentindices(S)[2])
 
-function bandedblockbandeddata(V::SubArray) 
+function bandedblockbandeddata(V::SubArray)
     l,u = blockbandwidths(V)
     L,U = blockbandwidths(parent(V)) .+ (-1,1) .* blockbandshift(V)
     view(bandedblockbandeddata(parent(V)), Block.(U-u+1:U+l+1), parentindices(V)[2])
@@ -493,7 +493,7 @@ function inblockbands(V::SubArray{<:Any,2,<:AbstractMatrix,<:Tuple{BlockSlice1,B
     K_sl, J_sl = parentindices(V)
     K, J = K_sl.block, J_sl.block
     l,u = blockbandwidths(A)
-    -l ≤ Int(J-K) ≤ u
+    -l ≤ Int(J-K) ≤ u
 end
 
 function parentblock(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice{<:BlockIndexRange1}}}) where T
@@ -514,7 +514,7 @@ function parentblock(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{<:Block
     view(A, K_sl.block.block, J_sl.block)
 end
 
-# gives the columns of parent(V).data that encode the block
+# gives the columns of parent(V).data that encode the block
 parentblocks2Int(V::BandedBlockBandedBlock)::Tuple{Int,Int} = Int(first(parentindices(V)).block),
                                                           Int(last(parentindices(V)).block)
 
@@ -592,7 +592,7 @@ end
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
     K,J = parentblocks2Int(V)
-    if -A.l ≤ J-K ≤ A.u && -A.λ ≤ j-k ≤ A.μ
+    if -A.l ≤ J-K ≤ A.u && -A.λ ≤ j-k ≤ A.μ
         inbands_getindex(V, k, j)
     else
         zero(eltype(V))
@@ -603,7 +603,7 @@ end
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
     K,J = parentblocks2Int(V)
-    if -A.l ≤ J-K ≤ A.u && -A.λ ≤ j-k ≤ A.μ
+    if -A.l ≤ J-K ≤ A.u && -A.λ ≤ j-k ≤ A.μ
         inbands_setindex!(V, v, k, j)
     elseif iszero(v) # allow setindex for 0 datya
         v

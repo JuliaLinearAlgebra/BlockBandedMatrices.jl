@@ -96,7 +96,7 @@ import Base.Broadcast: materialize!
         cols = rows = 1:N
         A = BlockBandedMatrix{Int}(undef, rows,cols, (l,u))
         A.data .= 1:length(A.data)
-        
+
         @test @inferred(blockrowsupport(A, Block(1))) == Block.(1:3)
         @test blockrowsupport(A, Block(2)) == Block.(1:4)
         @test blockrowsupport(A, Block(3)) == Block.(2:4)
@@ -108,7 +108,7 @@ import Base.Broadcast: materialize!
 
         @test @inferred(blockrowsupport(A, Block.(3:4))) == Block.(2:4)
         @test @inferred(blockcolsupport(A, Block.(1:2))) == Block.(1:3)
-        
+
         @test @inferred(blockcolsupport(A, Block.(1:0))) == Block.(1:0)
     end
 
