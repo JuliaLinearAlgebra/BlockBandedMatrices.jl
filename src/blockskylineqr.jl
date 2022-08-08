@@ -36,7 +36,7 @@ function _blockbanded_qr!(A::AbstractMatrix, τ::AbstractVector, NCOLS::Block{1}
     A,τ
 end
 
-function qr!(A::BlockBandedMatrix{T}) where T 
+function qr!(A::BlockBandedMatrix{T}) where T
     M,N = blocksize(A)
     ax1 = M < N ? axes(A,1) : axes(A,2)
     _blockbanded_qr!(A, PseudoBlockVector(zeros(T,length(ax1)), (ax1,)))
@@ -52,7 +52,7 @@ function ql!(A::BlockBandedMatrix{T}) where T
         axes(A,2)
     end
     τ = PseudoBlockVector{T}(undef, (ax2,))
-    
+
     for K = N:-1:max(N - M + 1,1)
         μ = M+K-N
         KR = Block.(max(K-u,1):μ)
@@ -126,7 +126,7 @@ function materialize!(Mul::MatLmulMat{<:AdjQRPackedQLayout{<:AbstractBlockBanded
     Bin
 end
 
-# avoid LinearALgebra Strided obsession 
+# avoid LinearALgebra Strided obsession
 
 for Typ in (:StridedVector, :StridedMatrix, :AbstractVector, :AbstractMatrix, :LayoutMatrix, :LayoutVector)
     @eval function ldiv!(A::QR{<:Any,<:BlockSkylineMatrix}, B::$Typ)

@@ -149,9 +149,9 @@ end
 
 @inline function blockbanded_colstart(A, i::Integer)
     bs = blockcolstart(A,findblock(axes(A,2),i))
-    if isempty(axes(A,1)) 
+    if isempty(axes(A,1))
         1
-    elseif Int(bs) ≤ blocksize(A, 2)
+    elseif Int(bs) ≤ blocksize(A, 2)
         first(axes(A,1)[bs])
     else
         size(A,1)+1
@@ -170,7 +170,7 @@ end
 @inline function blockbanded_rowstop(A, i::Integer)
     CS = blockrowstop(A,findblock(axes(A,1),i))
     CS == Block(0) && return 0
-    last(axes(A,2)[CS])    
+    last(axes(A,2)[CS])
 end
 
 @inline blockbanded_colsupport(A, j::Integer) = blockbanded_colstart(A, j):blockbanded_colstop(A, j)
@@ -200,5 +200,5 @@ function ==(A::AbstractBlockBandedMatrix, B::AbstractBlockBandedMatrix)
     for J = blockaxes(A,2), K = max(Block(1),J-u):min(J+l,Block(N))
         view(A, K, J) == view(B, K, J) || return false
     end
-    return true 
+    return true
 end

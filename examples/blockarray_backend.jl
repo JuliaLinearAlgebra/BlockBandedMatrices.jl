@@ -22,7 +22,7 @@ import LinearAlgebra
 # BlockArrays
 adapt(T::Type{<:AbstractArray}, b::BlockArray) =
     _BlockArray(T.(b.blocks), b.block_sizes)
-adapt(T::Type{<:AbstractArray}, b::PseudoBlockArray) = 
+adapt(T::Type{<:AbstractArray}, b::PseudoBlockArray) =
     PseudoBlockArray(T(b.blocks), b.block_sizes)
 adapt(T::Type{<:PseudoBlockArray}, b::BlockArray) = T(b.blocks, b.block_sizes)
 adapt(T::Type{<:BlockArray}, b::PseudoBlockArray) = T(b.blocks, b.block_sizes)
@@ -115,7 +115,7 @@ function banded_mul!(c::BlockVector{T},
 
     @inbounds for i = 1:N, j = max(1,i-l):min(M,i+u)
       B = _BandedMatrix(A.data.blocks[i - j + u + 1, j],
-                        size(view(A, Block(i, j)), 1), 
+                        size(view(A, Block(i, j)), 1),
                         λ, μ)
         muladd!(one(T), B, x.blocks[j], one(T), c[Block(i)])
     end
@@ -149,7 +149,7 @@ function testme()
         @test eltype(cu(bmat)) === Float32
       end
     end
-   
+
     @testset "PseudoBlockArray Adapters" begin
       bmat = BandedBlockBandedMatrix{Float64}(undef, ([1, 1], [2, 2]), (1, 2), (1, 1))
       @test adapt(JLArray, bmat) isa BandedBlockBandedMatrix
@@ -175,7 +175,7 @@ function testme()
        x = PseudoBlockArray(Array{Float64, 1}(undef, size(A, 2)), m)
        x .= rand.()
        xblock = adapt(BlockArray, x)
-   
+
        @test LinearAlgebra.mul!(cblock, Ablock, xblock) ≈ A * x
        cblock .= 0
        @test banded_mul!(cblock, Ablock, xblock) ≈ A * x
@@ -201,7 +201,7 @@ function benchmarks()
   for N in [10, 100, 500, 1000], n = [N ÷ 5, N, 5N, 10N]
     l, u, λ, μ = rand(0:2, 4)
     M, m = N, n
-  
+
     A = BandedBlockBandedMatrix{Float64}(
              undef, (repeat([n], N), repeat([m], M)), (l, u), (λ, μ))
     A.data .= rand.()
@@ -233,7 +233,7 @@ function benchmarks()
   suite
 end
 
-block_ratio(result, name; method=median) = 
+block_ratio(result, name; method=median) =
     ratio(method(result["block"][name]), method(result["pseudo"][name]))
-viabm_ratio(result, name; method=median) = 
+viabm_ratio(result, name; method=median) =
     ratio(method(result["viabm"][name]), method(result["block"][name]))

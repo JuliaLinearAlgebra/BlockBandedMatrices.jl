@@ -218,7 +218,7 @@ BlockBandedMatrix{T}(A::AbstractMatrix, block_sizes::BlockBandedSizes) where T =
 ##
 
 function BlockSkylineMatrix{T}(Z::Zeros, block_sizes::BlockSkylineSizes) where T
-    if size(Z) ≠ map(length,block_sizes.axes)
+    if size(Z) ≠ map(length,block_sizes.axes)
         throw(DimensionMismatch("Size of input $(size(Z)) must be consistent with $(size(block_sizes))"))
     end
     _BlockSkylineMatrix(zeros(T, bb_numentries(block_sizes)), block_sizes)
@@ -226,7 +226,7 @@ end
 
 
 function BlockSkylineMatrix{T}(E::Eye, block_sizes::BlockSkylineSizes) where T
-    if size(E) ≠ size(block_sizes)
+    if size(E) ≠ size(block_sizes)
         throw(DimensionMismatch("Size of input $(size(E)) must be consistent with $(sum.(dims))"))
     end
     ret = BlockSkylineMatrix(Zeros{T}(size(E)), block_sizes)
@@ -364,7 +364,7 @@ const BlockBandedBlock{T} = SubArray{T,2,<:BlockSkylineMatrix,<:Tuple{BlockSlice
 
 
 
-# gives the columns of parent(V).data that encode the block
+# gives the columns of parent(V).data that encode the block
 _parent_blocks(V::BlockBandedBlock)::Tuple{Int,Int} =
     first(first(parentindices(V)).block.n),first(last(parentindices(V)).block.n)
 
@@ -388,7 +388,7 @@ strides(V::BlockBandedBlock) = (1,parent(V).block_sizes.block_strides[_parent_bl
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
     K,J = _parent_blocks(V)
-    if -A.block_sizes.l[J] ≤ J-K ≤ A.block_sizes.u[J]
+    if -A.block_sizes.l[J] ≤ J-K ≤ A.block_sizes.u[J]
         b_start = blockstart(A,K,J)
         b_start == 0 && return zero(eltype(V))
         b_stride = blockstride(A,J)
@@ -402,7 +402,7 @@ end
     @boundscheck checkbounds(V, k, j)
     A = parent(V)
     K,J = _parent_blocks(V)
-    if -A.block_sizes.l[J] ≤ J-K ≤ A.block_sizes.u[J]
+    if -A.block_sizes.l[J] ≤ J-K ≤ A.block_sizes.u[J]
         b_start = blockstart(A,K,J)
         # TODO: What to do if b_start == 0 ?
         b_stride = A.block_sizes.block_strides[J]

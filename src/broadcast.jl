@@ -2,7 +2,7 @@
 # Here we override broadcasting for banded matrices.
 # The design is to to exploit the broadcast machinery so that
 # banded matrices that conform to the banded matrix interface but are not
-# <: AbstractBandedMatrix can get access to fast copyto!, lmul!, rmul!, axpy!, etc.
+# <: AbstractBandedMatrix can get access to fast copyto!, lmul!, rmul!, axpy!, etc.
 # using broadcast variants (B .= A, B .= 2.0 .* A, etc.)
 
 
@@ -43,7 +43,7 @@ _blockbandwidth_l(l, a, ax) = blockisequal(axes(a,2),ax) ? (l,blockbandwidth(a,2
 _broadcast_blockbandwidths(bnds, _, _) = bnds
 _broadcast_blockbandwidths((l,u), a::AbstractVector, (ax1,ax2)) =
     _blockbandwidth_u(u, a, ax1)
-    
+
 
 function _broadcast_blockbandwidths((l,u), A::AbstractArray, (ax1,ax2))
     if size(A,2) == 1
@@ -70,8 +70,8 @@ _broadcast_subblockbandwidths(bnds) = bnds
 _broadcast_subblockbandwidths(bnds, _) = bnds
 _broadcast_subblockbandwidths((l,u), a::AbstractVector) = (bandwidth(a,1),u)
 
-function _broadcast_subblockbandwidths((l,u), A::AbstractArray) 
-    size(A,2) == 1 && return (subblockbandwidth(A,1),u) 
+function _broadcast_subblockbandwidths((l,u), A::AbstractArray)
+    size(A,2) == 1 && return (subblockbandwidth(A,1),u)
     size(A,1) == 1 && return (l, subblockbandwidth(A,2))
     subblockbandwidths(A) # need to special case vector broadcasting
 end
@@ -355,7 +355,7 @@ for op in (:+, :-)
     @eval function copyto!(C::AbstractArray{T}, bc::Broadcasted{<:AbstractBlockBandedStyle, <:Any, typeof($op),
                                                                 <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
         bc_axes = Base.Broadcast.combine_axes(bc.args...)# Use combine_axes as `bc` might get axes from `C`
-        if !blockisequal(axes(C), bc_axes) 
+        if !blockisequal(axes(C), bc_axes)
             copyto!(PseudoBlockArray(C, bc_axes), bc)
             return C
         end

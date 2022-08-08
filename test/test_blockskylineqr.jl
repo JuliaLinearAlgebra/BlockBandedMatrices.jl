@@ -175,7 +175,7 @@ import BlockBandedMatrices: blockcolsupport
 
         b = [1; zeros(size(T,1)-1)]
         B = [Matrix(I,2,2); zeros(size(T,1)-2,2)]
-        @test ((T - z*I)\b)[1] ≈ (F\b)[1] ≈ (F \ B)[1,1] ≈ ((T - z*I)\B)[1,1] ≈ -0.1309123477325813 + 0.28471699370329884im 
+        @test ((T - z*I)\b)[1] ≈ (F\b)[1] ≈ (F \ B)[1,1] ≈ ((T - z*I)\B)[1,1] ≈ -0.1309123477325813 + 0.28471699370329884im
     end
 
     @testset "BigFloat QR" begin

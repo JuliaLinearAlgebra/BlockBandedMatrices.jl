@@ -71,7 +71,7 @@ isblockbanded(A::BlockArray) = isbanded(A.blocks)
     K,J = KJ.n
     @boundscheck blockcheckbounds(block_arr, K, J)
     l,u = blockbandwidths(block_arr)
-    -l ≤ (J-K) ≤ u || return convert(VT, Zeros{T}(length.(getindex.(axes(block_arr),(Block(K),Block(J))))...))
+    -l ≤ (J-K) ≤ u || return convert(VT, Zeros{T}(length.(getindex.(axes(block_arr),(Block(K),Block(J))))...))
     block_arr.blocks[K,J]
 end
 
@@ -97,14 +97,14 @@ for op in (:-, :+)
 
         function $op(A::BlockTridiagonal, λ::UniformScaling)
             checksquareblocks(A)
-            mortar(Tridiagonal(broadcast($op, A.blocks.dl, Ref(0λ)), 
+            mortar(Tridiagonal(broadcast($op, A.blocks.dl, Ref(0λ)),
                                broadcast($op, A.blocks.d, Ref(λ)),
                                broadcast($op, A.blocks.du, Ref(0λ))))
         end
         function $op(λ::UniformScaling, A::BlockTridiagonal)
             checksquareblocks(A)
-            mortar(Tridiagonal(broadcast($op, Ref(0λ), A.blocks.dl), 
-                               broadcast($op, Ref(λ), A.blocks.d), 
+            mortar(Tridiagonal(broadcast($op, Ref(0λ), A.blocks.dl),
+                               broadcast($op, Ref(λ), A.blocks.d),
                                broadcast($op, Ref(0λ), A.blocks.du)))
         end
         function $op(A::BlockBidiagonal, λ::UniformScaling)
@@ -165,7 +165,6 @@ end
 # ambiguity
 sub_materialize(::AbstractBandedLayout, V, ::Tuple{BlockedUnitRange,Base.OneTo{Int}}) = BandedMatrix(V)
 sub_materialize(::AbstractBandedLayout, V, ::Tuple{Base.OneTo{Int},BlockedUnitRange}) = BandedMatrix(V)
-
 
 
 #####
