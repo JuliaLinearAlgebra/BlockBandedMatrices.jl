@@ -56,9 +56,6 @@ const BlockIndexRange1{R<:AbstractUnitRange{Int}} = BlockIndexRange{1,Tuple{R}}
 blockcolrange(A...) = blockcolsupport(A...)
 blockrowrange(A...) = blockrowsupport(A...)
 
-_maybetail(::Tuple{}) = ()
-_maybetail(t::Tuple) = tail(t)
-
 include("AbstractBlockBandedMatrix.jl")
 include("broadcast.jl")
 include("BlockSkylineMatrix.jl")
