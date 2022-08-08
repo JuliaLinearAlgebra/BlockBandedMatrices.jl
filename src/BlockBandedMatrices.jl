@@ -6,7 +6,7 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         +, *, -, /, \, strides, zeros, size,
                         unsafe_convert, fill!, length, first, last,
                         eltype, getindex, to_indices, to_index,
-                        reindex, _maybetail, tail, @_propagate_inbounds_meta,
+                        reindex, tail, @_propagate_inbounds_meta,
                         ==, axes, copy, copyto!, similar, OneTo
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
@@ -55,6 +55,9 @@ const BlockIndexRange1{R<:AbstractUnitRange{Int}} = BlockIndexRange{1,Tuple{R}}
 
 blockcolrange(A...) = blockcolsupport(A...)
 blockrowrange(A...) = blockrowsupport(A...)
+
+_maybetail(::Tuple{}) = ()
+_maybetail(t::Tuple) = tail(t)
 
 include("AbstractBlockBandedMatrix.jl")
 include("broadcast.jl")
