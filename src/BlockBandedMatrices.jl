@@ -16,7 +16,7 @@ import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
                         AbstractTriangular, AdjOrTrans, HermOrSym, StructuredMatrixStyle,
                         qr, qr!
 import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, BlasComplex, BlasReal
-import LinearAlgebra.LAPACK: chktrans, chkdiag, liblapack, chklapackerror, checksquare, chkstride1,
+import LinearAlgebra.LAPACK: chktrans, chkdiag, chklapackerror, checksquare, chkstride1,
                     chkuplo
 import MatrixFactorizations: ql, ql!, _ql, QLPackedQ, AdjQRPackedQLayout, AdjQLPackedQLayout, QR, QRPackedQ
 import SparseArrays: sparse
