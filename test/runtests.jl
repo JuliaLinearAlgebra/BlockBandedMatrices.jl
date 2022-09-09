@@ -1,5 +1,10 @@
 using BlockBandedMatrices, Test, LinearAlgebra
 
+using Aqua
+@testset "Project quality" begin
+    Aqua.test_all(BlockBandedMatrices, ambiguities=false)
+end
+
 include("test_blockbanded.jl")
 include("test_blockskyline.jl")
 include("test_bandedblockbanded.jl")
