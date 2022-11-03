@@ -1,12 +1,12 @@
 # BlockBandedMatrices.jl
 A Julia package for representing block-banded matrices and banded-block-banded matrices
 
-[![Build Status](https://github.com/JuliaMatrices/BlockBandedMatrices.jl/workflows/CI/badge.svg)](https://github.com/JuliaMatrices/BlockBandedMatrices.jl/actions)
-[![codecov](https://codecov.io/gh/JuliaMatrices/BlockBandedMatrices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaMatrices/BlockBandedMatrices.jl)
+[![Build Status](https://github.com/JuliaMatrices/BlockBandedMatrices.jl/workflows/CI/badge.svg)](https://github.com/JuliaLinearAlgebra/BlockBandedMatrices.jl/actions)
+[![codecov](https://codecov.io/gh/JuliaMatrices/BlockBandedMatrices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaLinearAlgebra/BlockBandedMatrices.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
- [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMatrices.github.io/BlockBandedMatrices.jl/stable)
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaMatrices.github.io/BlockBandedMatrices.jl/latest)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaLinearAlgebra.github.io/BlockBandedMatrices.jl/stable)
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaLinearAlgebra.github.io/BlockBandedMatrices.jl/latest)
 
 
 
