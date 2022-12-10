@@ -15,7 +15,7 @@ import BlockBandedMatrices: blockcolsupport
         Q,R = F
         Q̃,R̃ = qr(Matrix(A))
         @test R ≈ R̃
-        @test Q ≈ Q̃
+        @test Matrix(Q) ≈ Matrix(Q̃)
 
         b = randn(size(A,1))
         @test Q'b ≈ Q̃'b
@@ -37,7 +37,7 @@ import BlockBandedMatrices: blockcolsupport
         Q,R = F
         Q̃,R̃ = qr(Matrix(A))
         @test R ≈ R̃
-        @test Q ≈ Q̃
+        @test Matrix(Q) ≈ Matrix(Q̃)
 
         b = randn(size(A,1))
         @test Q'b ≈ Q̃'b
@@ -60,7 +60,7 @@ import BlockBandedMatrices: blockcolsupport
         Q,R = F
         Q̃,R̃ = qr(Matrix(A))
         @test R ≈ R̃
-        @test Q ≈ Q̃
+        @test Matrix(Q) ≈ Matrix(Q̃)
 
         b = randn(size(A,1))
         @test Q'b ≈ Q̃'b
@@ -83,7 +83,7 @@ import BlockBandedMatrices: blockcolsupport
         Q,L = F
         Q̃,L̃ = ql(Matrix(A))
         @test L ≈ L̃
-        @test Q ≈ Q̃
+        @test Matrix(Q) ≈ Matrix(Q̃)
 
         b = randn(size(A,1))
         @test Q'b ≈ Q̃'b
@@ -182,7 +182,7 @@ import BlockBandedMatrices: blockcolsupport
         N = 5
         A = BlockBandedMatrix{BigFloat}(undef, 1:N,1:N, (2,1))
         A.data .= randn.()
-        @test qr(A).Q ≈ qr(Float64.(A)).Q
+        @test Matrix(qr(A).Q) ≈ Matrix(qr(Float64.(A)).Q)
         b = randn(size(A,1))
         @test qr(A .+ 0im)\b ≈ qr(A)\b ≈ A\b
     end

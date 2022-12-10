@@ -173,14 +173,14 @@ import Base.Broadcast: materialize!
         @test MemoryLayout(typeof(V)) == ColumnMajor()
 
         Y = zeros(cols[N], cols[N])
-        @time BLAS.axpy!(2.0, V, Y)
+        @time axpy!(2.0, V, Y)
         @test Y ≈ 2A[Block(N,N)]
 
         Y = BandedMatrix(Zeros(cols[N], cols[N]), (0, 0))
-        @test_throws BandError BLAS.axpy!(2.0, V, Y)
+        @test_throws BandError axpy!(2.0, V, Y)
 
         AN = A[Block(N,N)]
-        @time BLAS.axpy!(2.0, V, V)
+        @time axpy!(2.0, V, V)
         @test A[Block(N,N)] ≈ 3AN
 
         A = BlockBandedMatrix(Ones{Float64}((4,6)), [2,2], [2,2,2], (0,2))
