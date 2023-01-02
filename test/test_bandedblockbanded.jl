@@ -320,24 +320,24 @@ import ArrayLayouts: RangeCumsum
         V = view(A, Block(N,N))
 
         AN = A[Block(N,N)]
-        BLAS.axpy!(2.0, V, V)
+        axpy!(2.0, V, V)
         @test A[Block(N,N)] ≈ 3AN
 
 
         Y = zeros(cols[N], cols[N])
-        BLAS.axpy!(2.0, V, Y)
+        axpy!(2.0, V, Y)
         @test Y ≈ 2A[Block(N,N)]
 
         Y = BandedMatrix(Zeros(cols[N], cols[N]), (λ, μ))
-        BLAS.axpy!(2.0, V, Y)
+        axpy!(2.0, V, Y)
         @test Y ≈ 2A[Block(N,N)]
 
         Y = BandedMatrix(Zeros(cols[N], cols[N]), (λ+1, μ+1))
-        BLAS.axpy!(2.0, V, Y)
+        axpy!(2.0, V, Y)
         @test Y ≈ 2A[Block(N,N)]
 
         Y = BandedMatrix(Zeros(cols[N], cols[N]), (0, 0))
-        @test_throws BandError BLAS.axpy!(2.0, V, Y)
+        @test_throws BandError axpy!(2.0, V, Y)
     end
 
     @testset "Float32"  begin

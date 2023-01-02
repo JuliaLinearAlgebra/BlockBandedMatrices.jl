@@ -613,7 +613,7 @@ end
 end
 
 
-BLAS.axpy!(a::T, A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{T}) where T =
+axpy!(a::T, A::BandedBlockBandedMatrix{T}, B::BandedBlockBandedMatrix{T}) where {T} =
     B .= a .* A .+ B
 
 

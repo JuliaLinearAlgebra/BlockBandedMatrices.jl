@@ -12,7 +12,7 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
                         materialize, materialize!
 
-import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!,
+import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!, axpy!,
                         AbstractTriangular, AdjOrTrans, HermOrSym, StructuredMatrixStyle,
                         qr, qr!
 import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, BlasComplex, BlasReal

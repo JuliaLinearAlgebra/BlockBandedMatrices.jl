@@ -135,7 +135,7 @@ end
         @time AB = A + B
         @test AB ≈ Matrix(A) + Matrix(B)
 
-        @time BLAS.axpy!(1.0, A, B)
+        @time axpy!(1.0, A, B)
         @test B ≈ AB
     end
 
