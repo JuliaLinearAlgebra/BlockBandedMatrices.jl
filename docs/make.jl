@@ -11,5 +11,5 @@ makedocs(
 
 
 deploydocs(
-    repo   = "github.com/JuliaMatrices/BlockBandedMatrices.jl.git",
+    repo   = "github.com/JuliaLinearAlgebra/BlockBandedMatrices.jl.git",
     )
