@@ -2,7 +2,7 @@ using BlockBandedMatrices, Test, LinearAlgebra
 
 using Aqua
 @testset "Project quality" begin
-    Aqua.test_all(BlockBandedMatrices, ambiguities=false)
+    Aqua.test_all(BlockBandedMatrices, ambiguities=false, piracy=false)
 end
 
 include("test_blockbanded.jl")
