@@ -462,6 +462,7 @@ _firstblock(B::Block{1}) = Int(B)
 _firstblock(B::BlockIndexRange) = _firstblock(B.block)
 _firstblock(B::BlockRange) = B.indices[1][1]
 _firstblock(B::Base.Slice) = _firstblock(B.indices)
+_firstblock(B::BlockSlice) = _firstblock(B.block)
 
 
 function blockbandwidths(V::SubArray)
