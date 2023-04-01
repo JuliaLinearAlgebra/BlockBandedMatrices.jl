@@ -90,12 +90,11 @@ end
 ####
 # BlockIndexRange subblocks
 ####
-sublayout(::AbstractBlockBandedLayout, ::Type{<:Tuple{<:BlockSlices, <:BlockSlices}}) = BlockBandedLayout()
+sublayout(::AbstractBlockBandedLayout, ::Type{<:Tuple{BlockRangeInd, BlockRangeInd}}) = BlockBandedLayout()
 
-sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlices, <:BlockSlices}}) = BlockBandedColumnMajor()
-sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlices, <:BlockSlice{Block1}}}) = ColumnMajor()
-sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlices, <:BlockSlice{<:BlockIndexRange1}}}) = ColumnMajor()
-sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{<:BlockSlice{<:BlockIndexRange1}, <:BlockSlice{<:BlockIndexRange1}}}) = ColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{BlockRangeInd, BlockRangeInd}}) = BlockBandedColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{BlockRangeInd, SingleBlockInd}}) = ColumnMajor()
+sublayout(::BlockBandedColumnMajor, ::Type{<:Tuple{SingleBlockInd, SingleBlockInd}}) = ColumnMajor()
 
 isblockbanded(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlices, <:BlockSlices}}) =
     isblockbanded(parent(V))
