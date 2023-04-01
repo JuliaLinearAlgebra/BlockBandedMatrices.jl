@@ -47,7 +47,7 @@ const DefaultBandedBlockBandedMatrix{T} = BandedBlockBandedMatrix{T, PseudoBlock
 @inline _BandedBlockBandedMatrix(data::AbstractMatrix,rblocksizes::AbstractVector{Int}, cblocksizes::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
     _BandedBlockBandedMatrix(data, (blockedrange(rblocksizes),blockedrange(cblocksizes)), lu, λμ)
 
-_blocklengths2blocklasts(b::Fill) = iszero(FillArrays.getindex_value(b)) ? (1:1:0) : cumsum(b)
+_blocklengths2blocklasts(b::Fill) = cumsum(b)
 _bbb_data_axes(caxes, lu, λμ) = (blockedrange(Fill(max(0,sum(λμ)+1),max(0,sum(lu)+1))),caxes)
 
 BandedBlockBandedMatrix{T,B,R}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B,R<:AbstractUnitRange{Int}} =
@@ -408,19 +408,19 @@ end
 const SubBandedBlockBandedMatrix{T,R1,R2} =
     SubArray{T,2,<:BandedBlockBandedMatrix{T},<:Tuple{BlockSlice{R1},BlockSlice{R2}}}
 
+const SingleBlockInd = Union{BlockSlice1, BlockSlice{<:BlockIndexRange1}}
+const BlockRangeInd = Union{BlockSlices, BlockedUnitRange}
 
-sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice1,BlockSlice1}} = bandedcolumns(sublayout(ML(), II))
-sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice{<:BlockIndexRange1}}} = bandedcolumns(sublayout(ML(), II))
-sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice1}} = bandedcolumns(sublayout(ML(), II))
-sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice1,BlockSlice{<:BlockIndexRange1}}} = bandedcolumns(sublayout(ML(), II))
-sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockRange1}}} = bandedblockbandedcolumns(sublayout(ML(), II))
-sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice1,BlockSlice{<:BlockRange1}}} = bandedblockbandedcolumns(sublayout(ML(), II))
-sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockRange1},BlockSlice1}} = bandedblockbandedcolumns(sublayout(ML(), II))
-sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice{<:BlockRange1}}} = bandedblockbandedcolumns(sublayout(ML(), II))
-sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockIndexRange1}}} = bandedblockbandedcolumns(sublayout(ML(), II))
+sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{SingleBlockInd,SingleBlockInd}} = bandedcolumns(sublayout(ML(), II))
+sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockRangeInd,BlockRangeInd}} = bandedblockbandedcolumns(sublayout(ML(), II))
+sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{SingleBlockInd,BlockRangeInd}} = bandedblockbandedcolumns(sublayout(ML(), II))
+sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockRangeInd,SingleBlockInd}} = bandedblockbandedcolumns(sublayout(ML(), II))
 
-blockbandshift(A::BlockSlice, B::BlockSlice) = BandedMatrices.bandshift(Int.(A.block), Int.(B.block))
-blockbandshift(S) = blockbandshift(parentindices(S)[1],parentindices(S)[2])
+_blockaxes1(A::BlockSlice) = A.block
+_blockaxes1(A::Slice) = _blockaxes1(A.indices)
+_blockaxes1(A::BlockedUnitRange) = blockaxes(A,1)
+blockbandshift(A, B) = BandedMatrices.bandshift(Int.(_blockaxes1(A)), Int.(_blockaxes1(B)))
+blockbandshift(S) = blockbandshift(parentindices(S)...)
 
 function bandedblockbandeddata(V::SubArray)
     l,u = blockbandwidths(V)
@@ -428,14 +428,10 @@ function bandedblockbandeddata(V::SubArray)
     view(bandedblockbandeddata(parent(V)), Block.(U-u+1:U+l+1), parentindices(V)[2])
 end
 
-sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockSlice1,BlockSlice1}}) = BandedLayout()
-sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice{<:BlockIndexRange1}}}) = BandedLayout()
-sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice1}}) = BandedLayout()
-sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockSlice1,BlockSlice{<:BlockIndexRange1}}}) = BandedLayout()
-sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockRange1}}}) = BandedBlockBandedLayout()
-sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockSlice1,BlockSlice{<:BlockRange1}}}) = BandedBlockBandedLayout()
-sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice1}}) = BandedBlockBandedLayout()
-sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockSlice{<:BlockRange1},BlockSlice{<:BlockIndexRange1}}}) = BandedBlockBandedLayout()
+sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{SingleBlockInd,SingleBlockInd}}) = BandedLayout()
+sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockRangeInd,BlockRangeInd}}) = BandedBlockBandedLayout()
+sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{SingleBlockInd,BlockRangeInd}}) = BandedBlockBandedLayout()
+sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockRangeInd,SingleBlockInd}}) = BandedBlockBandedLayout()
 
 
 sub_materialize(::AbstractBandedBlockBandedLayout, V, _) = BandedBlockBandedMatrix(V)
@@ -451,34 +447,23 @@ isbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(A) isa A
 isbandedblockbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(A) isa AbstractBandedBlockBandedLayout
 
 
-subblockbandwidths(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlice{<:BlockRange1},<:BlockSlice{<:BlockRange1}}}) =
-    subblockbandwidths(parent(V))
+subblockbandwidths(V::SubArray) = subblockbandwidths(parent(V))
 
-function blockbandwidths(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlice{<:BlockRange1},<:BlockSlice1}})
-    A = parent(V)
-    KR = parentindices(V)[1].block.indices[1]
-    J = parentindices(V)[2].block
-    shift = Int(KR[1])-Int(J)
-    blockbandwidth(A,1) - shift, blockbandwidth(A,2) + shift
-end
 
-function blockbandwidths(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlice{<:Block1},<:BlockSlice{<:BlockRange1}}})
+_firstblock(B::BlockedUnitRange) = Int(blockaxes(B,1)[1])
+_firstblock(B::Block{1}) = Int(B)
+_firstblock(B::BlockIndexRange) = _firstblock(B.block)
+_firstblock(B::BlockRange) = B.indices[1][1]
+_firstblock(B::Base.Slice) = _firstblock(B.indices)
+_firstblock(B::BlockSlice) = _firstblock(B.block)
+
+
+function blockbandwidths(V::SubArray)
     A = parent(V)
-    K = parentindices(V)[1].block
-    JR = parentindices(V)[2].block.indices[1]
-    shift = Int(K)-Int(JR[1])
+    K1,J1 = map(_firstblock, parentindices(V))
+    shift = K1-J1
     l,u = blockbandwidths(A)
     l - shift, u + shift
-end
-
-function blockbandwidths(V::SubArray{<:Any,2,<:Any,<:Tuple{<:BlockSlice{<:BlockRange1},<:BlockSlice{<:BlockRange1}}})
-    A = parent(V)
-
-    KR = parentindices(V)[1].block.indices[1]
-    JR = parentindices(V)[2].block.indices[1]
-    shift = Int(first(KR))-Int(first(JR))
-
-    blockbandwidth(A,1) - shift, blockbandwidth(A,2) + shift
 end
 
 

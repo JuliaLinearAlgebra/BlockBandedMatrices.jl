@@ -303,6 +303,12 @@ import ArrayLayouts: RangeCumsum
         @test B == V == A[Block.(2:3), Block.(3:4)]
 
         @test A[Block.(2:3), Block.(3:4)] isa BandedBlockBandedMatrix
+        @test A[axes(A)...] isa BandedBlockBandedMatrix
+        @test A[axes(A,1), Block.(3:4)] isa BandedBlockBandedMatrix
+        @test A[Block.(3:4), axes(A,1)] isa BandedBlockBandedMatrix
+        @test A[:, Block.(3:4)] isa BandedBlockBandedMatrix
+        @test A[Block.(3:4), :] isa BandedBlockBandedMatrix
+        @test A[:, :] isa BandedBlockBandedMatrix
 
         x = randn(size(B,2))
         y = similar(x, size(B,1))

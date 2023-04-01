@@ -7,7 +7,7 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         unsafe_convert, fill!, length, first, last,
                         eltype, getindex, to_indices, to_index,
                         reindex, tail, @_propagate_inbounds_meta,
-                        ==, axes, copy, copyto!, similar, OneTo
+                        ==, axes, copy, copyto!, similar, OneTo, Slice
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
                         materialize, materialize!
