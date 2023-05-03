@@ -450,10 +450,10 @@ isbandedblockbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayo
 subblockbandwidths(V::SubArray) = subblockbandwidths(parent(V))
 
 
-_firstblock(B::BlockedUnitRange) = Int(blockaxes(B,1)[1])
+_firstblock(B::BlockedUnitRange) = Int(first(blockaxes(B,1)))
 _firstblock(B::Block{1}) = Int(B)
 _firstblock(B::BlockIndexRange) = _firstblock(B.block)
-_firstblock(B::BlockRange) = B.indices[1][1]
+_firstblock(B::BlockRange) = first(B.indices[1])
 _firstblock(B::Base.Slice) = _firstblock(B.indices)
 _firstblock(B::BlockSlice) = _firstblock(B.block)
 
