@@ -167,7 +167,7 @@ import BlockBandedMatrices: blockcolsupport
         R = UpperTriangular(V)
         @test axes(R) == axes(V) == axes(F.factors)
         @test blocksize(R) == (N,N)
-        @test @allocated(blocksize(R)) ≤ 40
+        @test @allocated(blocksize(R)) ≤ 40
         @test blockbandwidths(R) == (0,2)
         @test @allocated(blockbandwidths(R)) ≤ 40
         @test blockcolsupport(R,Block(4)) == Block.(2:4)
