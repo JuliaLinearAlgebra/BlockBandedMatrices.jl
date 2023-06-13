@@ -11,8 +11,8 @@ BlockBandedMatrices.subblockbandwidths(::MyBandedBlockBandedMatrix) = (1,1)
 Base.axes(A::MyBandedBlockBandedMatrix) = axes(A.A)
 function Base.getindex(A::MyBandedBlockBandedMatrix, k::Int, j::Int)
     Kk, Jj = findblockindex(axes(A,1), k), findblockindex(axes(A,2), j)
-    -1 ≤ Int(block(Kk)-block(Jj)) ≤ 1 || return 0.0
-    -1 ≤ Int(blockindex(Kk)-blockindex(Jj)) ≤ 1 || return 0.0
+    -1 ≤ Int(block(Kk)-block(Jj)) ≤ 1 || return 0.0
+    -1 ≤ Int(blockindex(Kk)-blockindex(Jj)) ≤ 1 || return 0.0
     A.A[k,j]
 end
 
@@ -25,7 +25,7 @@ BlockBandedMatrices.blockbandwidths(::MyBlockBandedMatrix) = (1,1)
 Base.axes(A::MyBlockBandedMatrix) = axes(A.A)
 function Base.getindex(A::MyBlockBandedMatrix, k::Int, j::Int)
     Kk, Jj = findblockindex(axes(A,1), k), findblockindex(axes(A,2), j)
-    -1 ≤ Int(block(Kk)-block(Jj)) ≤ 1 || return 0.0
+    -1 ≤ Int(block(Kk)-block(Jj)) ≤ 1 || return 0.0
     A.A[k,j]
 end
 
