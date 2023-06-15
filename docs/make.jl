@@ -1,5 +1,7 @@
 using Documenter, BlockBandedMatrices
 
+DocMeta.setdocmeta!(BlockBandedMatrices, :DocTestSetup, :(using BlockBandedMatrices))
+
 makedocs(
     modules = [BlockBandedMatrices],
     sitename = "BlockBandedMatrices.jl",

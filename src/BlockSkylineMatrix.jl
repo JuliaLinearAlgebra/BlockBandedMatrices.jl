@@ -120,6 +120,12 @@ struct BlockSkylineMatrix{T, DATA<:AbstractVector{T}, BS<:BlockSkylineSizes} <: 
     end
 end
 
+"""
+    BlockBandedMatrix
+
+A `BlockBandedMatrix` is a subtype of `BlockMatrix` of `BlockArrays.jl` whose
+layout of non-zero blocks is banded.
+"""
 const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, BlockBandedSizes}
 
 # Auxiliary outer constructors
@@ -149,8 +155,10 @@ lengths `rows` and `cols`, respectively, for ragged bands.
 # Examples
 
 ```jldoctest
+julia> using LinearAlgebra, FillArrays
+
 julia> BlockSkylineMatrix(I, [2,3,4], [1,2,3], ([2,0,1],[1,1,1]))
-3×3-blocked 9×6 BlockSkylineMatrix{Bool,Array{Bool,1},BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedUnitRange{Array{Int64,1}},BlockArrays.BlockedUnitRange{Array{Int64,1}}},Array{Int64,1},Array{Int64,1},BandedMatrices.BandedMatrix{Int64,Array{Int64,2},Base.OneTo{Int64}},Array{Int64,1}}}:
+3×3-blocked 9×6 BlockSkylineMatrix{Bool, Vector{Bool}, BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedUnitRange{Vector{Int64}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}, Vector{Int64}, Vector{Int64}, BandedMatrices.BandedMatrix{Int64, Matrix{Int64}, Base.OneTo{Int64}}, Vector{Int64}}}:
  1  │  0  0  │  ⋅  ⋅  ⋅
  0  │  1  0  │  ⋅  ⋅  ⋅
  ───┼────────┼─────────
@@ -164,7 +172,7 @@ julia> BlockSkylineMatrix(I, [2,3,4], [1,2,3], ([2,0,1],[1,1,1]))
  0  │  ⋅  ⋅  │  0  0  0
 
 julia> BlockSkylineMatrix(Ones(9,6), [2,3,4], [1,2,3], ([2,0,1],[1,1,1]))
-3×3-blocked 9×6 BlockSkylineMatrix{Float64,Array{Float64,1},BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedUnitRange{Array{Int64,1}},BlockArrays.BlockedUnitRange{Array{Int64,1}}},Array{Int64,1},Array{Int64,1},BandedMatrices.BandedMatrix{Int64,Array{Int64,2},Base.OneTo{Int64}},Array{Int64,1}}}:
+3×3-blocked 9×6 BlockSkylineMatrix{Float64, Vector{Float64}, BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedUnitRange{Vector{Int64}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}, Vector{Int64}, Vector{Int64}, BandedMatrices.BandedMatrix{Int64, Matrix{Int64}, Base.OneTo{Int64}}, Vector{Int64}}}:
  1.0  │  1.0  1.0  │   ⋅    ⋅    ⋅
  1.0  │  1.0  1.0  │   ⋅    ⋅    ⋅
  ─────┼────────────┼───────────────
@@ -186,6 +194,13 @@ BlockSkylineMatrix
 @inline BlockSkylineMatrix{T}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2, AbstractVector{Int}}) where T =
     BlockSkylineMatrix{T}(undef, BlockSkylineSizes(axes, lu...))
 
+"""
+    BlockBandedMatrix{T}(undef, rows::AbstractVector{Int}, cols::AbstractVector{Int},
+                        (l,u)::NTuple{2,Int})
+
+Return an unitialized `sum(rows) × sum(cols)` `BlockBandedMatrix` having `eltype` `T`,
+with `rows` by `cols` blocks and `(l,u)` as the block-bandwidth.
+"""
 @inline BlockBandedMatrix{T}(::UndefInitializer, rdims::AbstractVector{Int}, cdims::AbstractVector{Int}, lu::NTuple{2, Int}) where T =
     BlockSkylineMatrix{T}(undef, BlockBandedSizes(rdims, cdims, lu...))
 
@@ -257,10 +272,78 @@ BlockBandedMatrix{T}(A::Union{AbstractMatrix,UniformScaling},
 BlockSkylineMatrix(A::Union{AbstractMatrix,UniformScaling},
                         rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
                         lu::NTuple{2,AbstractVector{Int}}) = BlockSkylineMatrix{eltype(A)}(A, rdims, cdims, lu)
+
+
+"""
+    BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
+                        rows::AbstractVector{Int}, cols::AbstractVector{Int},
+                        (l,u)::NTuple{2,Int})
+
+Return a `sum(rows) × sum(cols)` `BlockBandedMatrix`, with `rows` by `cols` blocks,
+with `(l,u)` as the block-bandwidth.
+The structural non-zero entries are equal to the corresponding indices of `A`.
+
+# Examples
+```jldoctest
+julia> using LinearAlgebra, FillArrays
+
+julia> l,u = 0,1; # block bandwidths
+
+julia> nrowblk, ncolblk = 3, 3; # number of row/column blocks
+
+julia> rows = 1:nrowblk; cols = 1:ncolblk; # block sizes
+
+julia> BlockBandedMatrix(I, rows, cols, (l,u))
+3×3-blocked 6×6 BlockBandedMatrix{Bool}:
+ 1  │  0  0  │  ⋅  ⋅  ⋅
+ ───┼────────┼─────────
+ ⋅  │  1  0  │  0  0  0
+ ⋅  │  0  1  │  0  0  0
+ ───┼────────┼─────────
+ ⋅  │  ⋅  ⋅  │  1  0  0
+ ⋅  │  ⋅  ⋅  │  0  1  0
+ ⋅  │  ⋅  ⋅  │  0  0  1
+
+julia> BlockBandedMatrix(Ones(sum(rows),sum(cols)), rows, cols, (l,u))
+3×3-blocked 6×6 BlockBandedMatrix{Float64}:
+ 1.0  │  1.0  1.0  │   ⋅    ⋅    ⋅
+ ─────┼────────────┼───────────────
+  ⋅   │  1.0  1.0  │  1.0  1.0  1.0
+  ⋅   │  1.0  1.0  │  1.0  1.0  1.0
+ ─────┼────────────┼───────────────
+  ⋅   │   ⋅    ⋅   │  1.0  1.0  1.0
+  ⋅   │   ⋅    ⋅   │  1.0  1.0  1.0
+  ⋅   │   ⋅    ⋅   │  1.0  1.0  1.0
+```
+"""
 BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
                         rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
                         lu::NTuple{2,Int}) = BlockBandedMatrix{eltype(A)}(A, rdims, cdims, lu)
 
+"""
+    BlockBandedMatrix(A::AbstractMatrix, (l,u)::NTuple{2,Int})
+
+Return a `BlockBandedMatrix` with block-bandwidths `(l,u)`, where the
+structural non-zero blocks correspond to those of `A`.
+
+Examples
+```jldoctest
+julia> using BlockArrays
+
+julia> B = BlockArray(ones(6,6), 1:3, 1:3);
+
+julia> BlockBandedMatrix(B, (1,1))
+3×3-blocked 6×6 BlockBandedMatrix{Float64}:
+ 1.0  │  1.0  1.0  │   ⋅    ⋅    ⋅
+ ─────┼────────────┼───────────────
+ 1.0  │  1.0  1.0  │  1.0  1.0  1.0
+ 1.0  │  1.0  1.0  │  1.0  1.0  1.0
+ ─────┼────────────┼───────────────
+  ⋅   │  1.0  1.0  │  1.0  1.0  1.0
+  ⋅   │  1.0  1.0  │  1.0  1.0  1.0
+  ⋅   │  1.0  1.0  │  1.0  1.0  1.0
+```
+"""
 BlockBandedMatrix(A::AbstractMatrix, lu::NTuple{2,Int}) = BlockBandedMatrix(A, BlockBandedSizes(axes(A), lu...))
 
 function convert(::Type{BlockSkylineMatrix}, A::AbstractMatrix)

@@ -62,23 +62,33 @@ BandedBlockBandedMatrix{T,B}(::UndefInitializer, rblocksizes::AbstractVector{Int
 
 BandedBlockBandedMatrix{T}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
     _BandedBlockBandedMatrix(PseudoBlockMatrix{T}(undef, _bbb_data_axes(axes[2],lu,λμ)), axes[1], lu, λμ)
+"""
+    BandedBlockBandedMatrix{T}(undef, rows, cols, (l, u), (λ, μ))
+
+Return an unitialized `BandedBlockBandedMatrix` having `eltype` `T`,
+with block-bandwidths `(l,u)` and where `A[Block(K,J)]` is a
+`BandedMatrix{T}` of size `rows[K]×cols[J]` with bandwidths `(λ,μ)`.
+"""
 BandedBlockBandedMatrix{T}(::UndefInitializer, rblocksizes::AbstractVector{Int}, cblocksizes::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
     BandedBlockBandedMatrix{T}(undef, (blockedrange(rblocksizes),blockedrange(cblocksizes)), lu, λμ)
 
 
 """
-    BandedBlockBandedMatrix{T}(M::Union{UndefInitializer,UniformScaling,AbstractMatrix},
+    BandedBlockBandedMatrix(M::Union{UniformScaling,AbstractMatrix},
                                rows, cols, (l, u), (λ, μ))
 
-returns a `sum(rows)`×`sum(cols)` banded-block-banded matrix `A` having elements of
-type `T`, with block-bandwidths `(l,u)` and where `A[Block(K,J)]` is a
-`BandedMatrix{T}` of size `rows[K]`×`cols[J]` with bandwidths `(λ,μ)`.
+Return a `sum(rows) × sum(cols)` banded-block-banded matrix `A`,
+with block-bandwidths `(l,u)` and where `A[Block(K,J)]` is a
+`BandedMatrix` of size `rows[K]`×`cols[J]` with bandwidths `(λ,μ)`.
+The structural non-zero elements of the returned matrix corresponds to those of `M`.
 
 # Examples
 
 ```jldoctest
+julia> using LinearAlgebra, FillArrays
+
 julia> BandedBlockBandedMatrix(I, [3,4,3], [3,4,3], (1,1), (1,1))
-3×3-blocked 10×10 BandedBlockBandedMatrix{Bool,BlockArrays.PseudoBlockArray{Bool,2,Array{Bool,2},Tuple{BlockArrays.BlockedUnitRange{Array{Int64,1}},BlockArrays.BlockedUnitRange{Array{Int64,1}}}},BlockArrays.BlockedUnitRange{Array{Int64,1}}}:
+3×3-blocked 10×10 BandedBlockBandedMatrix{Bool, BlockArrays.PseudoBlockMatrix{Bool, Matrix{Bool}, Tuple{BlockArrays.BlockedUnitRange{Vector{Int64}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}:
  1  0  ⋅  │  0  0  ⋅  ⋅  │  ⋅  ⋅  ⋅
  0  1  0  │  0  0  0  ⋅  │  ⋅  ⋅  ⋅
  ⋅  0  1  │  ⋅  0  0  0  │  ⋅  ⋅  ⋅
@@ -93,7 +103,7 @@ julia> BandedBlockBandedMatrix(I, [3,4,3], [3,4,3], (1,1), (1,1))
  ⋅  ⋅  ⋅  │  ⋅  0  0  0  │  ⋅  0  1
 
 julia> BandedBlockBandedMatrix(Ones{Int}(10,13), [3,4,3], [4,5,4], (1,1), (1,1))
-3×3-blocked 10×13 BandedBlockBandedMatrix{Int64,BlockArrays.PseudoBlockArray{Int64,2,Array{Int64,2},Tuple{BlockArrays.BlockedUnitRange{Array{Int64,1}},BlockArrays.BlockedUnitRange{Array{Int64,1}}}},BlockArrays.BlockedUnitRange{Array{Int64,1}}}:
+3×3-blocked 10×13 BandedBlockBandedMatrix{Int64, BlockArrays.PseudoBlockMatrix{Int64, Matrix{Int64}, Tuple{BlockArrays.BlockedUnitRange{Vector{Int64}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}:
  1  1  ⋅  ⋅  │  1  1  ⋅  ⋅  ⋅  │  ⋅  ⋅  ⋅  ⋅
  1  1  1  ⋅  │  1  1  1  ⋅  ⋅  │  ⋅  ⋅  ⋅  ⋅
  ⋅  1  1  1  │  ⋅  1  1  1  ⋅  │  ⋅  ⋅  ⋅  ⋅

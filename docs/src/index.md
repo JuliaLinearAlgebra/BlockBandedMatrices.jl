@@ -5,10 +5,11 @@
 
 ```@docs
 BlockBandedMatrix
-```
-
-```@docs
+BlockBandedMatrix(::AbstractMatrix, ::AbstractVector{Int}, ::AbstractVector{Int}, ::NTuple{2,Int})
+BlockBandedMatrix(::AbstractMatrix, ::NTuple{2,Int})
+BlockBandedMatrix{T}(::UndefInitializer, ::AbstractVector{Int}, ::AbstractVector{Int}, ::NTuple{2,Int})
 BandedBlockBandedMatrix
+BandedBlockBandedMatrix{T}(::UndefInitializer, ::AbstractVector{Int}, ::AbstractVector{Int}, ::NTuple{2,Int}, ::NTuple{2,Int})
 ```
 
 
@@ -41,7 +42,7 @@ of row and column blocks, then `A` has zero structure
   a_21 a_22 │  ⋅    ⋅
   ──────────┼──────────
   a_31 a_32 │ a_33 a_34
-  a_41 a_42 │ a_43 a_44  
+  a_41 a_42 │ a_43 a_44
   ──────────┼──────────
    ⋅    ⋅   │ a_53 a_54
    ⋅    ⋅   │ a_63 a_64 ]
@@ -69,7 +70,7 @@ of row and column blocks, then `A` has zero structure
   a_21 a_22 │  ⋅    ⋅
   ──────────┼──────────
   a_31  ⋅   │ a_33  ⋅
-  a_41 a_42 │ a_43 a_44  
+  a_41 a_42 │ a_43 a_44
   ──────────┼──────────
    ⋅    ⋅   │ a_53  ⋅
    ⋅    ⋅   │ a_63 a_64 ]
@@ -78,7 +79,7 @@ and is stored in memory via `A.data` as a `PseudoBlockMatrix`, which has block s
 2 x 2, containing entries:
 ```julia
 [a_11 a_22 │ a_33 a_44
- a_21  ×   │ a_43  ×  
+ a_21  ×   │ a_43  ×
  ──────────┼──────────
  a_31 a_42 │ a_53 a_64
  a_41  ×   │ a_63  ×   ]
