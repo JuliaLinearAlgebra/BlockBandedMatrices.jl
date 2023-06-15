@@ -78,7 +78,7 @@ Returns the lower blockbandwidth (`i==1`) or the upper blockbandwidth (`i==2`).
 blockbandwidth(A, k::Integer) = blockbandwidths(A)[k]
 
 """
-    bandrange(A)
+    blockbandrange(A)
 
 Returns the range `-blockbandwidth(A,1):blockbandwidth(A,2)`.
 """
