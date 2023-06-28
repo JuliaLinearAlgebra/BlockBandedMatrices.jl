@@ -2,8 +2,8 @@ using ArrayLayouts, BlockBandedMatrices, BandedMatrices, BlockArrays, LinearAlge
 import BlockBandedMatrices: AbstractBandedBlockBandedMatrix, AbstractBlockBandedMatrix, block, blockindex, blockcolsupport, blockrowsupport
 import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle, bandeddata, BandedColumns, _BandedMatrix
 
-struct MyBandedBlockBandedMatrix <: AbstractBandedBlockBandedMatrix{Float64}
-    A::BlockMatrix{Float64}
+struct MyBandedBlockBandedMatrix{AT<:BlockMatrix{Float64}} <: AbstractBandedBlockBandedMatrix{Float64}
+    A::AT
 end
 
 BlockBandedMatrices.blockbandwidths(::MyBandedBlockBandedMatrix) = (1,1)
@@ -17,8 +17,8 @@ function Base.getindex(A::MyBandedBlockBandedMatrix, k::Int, j::Int)
 end
 
 
-struct MyBlockBandedMatrix <: AbstractBlockBandedMatrix{Float64}
-    A::BlockMatrix{Float64}
+struct MyBlockBandedMatrix{AT<:BlockMatrix{Float64}} <: AbstractBlockBandedMatrix{Float64}
+    A::AT
 end
 
 BlockBandedMatrices.blockbandwidths(::MyBlockBandedMatrix) = (1,1)
