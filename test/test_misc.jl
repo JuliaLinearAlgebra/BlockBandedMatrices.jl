@@ -1,6 +1,16 @@
-using ArrayLayouts, BlockBandedMatrices, BandedMatrices, BlockArrays, LinearAlgebra, Test
-import BlockBandedMatrices: AbstractBandedBlockBandedMatrix, AbstractBlockBandedMatrix, block, blockindex, blockcolsupport, blockrowsupport
-import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle, bandeddata, BandedColumns, _BandedMatrix
+using ArrayLayouts
+using BandedMatrices
+using BlockArrays
+using BlockBandedMatrices
+using LinearAlgebra
+using Test
+
+import BlockBandedMatrices: AbstractBandedBlockBandedMatrix,
+                            AbstractBlockBandedMatrix,
+                            block,blockindex, blockcolsupport, blockrowsupport
+
+import BandedMatrices: bandwidths, AbstractBandedMatrix, BandedStyle,
+                        bandeddata, BandedColumns, _BandedMatrix
 
 struct MyBandedBlockBandedMatrix{AT<:BlockMatrix{Float64}} <: AbstractBandedBlockBandedMatrix{Float64}
     A::AT

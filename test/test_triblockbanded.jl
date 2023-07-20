@@ -1,6 +1,15 @@
-using BlockBandedMatrices, BandedMatrices, BlockArrays, ArrayLayouts, LinearAlgebra, Test
-import BlockBandedMatrices: MemoryLayout, TriangularLayout, BandedBlockBandedColumnMajor,
-                        BandedColumnMajor, BlockSkylineSizes, blockrowstop, blockcolstop, ColumnMajor
+using ArrayLayouts
+using BandedMatrices
+using BlockArrays
+using BlockBandedMatrices
+using LinearAlgebra
+using Test
+
+import BlockBandedMatrices: MemoryLayout, TriangularLayout,
+                            BandedBlockBandedColumnMajor,
+                            BandedColumnMajor, BlockSkylineSizes,
+                            blockrowstop, blockcolstop, ColumnMajor
+
 import BlockArrays: BlockedUnitRange, blockisequal
 
 @testset "triangular" begin

@@ -1,4 +1,9 @@
-using BlockBandedMatrices, BlockArrays, LinearAlgebra, MatrixFactorizations, Test
+using BlockBandedMatrices
+using BlockArrays
+using LinearAlgebra
+using MatrixFactorizations
+using Test
+
 import BlockBandedMatrices: blockcolsupport
 
 @testset "BlockBandedMatrix QR/QL" begin

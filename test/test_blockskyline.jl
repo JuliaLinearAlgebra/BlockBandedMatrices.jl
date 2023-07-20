@@ -1,4 +1,10 @@
-using ArrayLayouts, BlockBandedMatrices, BlockArrays, LinearAlgebra, Random, Test
+using ArrayLayouts
+using BlockArrays
+using BlockBandedMatrices
+using LinearAlgebra
+using Random
+using Test
+
 import BlockBandedMatrices: colblockbandwidths, BroadcastStyle, BlockSkylineStyle, blockisequal
 
 Random.seed!(0)

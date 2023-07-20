@@ -1,5 +1,12 @@
-using BlockBandedMatrices, ArrayLayouts, Test
-import BlockBandedMatrices: BandedBlockBandedRowMajor, BandedBlockBandedRows, BandedBlockBandedColumns,BlockBandedRows, BlockBandedColumns
+using ArrayLayouts
+using BlockBandedMatrices
+using Test
+
+import BlockBandedMatrices: BandedBlockBandedRowMajor,
+                            BandedBlockBandedRows,
+                            BandedBlockBandedColumns,
+                            BlockBandedRows,
+                            BlockBandedColumns
 
 @testset "Adj/Trans" begin
     @testset "BandedBlockBanded" begin

@@ -1,4 +1,6 @@
-using BlockBandedMatrices, Test, LinearAlgebra
+using BlockBandedMatrices
+using LinearAlgebra
+using Test
 
 using Aqua
 @testset "Project quality" begin
