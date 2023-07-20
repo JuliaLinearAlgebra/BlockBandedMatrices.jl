@@ -1,5 +1,13 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, ArrayLayouts, LinearAlgebra, Test
-import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle, BlockBandedStyle, blockrowsupport, blockcolsupport
+using ArrayLayouts
+using BandedMatrices
+using BlockArrays
+using BlockBandedMatrices
+using FillArrays
+using LinearAlgebra
+using Test
+
+import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
+                            BlockBandedStyle, blockrowsupport, blockcolsupport
 import Base.Broadcast: materialize!
 
 @testset "BlockBandedMatrix" begin

@@ -1,4 +1,10 @@
-using BandedMatrices, BlockBandedMatrices, BlockArrays, LinearAlgebra, ArrayLayouts, Test
+using ArrayLayouts
+using BandedMatrices
+using BlockArrays
+using BlockBandedMatrices
+using LinearAlgebra
+using Test
+
 import Base: oneto
 
 @testset "broadcasting" begin

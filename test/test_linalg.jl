@@ -1,4 +1,10 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, ArrayLayouts, LinearAlgebra, Test
+using ArrayLayouts
+using BandedMatrices
+using BlockArrays
+using BlockBandedMatrices
+using LinearAlgebra
+using Test
+
 import BandedMatrices: BandError, bandeddata
 import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!,
                             blockcolstop, blockrowstop, BlockSkylineSizes

@@ -1,5 +1,14 @@
-using BlockArrays, BandedMatrices, BlockBandedMatrices, FillArrays, SparseArrays, Test, ArrayLayouts , LinearAlgebra
-import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolsupport, blockrowsupport, colsupport, rowsupport,
+using ArrayLayouts
+using BandedMatrices
+using BlockArrays
+using BlockBandedMatrices
+using FillArrays
+using LinearAlgebra
+using SparseArrays
+using Test
+
+import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolsupport,
+                            blockrowsupport, colsupport, rowsupport,
                             isbandedblockbanded, bandeddata, BandedBlockBandedColumns
 import ArrayLayouts: RangeCumsum
 
