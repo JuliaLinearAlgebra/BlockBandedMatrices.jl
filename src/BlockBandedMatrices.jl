@@ -1,5 +1,5 @@
 module BlockBandedMatrices
-using BlockArrays, BandedMatrices, ArrayLayouts, FillArrays, SparseArrays, MatrixFactorizations
+using BlockArrays, BandedMatrices, ArrayLayouts, FillArrays, MatrixFactorizations
 using LinearAlgebra
 
 import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
@@ -19,7 +19,6 @@ import LinearAlgebra.BLAS: BlasInt, BlasFloat, @blasfunc, BlasComplex, BlasReal
 import LinearAlgebra.LAPACK: chktrans, chkdiag, chklapackerror, checksquare, chkstride1,
                     chkuplo
 import MatrixFactorizations: ql, ql!, _ql, QLPackedQ, AdjQRPackedQLayout, AdjQLPackedQLayout, QR, QRPackedQ
-import SparseArrays: sparse
 
 import ArrayLayouts: BlasMatLmulVec, MatLmulVec, MatLmulMat,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatLdivVec,
@@ -42,8 +41,7 @@ import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrang
                         BandedLayout, BandedColumnMajor, BandedColumns, bandedcolumns,
                         BandedSubBandedMatrix, bandeddata,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop,
-                        BandedStyle, _fill_lmul!, bandshift,
-                        _banded_colval, _banded_rowval, _banded_nzval # for sparse
+                        BandedStyle, _fill_lmul!, bandshift
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, BlockSkylineMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block, BlockTridiagonal, BlockBidiagonal, isblockbanded
@@ -67,5 +65,9 @@ include("blockskylineqr.jl")
 include("interfaceimpl.jl")
 include("triblockbanded.jl")
 include("adjtransblockbanded.jl")
+
+if !isdefined(Base, :get_extension)
+    include("../ext/BlockBandedMatricesSparseArraysExt.jl")
+end
 
 end # module

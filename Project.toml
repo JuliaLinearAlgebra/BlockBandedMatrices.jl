@@ -1,6 +1,6 @@
 name = "BlockBandedMatrices"
 uuid = "ffab5731-97b5-5995-9138-79e8c1846df0"
-version = "0.12.2"
+version = "0.12.3"
 
 [deps]
 ArrayLayouts = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
@@ -11,6 +11,12 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MatrixFactorizations = "a3b82374-2e81-5b9e-98ce-41277c0e4c87"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[weakdeps]
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[extensions]
+BlockBandedMatricesSparseArraysExt = "SparseArrays"
 
 [compat]
 Aqua = "0.6"
@@ -24,7 +30,8 @@ julia = "1.6"
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "Random", "Test"]
+test = ["Aqua", "Random", "SparseArrays", "Test"]
