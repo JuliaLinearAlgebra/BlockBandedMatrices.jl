@@ -465,14 +465,6 @@ const BandedBlockBandedBlock{T, BLOCKS, RAXIS} = SubArray{T,2,BandedBlockBandedM
 BroadcastStyle(::Type{<: BandedBlockBandedBlock}) = BandedStyle()
 
 
-function inblockbands(V::SubArray{<:Any,2,<:AbstractMatrix,<:Tuple{BlockSlice1,BlockSlice1},false})
-    A = parent(V)
-    K_sl, J_sl = parentindices(V)
-    K, J = K_sl.block, J_sl.block
-    l,u = blockbandwidths(A)
-    -l ≤ Int(J-K) ≤ u
-end
-
 function parentblock(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice{<:BlockIndexRange1}}}) where T
     A = parent(V)
     K_sl, J_sl = parentindices(V)
@@ -499,6 +491,29 @@ parentblocks2Int(V::BandedBlockBandedBlock)::Tuple{Int,Int} = Int(first(parentin
 ######################################
 # BandedMatrix interface  for Blocks #
 ######################################
+getindex(A::BandedBlockBandedMatrix, KJ::Block{2}) = A[Block.(KJ.n)...]
+
+function inblockbands(A, K::Block{1}, J::Block{1})
+    l,u = blockbandwidths(A)
+    -l ≤ Int(J-K) ≤ u
+end
+
+function inblockbands(V::SubArray{<:Any,2,<:AbstractMatrix,<:Tuple{BlockSlice1,BlockSlice1},false})
+    K_sl, J_sl = parentindices(V)
+    inblockbands(parent(V), K_sl.block, J_sl.block)
+end
+
+function getindex(A::BandedBlockBandedMatrix{T}, K::Block{1}, J::Block{1}) where T
+    inblockbands(A, K, J) || return BandedMatrix{T}(undef, (length(axes(A,1)[K]), length(axes(A,2)[J])), (-720,-720))
+    _BandedMatrix(A.data[A.u + K - J + 1, J], length(axes(A,1)[K]), subblockbandwidths(A)...)
+end
+
+function getindex(A::BandedBlockBandedMatrix{T}, KR::BlockRange{1}, JR::BlockRange{1}) where T
+    sh = Int(KR[1]-JR[1])
+    l,u = blockbandwidths(A)
+    _BandedBlockBandedMatrix(A.data[:,JR], axes(axes(A,1)[KR],1), (l-sh, u+sh), subblockbandwidths(A))
+end
+
 @inline function bandwidths(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice1,BlockSlice1}}) where T
     inblockbands(V) && return subblockbandwidths(parent(V))
     (-720,-720)
