@@ -613,3 +613,16 @@ lmul!(x::Number, A::BandedBlockBandedMatrix) = (lmul!(x, A.data); A)
 rmul!(A::BandedBlockBandedMatrix, x::Number) = (rmul!(A.data, x); A)
 *(x::Number, A::BandedBlockBandedMatrix) = _BandedBlockBandedMatrix(x*A.data, axes(A,1), blockbandwidths(A), subblockbandwidths(A))
 *(A::BandedBlockBandedMatrix, x::Number) = _BandedBlockBandedMatrix(A.data*x, axes(A,1), blockbandwidths(A), subblockbandwidths(A))
+
+
+#####
+# summary
+#####
+
+_bandedblockbanded_summary(io, B::BandedBlockBandedMatrix{T}) where T = print(io, "BandedBlockBandedMatrix{$T} with block-bandwidths $(blockbandwidths(B)) and sub-block-bandwidths block-bandwidths $(subblockbandwidths(B))")
+BlockArrays._show_typeof(io::IO, B::DefaultBandedBlockBandedMatrix) = _bandedblockbanded_summary(io, B)
+function BlockArrays._show_typeof(io::IO, B::BandedBlockBandedMatrix)
+    _bandedblockbanded_summary(io, B)
+    print(io, " with data ")
+    summary(io, B.data)
+end
