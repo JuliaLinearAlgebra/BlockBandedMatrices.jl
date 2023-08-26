@@ -4,9 +4,13 @@ A Julia package for representing block-banded matrices and banded-block-banded m
 [![Build Status](https://github.com/JuliaMatrices/BlockBandedMatrices.jl/workflows/CI/badge.svg)](https://github.com/JuliaLinearAlgebra/BlockBandedMatrices.jl/actions)
 [![codecov](https://codecov.io/gh/JuliaMatrices/BlockBandedMatrices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaLinearAlgebra/BlockBandedMatrices.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
+[![version](https://juliahub.com/docs/General/BlockBandedMatrices/stable/version.svg)](https://juliahub.com/ui/Packages/General/BlockBandedMatrices)
+[![deps](https://juliahub.com/docs/General/BlockBandedMatrices/stable/deps.svg)](https://juliahub.com/ui/Packages/General/BlockBandedMatrices?t=2)
+[![pkgeval](https://juliahub.com/docs/General/BlockBandedMatrices/stable/pkgeval.svg)](https://juliahub.com/ui/Packages/General/BlockBandedMatrices)
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaLinearAlgebra.github.io/BlockBandedMatrices.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaLinearAlgebra.github.io/BlockBandedMatrices.jl/dev)
+
 
 
 
