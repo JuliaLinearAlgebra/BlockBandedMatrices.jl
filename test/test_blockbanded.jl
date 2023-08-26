@@ -8,7 +8,6 @@ using Test
 
 import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
                             BlockBandedStyle, blockrowsupport, blockcolsupport
-import Base.Broadcast: materialize!
 
 @testset "BlockBandedMatrix" begin
     @test BroadcastStyle(BlockBandedMatrix) == BlockBandedStyle()
@@ -196,7 +195,7 @@ import Base.Broadcast: materialize!
         @test sum(A) == 20
         @test sum(B) == 20
         C = BlockBandedMatrix{Float64}(undef, [2,2], [2,2,2], (0,3))
-        @test all(mul!(C,A,B) .=== materialize!(MulAdd(1.0,A,B,0.0,similar(C))) .=== A*B)
+        @test all(mul!(C,A,B) .=== ArrayLayouts.materialize!(MulAdd(1.0,A,B,0.0,similar(C))) .=== A*B)
         AB = A*B
         @test AB isa BlockBandedMatrix
         @test Matrix(AB) ≈ Matrix(A)*Matrix(B)
