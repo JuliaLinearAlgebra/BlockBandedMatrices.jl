@@ -9,8 +9,7 @@ import Base: getindex, setindex!, checkbounds, @propagate_inbounds, convert,
                         reindex, tail, @_propagate_inbounds_meta,
                         ==, axes, copy, copyto!, similar, OneTo, Slice
 
-import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
-                        materialize, materialize!
+import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted
 
 import LinearAlgebra: UniformScaling, isdiag, rmul!, lmul!, ldiv!, rdiv!, axpy!,
                         AbstractTriangular, AdjOrTrans, HermOrSym, StructuredMatrixStyle,
@@ -22,7 +21,7 @@ import MatrixFactorizations: ql, ql!, _ql, QLPackedQ, AdjQRPackedQLayout, AdjQLP
 
 import ArrayLayouts: BlasMatLmulVec, MatLmulVec, MatLmulMat,
                     triangularlayout, UpperTriangularLayout, TriangularLayout, MatLdivVec,
-                    triangulardata, sublayout, sub_materialize,
+                    triangulardata, sublayout, sub_materialize, materialize, materialize!,
                     AbstractColumnMajor, DenseColumnMajor, ColumnMajor,
                     DiagonalLayout, MulAdd, mul, colsupport, rowsupport,
                     _qr, _factorize, _copyto!, zero!, layout_replace_in_print_matrix,
