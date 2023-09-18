@@ -18,6 +18,16 @@ import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!,
     C.data .= NaN
     rmul!(C, 0.0)
     norm(C) == 0.0
+
+    C.data .= 1
+    @test lmul!(2, C) == fill(2,3,3)
+
+    A = BlockBandedMatrix{Float64}(undef, 1:2,1:2, (1,1))
+    A.data .= 1
+    lmul!(2, A)
+    @test A == fill(2,3,3)
+    rmul!(A, 2)
+    @test A == fill(4,3,3)
 end
 
 @testset "BlockBandedMatrix linear algebra" begin

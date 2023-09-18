@@ -250,8 +250,6 @@ end
 
 
 function blockbanded_rmul!(B::AbstractMatrix{T}, x::Number) where T
-    x == zero(T) || throw(BandError(B))
-
     for J = blockaxes(B,2), K = blockcolsupport(B,J)
         rmul!(view(B,K,J), x)
     end
@@ -259,8 +257,6 @@ function blockbanded_rmul!(B::AbstractMatrix{T}, x::Number) where T
 end
 
 function blockbanded_lmul!(x::Number, B::AbstractMatrix{T}) where T
-    x == zero(T) || throw(BandError(B))
-
     for J = blockaxes(B,2), K = blockcolsupport(B,J)
         lmul!(x, view(B,K,J))
     end
