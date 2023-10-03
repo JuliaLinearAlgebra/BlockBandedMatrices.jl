@@ -20,7 +20,7 @@ BlockBandedMatricesSparseArraysExt = "SparseArrays"
 [compat]
 Aqua = "0.6"
 ArrayLayouts = "1"
-BandedMatrices = "0.17.2"
+BandedMatrices = "0.17.2, 1"
 BlockArrays = "0.16.34"
 FillArrays = "1"
 MatrixFactorizations = "1, 2"
