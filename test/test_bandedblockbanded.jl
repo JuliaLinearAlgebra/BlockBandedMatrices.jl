@@ -9,7 +9,7 @@ using Test
 
 import BlockBandedMatrices: _BandedBlockBandedMatrix, blockcolsupport,
                             blockrowsupport, colsupport, rowsupport,
-                            isbandedblockbanded, bandeddata, BandedBlockBandedColumns
+                            isbandedblockbanded, isbanded, bandeddata, BandedBlockBandedColumns
 import ArrayLayouts: RangeCumsum
 
 @testset "BandedBlockBandedMatrix" begin
