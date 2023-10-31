@@ -1,9 +1,10 @@
 module BlockBandedMatricesSparseArraysExt
 
 using BlockBandedMatrices
-using BandedMatrices
-using BandedMatrices: _banded_rowval, _banded_colval, _banded_nzval
-using BlockArrays: blockaxes, blockcolsupport
+# Specifying the full namespace is necessary because of https://github.com/JuliaLang/julia/issues/48533
+# See https://github.com/JuliaStats/LogExpFunctions.jl/pull/63
+using BlockBandedMatrices.BandedMatrices: _banded_rowval, _banded_colval, _banded_nzval
+using BlockBandedMatrices.BlockArrays: blockaxes, blockcolsupport
 import SparseArrays: sparse
 
 function sparse(A::BandedBlockBandedMatrix)
