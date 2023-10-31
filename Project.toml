@@ -18,7 +18,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 BlockBandedMatricesSparseArraysExt = "SparseArrays"
 
 [compat]
-Aqua = "0.6"
+Aqua = "0.7"
 ArrayLayouts = "1"
 BandedMatrices = "0.17.2, 1"
 BlockArrays = "0.16.34"
