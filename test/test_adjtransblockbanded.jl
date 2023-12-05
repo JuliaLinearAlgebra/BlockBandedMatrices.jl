@@ -55,8 +55,10 @@ import BlockBandedMatrices: BandedBlockBandedRowMajor, BandedBlockBandedRows,
 
         E1 = BandedBlockBandedMatrix{Float64}(undef, Int[], [1], (0,0), (0,1))
         @test colsupport(E1, 1) == 1:0
+        @test rowsupport(E1', 1) == 1:0
 
         E2 = BandedBlockBandedMatrix{Float64}(undef, [1], Int[], (0,0), (0,1))
-        @test rowsupport(E1, 1) == 1:0
+        @test rowsupport(E2, 1) == 1:0
+        @test colsupport(E2', 1) == 1:0
     end
 end
