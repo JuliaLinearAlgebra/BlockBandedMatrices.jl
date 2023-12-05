@@ -1,12 +1,7 @@
-using ArrayLayouts
-using BlockBandedMatrices
-using Test
-
-import BlockBandedMatrices: BandedBlockBandedRowMajor,
-                            BandedBlockBandedRows,
-                            BandedBlockBandedColumns,
-                            BlockBandedRows,
-                            BlockBandedColumns
+using ArrayLayouts, BlockBandedMatrices, Test
+import BlockBandedMatrices: BandedBlockBandedRowMajor, BandedBlockBandedRows, 
+                            BandedBlockBandedColumns, BlockBandedRows, 
+                            BlockBandedColumns, blockcolsupport, blockrowsupport
 
 @testset "Adj/Trans" begin
     @testset "BandedBlockBanded" begin
@@ -44,5 +39,26 @@ import BlockBandedMatrices: BandedBlockBandedRowMajor,
 
         @test BlockBandedMatrix(A') == A'
         @test BlockBandedMatrix(transpose(A)) == transpose(A)
+    end
+
+    @testset "blockcolsupport" begin
+        D_y = BandedBlockBandedMatrix{Float64}(undef, Fill(2,81), [3; Fill(2,79)], (0,0), (0,1))
+        @test colsupport(D_y, 161) == 159:160
+        @test rowsupport(D_y, 162) == 162:161
+        @test colsupport(D_y', 162) == 162:161
+        @test rowsupport(D_y', 161) == 159:160
+
+        @test blockcolsupport(D_y, Block(80)) == Block.(80:80)
+        @test blockrowsupport(D_y, Block(81)) == Block.(81:80)
+        @test blockcolsupport(D_y', Block(81)) == Block.(81:80)
+        @test blockrowsupport(D_y', Block(80)) == Block.(80:80)
+
+        E1 = BandedBlockBandedMatrix{Float64}(undef, Int[], [1], (0,0), (0,1))
+        @test colsupport(E1, 1) == 1:0
+        @test rowsupport(E1', 1) == 1:0
+
+        E2 = BandedBlockBandedMatrix{Float64}(undef, [1], Int[], (0,0), (0,1))
+        @test rowsupport(E2, 1) == 1:0
+        @test colsupport(E2', 1) == 1:0
     end
 end
