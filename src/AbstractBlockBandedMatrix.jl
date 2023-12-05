@@ -152,7 +152,7 @@ end
     bs = blockcolstart(A,findblock(axes(A,2),i))
     if isempty(axes(A,1))
         1
-    elseif Int(bs) ≤ blocksize(A, 2)
+    elseif Int(bs) ≤ blocksize(A, 1)
         first(axes(A,1)[bs])
     else
         size(A,1)+1
@@ -165,8 +165,16 @@ end
     last(axes(A,1)[CS])
 end
 
-@inline blockbanded_rowstart(A, i::Integer) =
-    first(axes(A,2)[blockrowstart(A,findblock(axes(A,1),i))])
+@inline function blockbanded_rowstart(A, i::Integer)
+    bs = blockrowstart(A,findblock(axes(A,1),i))
+    if isempty(axes(A,2))
+        1
+    elseif Int(bs) ≤ blocksize(A, 2)
+        first(axes(A,2)[bs])
+    else
+        size(A,2)+1
+    end
+end
 
 @inline function blockbanded_rowstop(A, i::Integer)
     CS = blockrowstop(A,findblock(axes(A,1),i))
