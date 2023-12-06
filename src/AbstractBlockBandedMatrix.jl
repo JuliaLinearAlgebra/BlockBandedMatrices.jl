@@ -1,6 +1,6 @@
 
 """
-   AbstractBlockBandedLayout
+    AbstractBlockBandedLayout
 
 isa a `MemoryLayout` that indicates that the array implements the block-banded
 interface.
@@ -8,7 +8,7 @@ interface.
 abstract type AbstractBlockBandedLayout <: AbstractBlockLayout end
 
 """
-   AbstractBandedBlockBandedLayout
+    AbstractBandedBlockBandedLayout
 
 isa a `MemoryLayout` that indicates that the array implements the banded-block-banded
 interface.

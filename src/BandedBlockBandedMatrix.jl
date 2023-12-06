@@ -88,7 +88,7 @@ The structural non-zero elements of the returned matrix corresponds to those of 
 julia> using LinearAlgebra, FillArrays
 
 julia> BandedBlockBandedMatrix(I, [3,4,3], [3,4,3], (1,1), (1,1))
-3×3-blocked 10×10 BandedBlockBandedMatrix{Bool, BlockArrays.PseudoBlockMatrix{Bool, Matrix{Bool}, Tuple{BlockArrays.BlockedUnitRange{Vector{Int64}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}:
+3×3-blocked 10×10 BandedBlockBandedMatrix{Bool} with block-bandwidths (1, 1) and sub-block-bandwidths block-bandwidths (1, 1):
  1  0  ⋅  │  0  0  ⋅  ⋅  │  ⋅  ⋅  ⋅
  0  1  0  │  0  0  0  ⋅  │  ⋅  ⋅  ⋅
  ⋅  0  1  │  ⋅  0  0  0  │  ⋅  ⋅  ⋅
@@ -103,7 +103,7 @@ julia> BandedBlockBandedMatrix(I, [3,4,3], [3,4,3], (1,1), (1,1))
  ⋅  ⋅  ⋅  │  ⋅  0  0  0  │  ⋅  0  1
 
 julia> BandedBlockBandedMatrix(Ones{Int}(10,13), [3,4,3], [4,5,4], (1,1), (1,1))
-3×3-blocked 10×13 BandedBlockBandedMatrix{Int64, BlockArrays.PseudoBlockMatrix{Int64, Matrix{Int64}, Tuple{BlockArrays.BlockedUnitRange{Vector{Int64}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}:
+3×3-blocked 10×13 BandedBlockBandedMatrix{Int64} with block-bandwidths (1, 1) and sub-block-bandwidths block-bandwidths (1, 1):
  1  1  ⋅  ⋅  │  1  1  ⋅  ⋅  ⋅  │  ⋅  ⋅  ⋅  ⋅
  1  1  1  ⋅  │  1  1  1  ⋅  ⋅  │  ⋅  ⋅  ⋅  ⋅
  ⋅  1  1  1  │  ⋅  1  1  1  ⋅  │  ⋅  ⋅  ⋅  ⋅
