@@ -7,6 +7,15 @@ using Aqua
     Aqua.test_all(BlockBandedMatrices, ambiguities=false, piracies=false)
 end
 
+using Documenter
+@testset "docstrings" begin
+    # don't test docstrings on old versions to avoid failures due to changes in types
+    if VERSION >= v"1.9"
+        DocMeta.setdocmeta!(BlockBandedMatrices, :DocTestSetup, :(using BlockBandedMatrices); recursive=true)
+        doctest(BlockBandedMatrices)
+    end
+end
+
 include("test_blockbanded.jl")
 include("test_blockskyline.jl")
 include("test_bandedblockbanded.jl")

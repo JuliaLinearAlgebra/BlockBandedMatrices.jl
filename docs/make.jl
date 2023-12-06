@@ -5,10 +5,10 @@ DocMeta.setdocmeta!(BlockBandedMatrices, :DocTestSetup, :(using BlockBandedMatri
 makedocs(
     modules = [BlockBandedMatrices],
     sitename = "BlockBandedMatrices.jl",
-    strict = false, # VERSION.major == 1 && sizeof(Int) == 8, # only strict mode on 1.0 and Int64
     pages = Any[
         "Home" => "index.md"
-    ]
+    ],
+    warnonly = :missing_docs,
 )
 
 

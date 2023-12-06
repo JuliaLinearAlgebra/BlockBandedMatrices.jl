@@ -10,24 +10,18 @@ BlockBandedMatrix(::AbstractMatrix, ::NTuple{2,Int})
 BlockBandedMatrix{T}(::UndefInitializer, ::AbstractVector{Int}, ::AbstractVector{Int}, ::NTuple{2,Int})
 BandedBlockBandedMatrix
 BandedBlockBandedMatrix{T}(::UndefInitializer, ::AbstractVector{Int}, ::AbstractVector{Int}, ::NTuple{2,Int}, ::NTuple{2,Int})
+BlockSkylineMatrix
 ```
 
 
 ## Accessing block-banded and banded-block-banded matrices
 
 ```@docs
+isblockbanded
 blockbandwidths
-```
-
-```@docs
 blockbandwidth
-```
-
-```@docs
+BlockBandedMatrices.blockbandrange
 subblockbandwidths
-```
-
-```@docs
 subblockbandwidth
 ```
 
@@ -88,3 +82,10 @@ where `×` is an entry in memory that is not used.
 
 The reasoning behind this storage scheme as that each block still satisfies
 the banded matrix interface.
+
+## Layout
+
+```@docs
+BlockBandedMatrices.AbstractBlockBandedLayout
+BlockBandedMatrices.AbstractBandedBlockBandedLayout
+```

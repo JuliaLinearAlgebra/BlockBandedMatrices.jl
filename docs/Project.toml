@@ -7,5 +7,5 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [compat]
 BlockArrays = "0.16"
-Documenter = "0.27"
+Documenter = "1"
 FillArrays = "1"
