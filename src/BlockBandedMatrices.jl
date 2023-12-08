@@ -40,7 +40,7 @@ import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrang
                         BandedLayout, BandedColumnMajor, BandedColumns, bandedcolumns,
                         BandedSubBandedMatrix, bandeddata,
                         _BandedMatrix, colstart, colstop, rowstart, rowstop,
-                        BandedStyle, _fill_lmul!, bandshift
+                        BandedStyle, bandshift
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, BlockSkylineMatrix, blockbandwidth, blockbandwidths,
         subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block, BlockTridiagonal, BlockBidiagonal, isblockbanded
