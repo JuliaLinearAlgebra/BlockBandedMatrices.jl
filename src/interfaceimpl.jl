@@ -13,8 +13,7 @@ function blockbandwidths(P::PseudoBlockMatrix{<:Any,<:Diagonal})
 end
 
 blockbandwidths(::Diagonal) = (0,0)
-bandeddata(P::PseudoBlockMatrix) = bandeddata(P.blocks)
-bandwidths(P::PseudoBlockMatrix) = bandwidths(P.blocks)
+
 
 BroadcastStyle(::Type{<:SubArray{<:Any,2,<:PseudoBlockMatrix{<:Any,<:Diagonal},
                                 <:Tuple{<:BlockSlice1,<:BlockSlice1}}}) = BandedStyle()
@@ -139,17 +138,7 @@ bandedblockbandeddata(D::Diagonal) = permutedims(D.diag)
 # Block-BandedMatrix
 ###
 
-function blockcolsupport(::AbstractBandedLayout, B, j)
-    m,n = axes(B)
-    cs = colsupport(B,n[j])
-    findblock(m,first(cs)):findblock(m,last(cs))
-end
 
-function blockrowsupport(::AbstractBandedLayout, B, k)
-    m,n = axes(B)
-    rs = rowsupport(B,m[k])
-    findblock(n,first(rs)):findblock(n,last(rs))
-end
 
 # fixed block sizes, we can figure out how far we encroach other blocks by looking at last column
 function blockbandwidths(::AbstractBandedLayout, (a,b)::Tuple{BlockedUnitRange{<:AbstractRange}, OneTo{Int}}, A)
@@ -162,9 +151,7 @@ function blockbandwidths(::AbstractBandedLayout, (a,b)::Tuple{BlockedUnitRange{<
     end
 end
 
-# ambiguity
-sub_materialize(::AbstractBandedLayout, V, ::Tuple{BlockedUnitRange,Base.OneTo{Int}}) = BandedMatrix(V)
-sub_materialize(::AbstractBandedLayout, V, ::Tuple{Base.OneTo{Int},BlockedUnitRange}) = BandedMatrix(V)
+
 
 
 #####
