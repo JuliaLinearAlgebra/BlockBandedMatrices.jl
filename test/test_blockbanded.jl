@@ -138,7 +138,7 @@ import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
 
         x = randn(size(B,2))
         y = similar(x, size(B,1))
-        @test all((similar(y) .= MulAdd(B, x)) .=== (similar(y) .= MulAdd(V,x)))
+        @test (similar(y) .= MulAdd(B, x)) == (similar(y) .= MulAdd(V,x))
     end
 
     @testset "BlockBandedMatrix indexing" begin
@@ -195,7 +195,7 @@ import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
         @test sum(A) == 20
         @test sum(B) == 20
         C = BlockBandedMatrix{Float64}(undef, [2,2], [2,2,2], (0,3))
-        @test all(mul!(C,A,B) .=== ArrayLayouts.materialize!(MulAdd(1.0,A,B,0.0,similar(C))) .=== A*B)
+        @test mul!(C,A,B) == ArrayLayouts.materialize!(MulAdd(1.0,A,B,0.0,similar(C))) == A*B
         AB = A*B
         @test AB isa BlockBandedMatrix
         @test Matrix(AB) ≈ Matrix(A)*Matrix(B)
