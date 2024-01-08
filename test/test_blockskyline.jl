@@ -132,8 +132,8 @@ Random.seed!(0)
             expu = max.(u, bs.u)
 
             Cbs = C.block_sizes
-            @test all(Cbs.l .== expl)
-            @test all(Cbs.u .== expu)
+            @test Cbs.l == expl
+            @test Cbs.u == expu
         end
 
         for (l,u) = [([0,0,0,0],[0,0,0,0]),
