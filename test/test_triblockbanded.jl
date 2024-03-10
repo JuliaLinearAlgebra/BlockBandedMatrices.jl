@@ -20,31 +20,35 @@ import BlockArrays: BlockedUnitRange, blockisequal
         U = UpperTriangular(A)
         @test MemoryLayout(typeof(U)) == TriangularLayout{'U','N',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
-        @test U*b isa Vector{Float64}
-        @test lmul(U,b) == U*b
-        @test U*b  ≈ Matrix(U)*b
+        Ub = U*b
+        @test Ub isa AbstractVector{Float64}
+        @test lmul(U,b) == Ub
+        @test Ub  ≈ Matrix(U)*b
 
         U = UnitUpperTriangular(A)
         @test MemoryLayout(typeof(U)) == TriangularLayout{'U','U',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
-        @test U*b isa Vector{Float64}
-        @test lmul(U,b) == U*b
-        @test U*b  ≈ Matrix(U)*b
+        Ub = U*b
+        @test Ub isa AbstractVector{Float64}
+        @test lmul(U,b) == Ub
+        @test Ub  ≈ Matrix(U)*b
 
         L = LowerTriangular(A)
         @test MemoryLayout(typeof(L)) == TriangularLayout{'L','N',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
-        @test L*b isa Vector{Float64}
-        @test lmul(L,b) == L*b
-        @test L*b  ≈ Matrix(L)*b
+        Lb = L*b
+        @test Lb isa AbstractVector{Float64}
+        @test lmul(L,b) == Lb
+        @test Lb  ≈ Matrix(L)*b
 
 
         L = UnitLowerTriangular(A)
         @test MemoryLayout(typeof(L)) == TriangularLayout{'L','U',BandedBlockBandedColumnMajor}()
         b = randn(size(L,1))
-        @test L*b isa Vector{Float64}
-        @test lmul(L,b) == L*b
-        @test L*b  ≈ Matrix(L)*b
+        Lb = L*b
+        @test Lb isa AbstractVector{Float64}
+        @test lmul(L,b) == Lb
+        @test Lb  ≈ Matrix(L)*b
     end
 
     @testset "Block by BlockIndex" begin
