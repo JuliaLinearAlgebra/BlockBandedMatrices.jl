@@ -408,7 +408,7 @@ end
     bi = findblockindex.(axes(A), (i,j))
     V = view(A, block.(bi)...)
     @inbounds V[blockindex.(bi)...] = convert(T, v)::T
-    return v
+    return A
 end
 
 ############
@@ -490,11 +490,10 @@ end
         # TODO: What to do if b_start == 0 ?
         b_stride = A.block_sizes.block_strides[J]
         A.data[b_start + k-1 + (j-1)*b_stride ] = v
-    elseif iszero(v) # allow setindex for 0 data
-        v
-    else
+    elseif !iszero(v) # allow setindex for 0 data
         throw(BandError(A, J-K))
     end
+    return V
 end
 
 """
