@@ -82,7 +82,8 @@ import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
 
         A[1,1] = -5
         @test A[1,1] == -5
-        A[1,3] = -6
+        # setindex! should return the array
+        @test setindex!(A, -6, 1, 3) === A
         @test A[1,3] == -6
 
         A[Block(3,4)] = Matrix(Ones{Int}(3,4))
@@ -95,6 +96,10 @@ import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
         V = view(ret, Block(1), Block(2))
         V[1,1] = 2
         @test ret[1,2] == 0
+
+        # setindex! should return the array
+        @test setindex!(V, 4, 1, 2) === V
+        @test V[1,2] == 4
     end
 
     @testset "blockcol/rowsupport" begin
