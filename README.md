@@ -6,7 +6,7 @@ A Julia package for representing block-banded matrices and banded-block-banded m
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 [![version](https://juliahub.com/docs/General/BlockBandedMatrices/stable/version.svg)](https://juliahub.com/ui/Packages/General/BlockBandedMatrices)
 [![deps](https://juliahub.com/docs/General/BlockBandedMatrices/stable/deps.svg)](https://juliahub.com/ui/Packages/General/BlockBandedMatrices?t=2)
-[![pkgeval](https://juliahub.com/docs/General/BlockBandedMatrices/stable/pkgeval.svg)](https://juliahub.com/ui/Packages/General/BlockBandedMatrices)
+[![pkgeval](https://juliahub.com/docs/General/BlockBandedMatrices/stable/pkgeval.svg)](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/report.html)
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaLinearAlgebra.github.io/BlockBandedMatrices.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaLinearAlgebra.github.io/BlockBandedMatrices.jl/dev)
