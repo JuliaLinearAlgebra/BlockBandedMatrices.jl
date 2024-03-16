@@ -103,44 +103,6 @@ function bb_numentries(B::BlockSkylineSizes)
     numentries
 end
 
-
-
-
-function _BandedBlockMatrix end
-
-
-#  A block matrix where only the bands are nonzero
-#   isomorphic to BandedMatrix{Matrix{T}}
-struct BlockSkylineMatrix{T, DATA<:AbstractVector{T}, BS<:BlockSkylineSizes} <: AbstractBlockBandedMatrix{T}
-    data::DATA
-    block_sizes::BS
-
-    global function _BlockSkylineMatrix(data::DATA, block_sizes::BS) where {T,DATA<:AbstractVector{T}, BS<:BlockSkylineSizes}
-        new{T,DATA,BS}(data, block_sizes)
-    end
-end
-
-"""
-    BlockBandedMatrix
-
-A `BlockBandedMatrix` is a subtype of `BlockMatrix` of `BlockArrays.jl` whose
-layout of non-zero blocks is banded.
-"""
-const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, BlockBandedSizes}
-
-# Auxiliary outer constructors
-@inline _BlockBandedMatrix(data::AbstractVector, bs::BlockBandedSizes) =
-    _BlockSkylineMatrix(data, bs)
-
-@inline _BlockBandedMatrix(data::AbstractVector, kr::AbstractVector{Int}, jr::AbstractVector{Int}, (l,u)::NTuple{2, Int}) =
-    _BlockBandedMatrix(data, BlockBandedSizes(kr,jr, l,u))
-
-@inline BlockSkylineMatrix{T}(::UndefInitializer, block_sizes::BlockSkylineSizes) where T =
-    _BlockSkylineMatrix(Vector{T}(undef, bb_numentries(block_sizes)), block_sizes)
-
-@inline BlockBandedMatrix{T}(::UndefInitializer, block_sizes::BlockBandedSizes) where T =
-    _BlockSkylineMatrix(Vector{T}(undef, bb_numentries(block_sizes)), block_sizes)
-
 """
     BlockSkylineMatrix{T,LL,UU}(M::Union{UndefInitializer,UniformScaling,AbstractMatrix},
                                 rows, cols, (l::LL, u::UU))
@@ -187,6 +149,38 @@ julia> BlockSkylineMatrix(Ones(9,6), [2,3,4], [1,2,3], ([2,0,1],[1,1,1]))
 ```
 """
 BlockSkylineMatrix
+
+#  A block matrix where only the bands are nonzero
+#   isomorphic to BandedMatrix{Matrix{T}}
+struct BlockSkylineMatrix{T, DATA<:AbstractVector{T}, BS<:BlockSkylineSizes} <: AbstractBlockBandedMatrix{T}
+    data::DATA
+    block_sizes::BS
+
+    global function _BlockSkylineMatrix(data::DATA, block_sizes::BS) where {T,DATA<:AbstractVector{T}, BS<:BlockSkylineSizes}
+        new{T,DATA,BS}(data, block_sizes)
+    end
+end
+
+"""
+    BlockBandedMatrix
+
+A `BlockBandedMatrix` is a subtype of `BlockMatrix` of `BlockArrays.jl` whose
+layout of non-zero blocks is banded.
+"""
+const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, BlockBandedSizes}
+
+# Auxiliary outer constructors
+@inline _BlockBandedMatrix(data::AbstractVector, bs::BlockBandedSizes) =
+    _BlockSkylineMatrix(data, bs)
+
+@inline _BlockBandedMatrix(data::AbstractVector, kr::AbstractVector{Int}, jr::AbstractVector{Int}, (l,u)::NTuple{2, Int}) =
+    _BlockBandedMatrix(data, BlockBandedSizes(kr,jr, l,u))
+
+@inline BlockSkylineMatrix{T}(::UndefInitializer, block_sizes::BlockSkylineSizes) where T =
+    _BlockSkylineMatrix(Vector{T}(undef, bb_numentries(block_sizes)), block_sizes)
+
+@inline BlockBandedMatrix{T}(::UndefInitializer, block_sizes::BlockBandedSizes) where T =
+    _BlockSkylineMatrix(Vector{T}(undef, bb_numentries(block_sizes)), block_sizes)
 
 @inline BlockBandedMatrix{T}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2, Int}) where T =
     BlockSkylineMatrix{T}(undef, BlockBandedSizes(axes, lu...))
