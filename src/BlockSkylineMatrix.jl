@@ -112,7 +112,7 @@ with block-bandwidths `(l,u)`, and where `A[Block(K,J)]` is a
 `Matrix{T}` of size `rows[K]`×`cols[J]`.
 
 `(l,u)` may be integers for constant bandwidths, or integer vectors of length
-`length(cols)`, for ragged bands. In the latter case, `l` and `u` represent the
+`length(cols)` for ragged bands. In the latter case, `l` and `u` represent the
 number of sub and super-block-bands in each column.
 
 # Examples
