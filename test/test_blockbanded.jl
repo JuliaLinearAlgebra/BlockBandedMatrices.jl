@@ -35,6 +35,19 @@ import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
 
         @test Matrix(BlockBandedMatrix{Int}(I, rows,cols, (l,u))) ==
             Matrix{Int}(I, 10, 10)
+
+        BS = BlockBandedMatrices.BlockBandedSizes(1:3, 1:3, 1, 1)
+        B = BlockBandedMatrix{Float64}(undef, BS)
+        @test blockbandwidths(B) == (1,1)
+        blks = blocks(B)
+        for (ind, blk) in zip(CartesianIndices(blks), blks)
+            @test size(blk) == Tuple(ind)
+        end
+
+        B2 = BlockBandedMatrices._BlockBandedMatrix(1:30, 1:3, 1:3, (1, 1))
+        @test @view(B2[Block(1,1)]) == reshape(1:1, 1, 1)
+        @test @view(B2[Block(2,2)]) == hcat(5:6, 11:12)
+        @test @view(B2[Block(3,3)]) == hcat(18:20, 23:25, 28:30)
     end
 
     @testset "BlockBandedMatrix block indexing" begin
