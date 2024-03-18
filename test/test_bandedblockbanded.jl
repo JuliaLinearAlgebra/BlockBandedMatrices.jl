@@ -466,7 +466,7 @@ import ArrayLayouts: RangeCumsum
 
     @testset "non-standard blocks" begin
         A = BandedBlockBandedMatrix{Float64}(undef, Int[], 1:5,(-1,1), (-1,1))
-        @test BlockBandedMatrices.colstart(A,1) == 1
+        @test isempty(BlockBandedMatrices.colrange(A,1))
         A = BandedBlockBandedMatrix{Float64}(undef, 1:2, 1:5,(-1,1), (-1,1))
         A.data .= randn.()
         V = view(A, Block(2,3))
