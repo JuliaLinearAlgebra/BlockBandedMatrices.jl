@@ -156,4 +156,10 @@ Random.seed!(0)
             end
         end
     end
+
+    @testset "indexing" begin
+        B = BlockSkylineMatrix{Bool}(I, 1:1, 1:4, ([0,0,0,0],[0,1,1,1]))
+        s = split(sprint(show, "text/plain", B), '\n')[2]
+        @test s == " 1  │  0  0  │  ⋅  ⋅  ⋅  │  ⋅  ⋅  ⋅  ⋅"
+    end
 end
