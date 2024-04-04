@@ -10,7 +10,7 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout,
                             BandedColumnMajor, BlockSkylineSizes,
                             blockrowstop, blockcolstop, ColumnMajor
 
-import BlockArrays: BlockedUnitRange, blockisequal
+import BlockArrays: blockisequal
 
 @testset "triangular" begin
     @testset "triangular BandedBlockBandedMatrix mul" begin
