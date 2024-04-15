@@ -15,9 +15,6 @@ end
 blockbandwidths(::Diagonal) = (0,0)
 
 
-BroadcastStyle(::Type{<:SubArray{<:Any,2,<:PseudoBlockMatrix{<:Any,<:Diagonal},
-                                <:Tuple{<:BlockSlice1,<:BlockSlice1}}}) = BandedStyle()
-
 
 
 
@@ -40,7 +37,6 @@ subblockbandwidths(::Zeros) = (-1,-1)
 # DiagonalBlockMatrix
 ###
 
-sublayout(::DiagonalLayout{L}, inds::Type{<:NTuple{2,BS}}) where {L,BS<:BlockSlice{<:BlockRange1}} = bandedblockbandedcolumns(sublayout(L(),Tuple{BS}))
 subblockbandwidths(::Diagonal) = (0,0)
 bandedblockbandeddata(D::Diagonal) = permutedims(D.diag)
 
@@ -74,3 +70,10 @@ blockbandwidths(K::BlockKron) = bandwidths(first(K.args))
 subblockbandwidths(K::BlockKron) = bandwidths(last(K.args))
 
 _blockkron(::Tuple{Vararg{AbstractBandedLayout}}, A) = BandedBlockBandedMatrix(BlockKron(A...))
+
+
+
+## WARNING: type piracy
+BroadcastStyle(::Type{<:SubArray{<:Any,2,<:PseudoBlockMatrix{<:Any,<:Diagonal}, <:Tuple{<:BlockSlice1,<:BlockSlice1}}}) = BandedStyle()
+
+sublayout(::DiagonalLayout{L}, inds::Type{<:NTuple{2,BS}}) where {L,BS<:BlockSlice{<:BlockRange1}} = bandedblockbandedcolumns(sublayout(L(),Tuple{BS}))
