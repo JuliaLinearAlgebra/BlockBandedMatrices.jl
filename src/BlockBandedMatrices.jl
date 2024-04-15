@@ -31,7 +31,8 @@ import BlockArrays: blocksize, blockcheckbounds, BlockedUnitRange, blockisequal,
                         Block, BlockSlice, unblock, block, blockindex,
                         _blocklengths2blocklasts, BlockIndexRange, sizes_from_blocks, BlockSlice1,
                         blockcolsupport, blockrowsupport, blockcolstart, blockcolstop, blockrowstart, blockrowstop,
-                        AbstractBlockLayout, BlockLayout, blocks, hasmatchingblocks, BlockStyle, BlockSlices, _blockkron
+                        AbstractBlockLayout, BlockLayout, blocks, hasmatchingblocks, BlockStyle, BlockSlices, _blockkron,
+                        BlockDiagonal, BlockTridiagonal, BlockBidiagonal, checksquareblocks, AbstractBlockedUnitRange
 
 import BandedMatrices: isbanded, bandwidths, bandwidth, banded_getindex, colrange,
                         inbands_setindex!, inbands_getindex, banded_setindex!,

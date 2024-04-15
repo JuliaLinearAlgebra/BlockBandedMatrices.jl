@@ -47,7 +47,7 @@ bandedblockbandeddata(D::Diagonal) = permutedims(D.diag)
 
 
 # fixed block sizes, we can figure out how far we encroach other blocks by looking at last column
-function blockbandwidths(::AbstractBandedLayout, (a,b)::Tuple{BlockedUnitRange{<:AbstractRange}, OneTo{Int}}, A)
+function blockbandwidths(::AbstractBandedLayout, (a,b)::Tuple{AbstractBlockedUnitRange{<:Any,<:AbstractRange}, OneTo{Int}}, A)
     l,u = bandwidths(A)
     m = min(length(a), l + length(b))
     if u ≥ 0

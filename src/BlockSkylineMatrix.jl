@@ -52,7 +52,7 @@ struct BlockSkylineSizes{BS<:NTuple{2,AbstractUnitRange{Int}}, LL<:AbstractVecto
     u::UU
 end
 
-const BlockBandedSizes = BlockSkylineSizes{NTuple{2,BlockedUnitRange{Vector{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}},
+const BlockBandedSizes = BlockSkylineSizes{NTuple{2,BlockedOneTo{Vector{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}}, Fill{Int,1,Tuple{OneTo{Int}}},
                                             BandedMatrix{Int,Matrix{Int},OneTo{Int}}, Vector{Int}}
 
 
@@ -121,7 +121,7 @@ number of sub and super-block-bands in each column.
 julia> using LinearAlgebra, FillArrays
 
 julia> BlockSkylineMatrix(I, [2,2,2,4], [1,2,3], ([2,0,1],[0,1,1]))
-4×3-blocked 10×6 BlockSkylineMatrix{Bool, Vector{Bool}, BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedUnitRange{Vector{Int64}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}, Vector{Int64}, Vector{Int64}, BandedMatrices.BandedMatrix{Int64, Matrix{Int64}, Base.OneTo{Int64}}, Vector{Int64}}}:
+4×3-blocked 10×6 BlockSkylineMatrix{Bool, Vector{Bool}, BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedOneTo{Vector{Int64}}, BlockArrays.BlockedOneTo{Vector{Int64}}}, Vector{Int64}, Vector{Int64}, BandedMatrices.BandedMatrix{Int64, Matrix{Int64}, Base.OneTo{Int64}}, Vector{Int64}}}:
  1  │  0  0  │  ⋅  ⋅  ⋅
  0  │  1  0  │  ⋅  ⋅  ⋅
  ───┼────────┼─────────
@@ -137,7 +137,7 @@ julia> BlockSkylineMatrix(I, [2,2,2,4], [1,2,3], ([2,0,1],[0,1,1]))
  ⋅  │  ⋅  ⋅  │  0  0  0
 
 julia> BlockSkylineMatrix(Ones(9,6), [2,3,4], [1,2,3], ([2,0,0],[0,1,1]))
-3×3-blocked 9×6 BlockSkylineMatrix{Float64, Vector{Float64}, BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedUnitRange{Vector{Int64}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}, Vector{Int64}, Vector{Int64}, BandedMatrices.BandedMatrix{Int64, Matrix{Int64}, Base.OneTo{Int64}}, Vector{Int64}}}:
+3×3-blocked 9×6 BlockSkylineMatrix{Float64, Vector{Float64}, BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedOneTo{Vector{Int64}}, BlockArrays.BlockedOneTo{Vector{Int64}}}, Vector{Int64}, Vector{Int64}, BandedMatrices.BandedMatrix{Int64, Matrix{Int64}, Base.OneTo{Int64}}, Vector{Int64}}}:
  1.0  │  1.0  1.0  │   ⋅    ⋅    ⋅
  1.0  │  1.0  1.0  │   ⋅    ⋅    ⋅
  ─────┼────────────┼───────────────

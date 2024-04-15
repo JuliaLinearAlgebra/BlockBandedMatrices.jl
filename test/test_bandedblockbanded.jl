@@ -507,7 +507,7 @@ import ArrayLayouts: RangeCumsum
     @testset "1:N blocks" begin
         N = 10
         A = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1), (1,1))
-        @test axes(A) isa NTuple{2,BlockedUnitRange{<:RangeCumsum}}
+        @test axes(A) isa NTuple{2,BlockedOneTo{<:RangeCumsum}}
     end
 
     @testset "change bandwidths" begin
