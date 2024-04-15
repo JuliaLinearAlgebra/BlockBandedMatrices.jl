@@ -1,12 +1,12 @@
 # BlockBandedMatrices.jl
 A Julia package for representing block-banded matrices and banded-block-banded matrices
 
-[![Build Status](https://github.com/JuliaMatrices/BlockBandedMatrices.jl/workflows/CI/badge.svg)](https://github.com/JuliaLinearAlgebra/BlockBandedMatrices.jl/actions)
-[![codecov](https://codecov.io/gh/JuliaMatrices/BlockBandedMatrices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaLinearAlgebra/BlockBandedMatrices.jl)
+[![Build Status](https://github.com/JuliaLinearAlgebra/BlockBandedMatrices.jl/workflows/CI/badge.svg)](https://github.com/JuliaLinearAlgebra/BlockBandedMatrices.jl/actions)
+[![codecov](https://codecov.io/gh/JuliaLinearAlgebra/BlockBandedMatrices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaLinearAlgebra/BlockBandedMatrices.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 [![version](https://juliahub.com/docs/General/BlockBandedMatrices/stable/version.svg)](https://juliahub.com/ui/Packages/General/BlockBandedMatrices)
 [![deps](https://juliahub.com/docs/General/BlockBandedMatrices/stable/deps.svg)](https://juliahub.com/ui/Packages/General/BlockBandedMatrices?t=2)
-[![pkgeval](https://juliahub.com/docs/General/BlockBandedMatrices/stable/pkgeval.svg)](https://juliahub.com/ui/Packages/General/BlockBandedMatrices)
+[![pkgeval](https://juliahub.com/docs/General/BlockBandedMatrices/stable/pkgeval.svg)](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/report.html)
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaLinearAlgebra.github.io/BlockBandedMatrices.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaLinearAlgebra.github.io/BlockBandedMatrices.jl/dev)
@@ -32,7 +32,7 @@ BlockBandedMatrix(I, rows,cols, (l,u))                          # creates a bloc
 ```
 
 A `BandedBlockBandedMatrix` has the added structure that the blocks themselves are
-banded, and conform to the banded matrix interface of [BandedMatrices.jl](https://github.com/JuliaMatrices/BandedMatrices.jl).
+banded, and conform to the banded matrix interface of [BandedMatrices.jl](https://github.com/JuliaLinearAlgebra/BandedMatrices.jl).
 We can construct a `BandedBlockBandedMatrix` as follows:
 ```julia
 l,u = 2,1          # block bandwidths

@@ -35,6 +35,19 @@ import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
 
         @test Matrix(BlockBandedMatrix{Int}(I, rows,cols, (l,u))) ==
             Matrix{Int}(I, 10, 10)
+
+        BS = BlockBandedMatrices.BlockBandedSizes(1:3, 1:3, 1, 1)
+        B = BlockBandedMatrix{Float64}(undef, BS)
+        @test blockbandwidths(B) == (1,1)
+        blks = blocks(B)
+        for (ind, blk) in zip(CartesianIndices(blks), blks)
+            @test size(blk) == Tuple(ind)
+        end
+
+        B2 = BlockBandedMatrices._BlockBandedMatrix(1:30, 1:3, 1:3, (1, 1))
+        @test @view(B2[Block(1,1)]) == reshape(1:1, 1, 1)
+        @test @view(B2[Block(2,2)]) == hcat(5:6, 11:12)
+        @test @view(B2[Block(3,3)]) == hcat(18:20, 23:25, 28:30)
     end
 
     @testset "BlockBandedMatrix block indexing" begin
@@ -82,7 +95,8 @@ import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
 
         A[1,1] = -5
         @test A[1,1] == -5
-        A[1,3] = -6
+        # setindex! should return the array
+        @test setindex!(A, -6, 1, 3) === A
         @test A[1,3] == -6
 
         A[Block(3,4)] = Matrix(Ones{Int}(3,4))
@@ -95,6 +109,10 @@ import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
         V = view(ret, Block(1), Block(2))
         V[1,1] = 2
         @test ret[1,2] == 0
+
+        # setindex! should return the array
+        @test setindex!(V, 4, 1, 2) === V
+        @test V[1,2] == 4
     end
 
     @testset "blockcol/rowsupport" begin
@@ -138,7 +156,7 @@ import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
 
         x = randn(size(B,2))
         y = similar(x, size(B,1))
-        @test all((similar(y) .= MulAdd(B, x)) .=== (similar(y) .= MulAdd(V,x)))
+        @test (similar(y) .= MulAdd(B, x)) == (similar(y) .= MulAdd(V,x))
     end
 
     @testset "BlockBandedMatrix indexing" begin
@@ -195,7 +213,7 @@ import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
         @test sum(A) == 20
         @test sum(B) == 20
         C = BlockBandedMatrix{Float64}(undef, [2,2], [2,2,2], (0,3))
-        @test all(mul!(C,A,B) .=== ArrayLayouts.materialize!(MulAdd(1.0,A,B,0.0,similar(C))) .=== A*B)
+        @test mul!(C,A,B) == ArrayLayouts.materialize!(MulAdd(1.0,A,B,0.0,similar(C))) == A*B
         AB = A*B
         @test AB isa BlockBandedMatrix
         @test Matrix(AB) ≈ Matrix(A)*Matrix(B)

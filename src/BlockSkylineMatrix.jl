@@ -103,11 +103,55 @@ function bb_numentries(B::BlockSkylineSizes)
     numentries
 end
 
+"""
+    BlockSkylineMatrix{T,LL,UU}(M::Union{UndefInitializer,UniformScaling,AbstractMatrix},
+                                rows, cols, (l::LL, u::UU))
 
+returns a `sum(rows)`×`sum(cols)` block-banded matrix `A` having elements of type `T`,
+with block-bandwidths `(l,u)`, and where `A[Block(K,J)]` is a
+`Matrix{T}` of size `rows[K]`×`cols[J]`.
 
+`(l,u)` may be integers for constant bandwidths, or integer vectors of length
+`length(cols)` for ragged bands. In the latter case, `l` and `u` represent the
+number of sub and super-block-bands in each column.
 
-function _BandedBlockMatrix end
+# Examples
 
+```jldoctest
+julia> using LinearAlgebra, FillArrays
+
+julia> BlockSkylineMatrix(I, [2,2,2,4], [1,2,3], ([2,0,1],[0,1,1]))
+4×3-blocked 10×6 BlockSkylineMatrix{Bool, Vector{Bool}, BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedUnitRange{Vector{Int64}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}, Vector{Int64}, Vector{Int64}, BandedMatrices.BandedMatrix{Int64, Matrix{Int64}, Base.OneTo{Int64}}, Vector{Int64}}}:
+ 1  │  0  0  │  ⋅  ⋅  ⋅
+ 0  │  1  0  │  ⋅  ⋅  ⋅
+ ───┼────────┼─────────
+ 0  │  0  1  │  0  0  0
+ 0  │  0  0  │  1  0  0
+ ───┼────────┼─────────
+ 0  │  ⋅  ⋅  │  0  1  0
+ 0  │  ⋅  ⋅  │  0  0  1
+ ───┼────────┼─────────
+ ⋅  │  ⋅  ⋅  │  0  0  0
+ ⋅  │  ⋅  ⋅  │  0  0  0
+ ⋅  │  ⋅  ⋅  │  0  0  0
+ ⋅  │  ⋅  ⋅  │  0  0  0
+
+julia> BlockSkylineMatrix(Ones(9,6), [2,3,4], [1,2,3], ([2,0,0],[0,1,1]))
+3×3-blocked 9×6 BlockSkylineMatrix{Float64, Vector{Float64}, BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedUnitRange{Vector{Int64}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}, Vector{Int64}, Vector{Int64}, BandedMatrices.BandedMatrix{Int64, Matrix{Int64}, Base.OneTo{Int64}}, Vector{Int64}}}:
+ 1.0  │  1.0  1.0  │   ⋅    ⋅    ⋅
+ 1.0  │  1.0  1.0  │   ⋅    ⋅    ⋅
+ ─────┼────────────┼───────────────
+ 1.0  │  1.0  1.0  │  1.0  1.0  1.0
+ 1.0  │  1.0  1.0  │  1.0  1.0  1.0
+ 1.0  │  1.0  1.0  │  1.0  1.0  1.0
+ ─────┼────────────┼───────────────
+ 1.0  │   ⋅    ⋅   │  1.0  1.0  1.0
+ 1.0  │   ⋅    ⋅   │  1.0  1.0  1.0
+ 1.0  │   ⋅    ⋅   │  1.0  1.0  1.0
+ 1.0  │   ⋅    ⋅   │  1.0  1.0  1.0
+```
+"""
+BlockSkylineMatrix
 
 #  A block matrix where only the bands are nonzero
 #   isomorphic to BandedMatrix{Matrix{T}}
@@ -140,53 +184,6 @@ const BlockBandedMatrix{T} = BlockSkylineMatrix{T, Vector{T}, BlockBandedSizes}
 
 @inline BlockBandedMatrix{T}(::UndefInitializer, block_sizes::BlockBandedSizes) where T =
     _BlockSkylineMatrix(Vector{T}(undef, bb_numentries(block_sizes)), block_sizes)
-
-"""
-    BlockSkylineMatrix{T,LL,UU}(M::Union{UndefInitializer,UniformScaling,AbstractMatrix},
-                                rows, cols, (l::LL, u::UU))
-
-returns a `sum(rows)`×`sum(cols)` block-banded matrix `A` having elements of type `T`,
-with block-bandwidths `(l,u)` and where `A[Block(K,J)]` is a
-`Matrix{T}` of size `rows[K]`×`cols[J]`.
-
-`(l,u)` may be integers for constant bandwidths or integer vectors of
-lengths `rows` and `cols`, respectively, for ragged bands.
-
-# Examples
-
-```jldoctest
-julia> using LinearAlgebra, FillArrays
-
-julia> BlockSkylineMatrix(I, [2,3,4], [1,2,3], ([2,0,1],[1,1,1]))
-3×3-blocked 9×6 BlockSkylineMatrix{Bool, Vector{Bool}, BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedUnitRange{Vector{Int64}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}, Vector{Int64}, Vector{Int64}, BandedMatrices.BandedMatrix{Int64, Matrix{Int64}, Base.OneTo{Int64}}, Vector{Int64}}}:
- 1  │  0  0  │  ⋅  ⋅  ⋅
- 0  │  1  0  │  ⋅  ⋅  ⋅
- ───┼────────┼─────────
- 0  │  0  1  │  0  0  0
- 0  │  0  0  │  1  0  0
- 0  │  0  0  │  0  1  0
- ───┼────────┼─────────
- 0  │  ⋅  ⋅  │  0  0  1
- 0  │  ⋅  ⋅  │  0  0  0
- 0  │  ⋅  ⋅  │  0  0  0
- 0  │  ⋅  ⋅  │  0  0  0
-
-julia> BlockSkylineMatrix(Ones(9,6), [2,3,4], [1,2,3], ([2,0,1],[1,1,1]))
-3×3-blocked 9×6 BlockSkylineMatrix{Float64, Vector{Float64}, BlockBandedMatrices.BlockSkylineSizes{Tuple{BlockArrays.BlockedUnitRange{Vector{Int64}}, BlockArrays.BlockedUnitRange{Vector{Int64}}}, Vector{Int64}, Vector{Int64}, BandedMatrices.BandedMatrix{Int64, Matrix{Int64}, Base.OneTo{Int64}}, Vector{Int64}}}:
- 1.0  │  1.0  1.0  │   ⋅    ⋅    ⋅
- 1.0  │  1.0  1.0  │   ⋅    ⋅    ⋅
- ─────┼────────────┼───────────────
- 1.0  │  1.0  1.0  │  1.0  1.0  1.0
- 1.0  │  1.0  1.0  │  1.0  1.0  1.0
- 1.0  │  1.0  1.0  │  1.0  1.0  1.0
- ─────┼────────────┼───────────────
- 1.0  │   ⋅    ⋅   │  1.0  1.0  1.0
- 1.0  │   ⋅    ⋅   │  1.0  1.0  1.0
- 1.0  │   ⋅    ⋅   │  1.0  1.0  1.0
- 1.0  │   ⋅    ⋅   │  1.0  1.0  1.0
-```
-"""
-BlockSkylineMatrix
 
 @inline BlockBandedMatrix{T}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2, Int}) where T =
     BlockSkylineMatrix{T}(undef, BlockBandedSizes(axes, lu...))
@@ -408,7 +405,7 @@ end
     bi = findblockindex.(axes(A), (i,j))
     V = view(A, block.(bi)...)
     @inbounds V[blockindex.(bi)...] = convert(T, v)::T
-    return v
+    return A
 end
 
 ############
@@ -490,11 +487,10 @@ end
         # TODO: What to do if b_start == 0 ?
         b_stride = A.block_sizes.block_strides[J]
         A.data[b_start + k-1 + (j-1)*b_stride ] = v
-    elseif iszero(v) # allow setindex for 0 data
-        v
-    else
+    elseif !iszero(v) # allow setindex for 0 data
         throw(BandError(A, J-K))
     end
+    return V
 end
 
 """

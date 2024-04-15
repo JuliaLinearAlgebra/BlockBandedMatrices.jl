@@ -88,8 +88,8 @@ end
 
     C = BandedMatrix{Float64}(undef, size(V), 2 .*bandwidths(V))
     C .= MulAdd(V,V)
-    @test all(C .=== BandedMatrix(V)*BandedMatrix(V))
-    @test all(muladd!(2.0, V,V, 1.0, copy(C)) .=== BandedMatrices.gbmm!('N', 'N', 2.0, V, V, 1.0, deepcopy(C)))
+    @test C == BandedMatrix(V)*BandedMatrix(V)
+    @test muladd!(2.0, V,V, 1.0, copy(C)) == BandedMatrices.gbmm!('N', 'N', 2.0, V, V, 1.0, deepcopy(C))
 
     C = BandedBlockBandedMatrix{Float64}(undef, rows,cols, (2l,2u), (2λ,2μ))
     C .= MulAdd(A,A)

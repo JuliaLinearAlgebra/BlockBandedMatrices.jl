@@ -132,8 +132,8 @@ Random.seed!(0)
             expu = max.(u, bs.u)
 
             Cbs = C.block_sizes
-            @test all(Cbs.l .== expl)
-            @test all(Cbs.u .== expu)
+            @test Cbs.l == expl
+            @test Cbs.u == expu
         end
 
         for (l,u) = [([0,0,0,0],[0,0,0,0]),
@@ -155,5 +155,11 @@ Random.seed!(0)
                 end
             end
         end
+    end
+
+    @testset "indexing" begin
+        B = BlockSkylineMatrix{Bool}(I, 1:1, 1:4, ([0,0,0,0],[0,1,1,1]))
+        s = split(sprint(show, "text/plain", B), '\n')[2]
+        @test s == " 1  │  0  0  │  ⋅  ⋅  ⋅  │  ⋅  ⋅  ⋅  ⋅"
     end
 end

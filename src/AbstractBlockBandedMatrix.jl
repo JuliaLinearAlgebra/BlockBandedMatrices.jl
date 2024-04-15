@@ -161,7 +161,7 @@ end
 
 @inline function blockbanded_colstop(A, i::Integer)
     CS = blockcolstop(A,findblock(axes(A,2),i))
-    CS == Block(0) && return 0
+    CS in blockaxes(axes(A,1), 1) || return 0
     last(axes(A,1)[CS])
 end
 
@@ -178,7 +178,7 @@ end
 
 @inline function blockbanded_rowstop(A, i::Integer)
     CS = blockrowstop(A,findblock(axes(A,1),i))
-    CS == Block(0) && return 0
+    CS in blockaxes(axes(A,2), 1) || return 0
     last(axes(A,2)[CS])
 end
 

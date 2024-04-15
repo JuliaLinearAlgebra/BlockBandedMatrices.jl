@@ -256,7 +256,7 @@ import ArrayLayouts: RangeCumsum
         @test_throws BandError V[3,1] = 5
 
         view(V, band(0)) .= -3
-        @test all(A[Block(3,4)][band(0)] .== -3)
+        @test all(==(-3), A[Block(3,4)][band(0)])
 
         @test BandedMatrix(V) isa BandedMatrix{Int,Matrix{Int}}
         @test BandedMatrix{Float64}(V) isa BandedMatrix{Float64,Matrix{Float64}}
@@ -321,7 +321,7 @@ import ArrayLayouts: RangeCumsum
 
         x = randn(size(B,2))
         y = similar(x, size(B,1))
-        @test all((similar(y) .= MulAdd(B, x)) .=== (similar(y) .= MulAdd(V,x)))
+        @test (similar(y) .= MulAdd(B, x)) == (similar(y) .= MulAdd(V,x))
     end
 
     @testset "BLAS arithmetic" begin
@@ -466,7 +466,7 @@ import ArrayLayouts: RangeCumsum
 
     @testset "non-standard blocks" begin
         A = BandedBlockBandedMatrix{Float64}(undef, Int[], 1:5,(-1,1), (-1,1))
-        @test BlockBandedMatrices.colstart(A,1) == 1
+        @test isempty(BlockBandedMatrices.colrange(A,1))
         A = BandedBlockBandedMatrix{Float64}(undef, 1:2, 1:5,(-1,1), (-1,1))
         A.data .= randn.()
         V = view(A, Block(2,3))

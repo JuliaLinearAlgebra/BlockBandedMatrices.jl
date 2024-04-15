@@ -10,7 +10,7 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout,
                             BandedColumnMajor, BlockSkylineSizes,
                             blockrowstop, blockcolstop, ColumnMajor
 
-import BlockArrays: BlockedUnitRange, blockisequal
+import BlockArrays: blockisequal
 
 @testset "triangular" begin
     @testset "triangular BandedBlockBandedMatrix mul" begin
@@ -20,31 +20,35 @@ import BlockArrays: BlockedUnitRange, blockisequal
         U = UpperTriangular(A)
         @test MemoryLayout(typeof(U)) == TriangularLayout{'U','N',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
-        @test U*b isa Vector{Float64}
-        @test all(lmul(U,b) .=== U*b)
-        @test U*b  ≈ Matrix(U)*b
+        Ub = U*b
+        @test Ub isa AbstractVector{Float64}
+        @test lmul(U,b) == Ub
+        @test Ub  ≈ Matrix(U)*b
 
         U = UnitUpperTriangular(A)
         @test MemoryLayout(typeof(U)) == TriangularLayout{'U','U',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
-        @test U*b isa Vector{Float64}
-        @test all(lmul(U,b) .=== U*b)
-        @test U*b  ≈ Matrix(U)*b
+        Ub = U*b
+        @test Ub isa AbstractVector{Float64}
+        @test lmul(U,b) == Ub
+        @test Ub  ≈ Matrix(U)*b
 
         L = LowerTriangular(A)
         @test MemoryLayout(typeof(L)) == TriangularLayout{'L','N',BandedBlockBandedColumnMajor}()
         b = randn(size(U,1))
-        @test L*b isa Vector{Float64}
-        @test all(lmul(L,b) .=== L*b)
-        @test L*b  ≈ Matrix(L)*b
+        Lb = L*b
+        @test Lb isa AbstractVector{Float64}
+        @test lmul(L,b) == Lb
+        @test Lb  ≈ Matrix(L)*b
 
 
         L = UnitLowerTriangular(A)
         @test MemoryLayout(typeof(L)) == TriangularLayout{'L','U',BandedBlockBandedColumnMajor}()
         b = randn(size(L,1))
-        @test L*b isa Vector{Float64}
-        @test all(lmul(L,b) .=== L*b)
-        @test L*b  ≈ Matrix(L)*b
+        Lb = L*b
+        @test Lb isa AbstractVector{Float64}
+        @test lmul(L,b) == Lb
+        @test Lb  ≈ Matrix(L)*b
     end
 
     @testset "Block by BlockIndex" begin
@@ -80,17 +84,17 @@ import BlockArrays: BlockedUnitRange, blockisequal
         U = UpperTriangular(A)
         b = randn(size(U,1))
         @test copyto!(similar(b), Ldiv(U,b)) ≈ Matrix(U) \ b
-        @test all((similar(b) .= Ldiv(U, b)) .=== copyto!(similar(b), Ldiv(U,b)))
+        @test (similar(b) .= Ldiv(U, b)) == copyto!(similar(b), Ldiv(U,b))
 
         U = UnitUpperTriangular(A)
         b = randn(size(U,1))
         @test copyto!(similar(b), Ldiv(U,b)) ≈ (Matrix(U) \ b)
-        @test all((similar(b) .= Ldiv(U, b)) .=== copyto!(similar(b), Ldiv(U,b)))
+        @test (similar(b) .= Ldiv(U, b)) == copyto!(similar(b), Ldiv(U,b))
 
         L = LowerTriangular(A)
         b = randn(size(L,1))
         @test copyto!(similar(b), Ldiv(L,b)) ≈ (Matrix(L) \ b)
-        @test all((similar(b) .= Ldiv(L, b)) .=== copyto!(similar(b), Ldiv(L,b)))
+        @test (similar(b) .= Ldiv(L, b)) == copyto!(similar(b), Ldiv(L,b))
     end
 
     @testset "Rectangular blocks BlockBandedMatrix linear algebra" begin
@@ -105,7 +109,7 @@ import BlockArrays: BlockedUnitRange, blockisequal
 
         V = view(A, Block.(1:3), Block.(1:4))
         @test blockisequal(axes(V), axes(A))
-        @test all(Matrix(V) .=== Matrix(A))
+        @test Matrix(V) == Matrix(A)
         @test view(V, Block(2)[1:2], Block(3)) ≡ view(A, Block(2)[1:2], Block(3))
 
         @test similar(Ldiv(UpperTriangular(A), b)) isa PseudoBlockVector
@@ -145,7 +149,7 @@ import BlockArrays: BlockedUnitRange, blockisequal
         r = UpperTriangular(Matrix(V)) \ b
         @test_broken BlockBandedMatrices.blockbanded_squareblocks_trtrs!(V, copy(b)) ≈ r
 
-        @test_broken all(ldiv!(UpperTriangular(V), copy(b)) .=== BlockBandedMatrices.blockbanded_squareblocks_trtrs!(V, copy(b)))
+        @test_broken ldiv!(UpperTriangular(V), copy(b)) == BlockBandedMatrices.blockbanded_squareblocks_trtrs!(V, copy(b))
 
         V = view(A, Block.(2:3), Block(3))
         @test unsafe_load(pointer(V)) == A[2,4]
@@ -155,8 +159,8 @@ import BlockArrays: BlockedUnitRange, blockisequal
         @test size(V) == (5,3)
         b = randn(size(V,2))
 
-        @test all((similar(b,size(V,1)) .= MulAdd(V,b)) .=== Matrix(V)*b .===
-                    BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
+        @test (similar(b,size(V,1)) .= MulAdd(V,b)) == Matrix(V)*b ==
+                    BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1)))
 
         V = view(A, Block.(1:3), Block(3)[2:3])
         @test_throws ArgumentError pointer(V)
@@ -172,8 +176,8 @@ import BlockArrays: BlockedUnitRange, blockisequal
 
         @test size(V) == (5,2)
         b = randn(size(V,2))
-        @test all((similar(b,size(V,1)) .= MulAdd(V,b)) .=== Matrix(V)*b .===
-                    BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
+        @test (similar(b,size(V,1)) .= MulAdd(V,b)) == Matrix(V)*b ==
+                    BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1)))
 
         V = view(A, Block.(1:3), Block(3)[2:3])
         @test_throws ArgumentError pointer(V)
@@ -190,18 +194,18 @@ import BlockArrays: BlockedUnitRange, blockisequal
         @test unsafe_load(pointer(V_22)) == V_22[1,1] == V[1,1]
         @test strides(V_22) == strides(V) == (1,9)
         b = randn(N)
-        @test all(copyto!(similar(b) , MulAdd(V,b)) .=== copyto!(similar(b) , MulAdd(V_22,b)) .===
-            Matrix(V)*b .===
-            BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1))))
+        @test copyto!(similar(b) , MulAdd(V,b)) == copyto!(similar(b) , MulAdd(V_22,b)) ==
+            Matrix(V)*b ==
+            BLAS.gemv!('N', 1.0, V, b, 0.0, Vector{Float64}(undef, size(V,1)))
 
-        @test_skip all(UpperTriangular(V_22) \ b .=== ldiv!(UpperTriangular(V_22) , copy(b)) .=== ldiv!(UpperTriangular(V) , copy(b)) .===
-            ldiv!(UpperTriangular(Matrix(V_22)) , copy(b)))
+        @test_skip UpperTriangular(V_22) \ b == ldiv!(UpperTriangular(V_22) , copy(b)) == ldiv!(UpperTriangular(V) , copy(b)) ==
+            ldiv!(UpperTriangular(Matrix(V_22)) , copy(b))
 
         V = view(A, Block.(rows), Block.(cols))
         V2 = view(A, 1:size(A,1), 1:size(A,2))
         b = randn(size(V,1))
 
-        @test all(Matrix(V) .=== Matrix(V2))
+        @test Matrix(V) == Matrix(V2)
         @test UpperTriangular(V2) \ b ≈ UpperTriangular(V) \ b
     end
 end
