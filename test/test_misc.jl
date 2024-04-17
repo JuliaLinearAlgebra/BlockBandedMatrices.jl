@@ -1,3 +1,5 @@
+module TestMisc
+
 using ArrayLayouts
 using BandedMatrices
 using BlockArrays
@@ -246,3 +248,4 @@ Base.size(F::FiniteDifference) = (F.n,F.n)
     end
 end
 
+end # module

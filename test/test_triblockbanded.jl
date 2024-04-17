@@ -1,3 +1,5 @@
+module TestTriBlockBanded
+
 using ArrayLayouts
 using BandedMatrices
 using BlockArrays
@@ -209,3 +211,5 @@ import BlockArrays: blockisequal
         @test UpperTriangular(V2) \ b ≈ UpperTriangular(V) \ b
     end
 end
+
+end # module
