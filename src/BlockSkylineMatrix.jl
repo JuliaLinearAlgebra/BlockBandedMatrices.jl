@@ -519,10 +519,10 @@ function copy_accommodating_diagonals(A::BlockSkylineMatrix, diagonals::UnitRang
         for (j,i) in enumerate(rows)
             # First we find which block the j:th element of the main
             # diagonal would occupy.
-            md_block = findfirst(≥(j), ax.lasts)
+            md_block = searchsortedfirst(blocklasts(ax), j)
 
             # Next we find which block covers row i
-            d_block = findfirst(≥(i), ax.lasts)
+            d_block = searchsortedfirst(blocklasts(ax), i)
 
             # Finally, we increase the block-bandwidth as necessary
             v[md_block] = max(v[md_block], abs(d_block-md_block))
