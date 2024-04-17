@@ -1,5 +1,4 @@
 using BlockBandedMatrices
-using LinearAlgebra
 using Test
 
 using Aqua

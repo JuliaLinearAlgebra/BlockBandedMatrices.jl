@@ -1,3 +1,5 @@
+module TestLinalg
+
 using ArrayLayouts
 using BandedMatrices
 using BlockArrays
@@ -201,3 +203,5 @@ end
     @test cholesky(Symmetric(Δ)).U ≈ cholesky(Matrix(Δ)).U
     @test cholesky(Symmetric(Δ,:L)).U ≈ cholesky(Matrix(Δ)).U
 end
+
+end # module
