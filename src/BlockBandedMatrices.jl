@@ -2,19 +2,19 @@ module BlockBandedMatrices
 using BlockArrays, BandedMatrices, ArrayLayouts, FillArrays, MatrixFactorizations
 using LinearAlgebra
 
-import ArrayLayouts: AbstractColumnMajor, AdjQRPackedQLayout, BlasMatLmulVec, ColumnMajor, DenseColumnMajor,
-                     DiagonalLayout, MatLdivVec, MatLmulMat, MatLmulVec, MemoryLayout, MulAdd, TriangularLayout,
-                     UpperTriangularLayout, _copyto!, _factorize, _qr, colsupport, conjlayout, hermitianlayout,
-                     layout_replace_in_print_matrix, mul, rowsupport, sub_materialize, sublayout, symmetriclayout,
-                     transposelayout, triangulardata, triangularlayout, zero!, materialize!, materialize
+import ArrayLayouts: AbstractColumnMajor, AdjQRPackedQLayout, ColumnMajor,
+                     DiagonalLayout, MatLmulMat, MatLmulVec, MemoryLayout, MulAdd, TriangularLayout,
+                     _copyto!, _factorize, _qr, colsupport, conjlayout, hermitianlayout,
+                     layout_replace_in_print_matrix, rowsupport, sub_materialize, sublayout, symmetriclayout,
+                     transposelayout, zero!, materialize!, materialize
 
-import BandedMatrices: BandedColumnMajor, BandedColumns, BandedLayout, BandedStyle, BandedSubBandedMatrix, BlasFloat,
-                       _BandedMatrix, banded_dense_axpy!, banded_generic_axpy!, banded_getindex, banded_setindex!,
-                       bandedcolumns, bandeddata, bandshift, bandwidth, bandwidths, colrange, colstart, colstop,
-                       inbands_getindex, inbands_setindex!, isbanded, rowstart, rowstop
+import BandedMatrices: BandedColumns, BandedLayout, BandedStyle, BlasFloat,
+                       _BandedMatrix, banded_getindex, banded_setindex!,
+                       bandedcolumns, bandeddata, bandshift, bandwidth, bandwidths, colrange,
+                       inbands_getindex, inbands_setindex!, isbanded
 
 import Base: *, +, -, /, \, ==, @propagate_inbounds, OneTo, Slice, axes, checkbounds,
-             convert, copy, copyto!, eltype, fill!, first, getindex, last, length, reindex, setindex!, similar, size,
+             convert, copy, copyto!, eltype, fill!, first, getindex, last, length, setindex!, similar, size,
              strides, unsafe_convert, zeros
 
 import Base.Broadcast: AbstractArrayStyle, BroadcastStyle, Broadcasted, DefaultArrayStyle, broadcasted
@@ -23,12 +23,12 @@ import BlockArrays: AbstractBlockLayout, Block, BlockIndexRange, BlockLayout, Bl
                     BlockStyle, BlockedUnitRange, DefaultBlockAxis, _blockkron, _blocklengths2blocklasts, block,
                     blockcheckbounds, blockcolstart, blockcolstop, blockcolsupport, blockindex, blockisequal,
                     blockrowstart, blockrowstop, blockrowsupport, blocks, blocksize, hasmatchingblocks,
-                    sizes_from_blocks, unblock
+                    sizes_from_blocks
 
 import FillArrays: Fill, Ones, Zeros
 
 import LinearAlgebra: AbstractTriangular, AdjOrTrans, HermOrSym, StructuredMatrixStyle, UniformScaling, axpy!,
-                      isdiag, ldiv!, lmul!, qr, qr!, rdiv!, rmul!
+                      isdiag, ldiv!, lmul!, qr, qr!, rmul!
 
 import LinearAlgebra.BLAS: BlasComplex, BlasFloat, BlasReal
 
