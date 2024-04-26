@@ -9,7 +9,6 @@ using Test
 
 import BlockBandedMatrices: MemoryLayout, TriangularLayout,
                             BandedBlockBandedColumnMajor,
-                            BandedColumnMajor, BlockSkylineSizes,
                             blockrowstop, blockcolstop, ColumnMajor
 
 import BlockArrays: blockisequal
