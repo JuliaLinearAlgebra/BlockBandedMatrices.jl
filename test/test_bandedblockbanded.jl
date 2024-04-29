@@ -1,3 +1,5 @@
+module TestBandedBlockBanded
+
 using ArrayLayouts
 using BandedMatrices
 using BlockArrays
@@ -564,3 +566,5 @@ if false # turned off since tests have check-bounds=yes
     BandedMatrices.inbands_setindex!(V, -2, 5, 1)
     @test A[2,1] == -2
 end
+
+end # module

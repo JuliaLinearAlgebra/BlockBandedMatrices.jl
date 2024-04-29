@@ -1,3 +1,5 @@
+module TestBroadcasting
+
 using ArrayLayouts
 using BandedMatrices
 using BlockArrays
@@ -287,3 +289,5 @@ import Base: oneto
         end
     end
 end
+
+end # module

@@ -1,3 +1,5 @@
+module TestBlockSkylineQR
+
 using BlockBandedMatrices
 using BlockArrays
 using LinearAlgebra
@@ -201,3 +203,5 @@ end
 # @time F = qr(A); # 11s
 # b = randn(size(A,1));
 # @time F\b; # 0.6s
+
+end # module

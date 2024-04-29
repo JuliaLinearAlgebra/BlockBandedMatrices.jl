@@ -1,3 +1,5 @@
+module TestBlockSkyline
+
 using ArrayLayouts
 using BlockArrays
 using BlockBandedMatrices
@@ -163,3 +165,5 @@ Random.seed!(0)
         @test s == " 1  │  0  0  │  ⋅  ⋅  ⋅  │  ⋅  ⋅  ⋅  ⋅"
     end
 end
+
+end # module

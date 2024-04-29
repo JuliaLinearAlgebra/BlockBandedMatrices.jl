@@ -1,6 +1,8 @@
+module TestAdjTransBlockBanded
+
 using ArrayLayouts, BlockBandedMatrices, Test
-import BlockBandedMatrices: BandedBlockBandedRowMajor, BandedBlockBandedRows, 
-                            BandedBlockBandedColumns, BlockBandedRows, 
+import BlockBandedMatrices: BandedBlockBandedRowMajor, BandedBlockBandedRows,
+                            BandedBlockBandedColumns, BlockBandedRows,
                             BlockBandedColumns, blockcolsupport, blockrowsupport
 
 @testset "Adj/Trans" begin
@@ -62,3 +64,5 @@ import BlockBandedMatrices: BandedBlockBandedRowMajor, BandedBlockBandedRows,
         @test colsupport(E2', 1) == 1:0
     end
 end
+
+end # module

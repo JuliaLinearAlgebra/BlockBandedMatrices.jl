@@ -1,3 +1,5 @@
+module TestLinalg
+
 using ArrayLayouts
 using BandedMatrices
 using BlockArrays
@@ -6,8 +8,7 @@ using LinearAlgebra
 using Test
 
 import BandedMatrices: BandError, bandeddata
-import BlockBandedMatrices: _BandedBlockBandedMatrix, MemoryLayout, mul!,
-                            blockcolstop, blockrowstop, BlockSkylineSizes
+import BlockBandedMatrices: _BandedBlockBandedMatrix
 
 @testset "lmul!/rmul!" begin
     C = BandedBlockBandedMatrix{Float64}(undef, 1:2,1:2, (1,1), (1,1))
@@ -201,3 +202,5 @@ end
     @test cholesky(Symmetric(Δ)).U ≈ cholesky(Matrix(Δ)).U
     @test cholesky(Symmetric(Δ,:L)).U ≈ cholesky(Matrix(Δ)).U
 end
+
+end # module

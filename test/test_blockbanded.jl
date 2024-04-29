@@ -1,3 +1,5 @@
+module TestBlockBanded
+
 using ArrayLayouts
 using BandedMatrices
 using BlockArrays
@@ -246,3 +248,5 @@ import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
         @inferred(f(s))
     end
 end
+
+end # module
