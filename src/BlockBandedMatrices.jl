@@ -19,7 +19,7 @@ import Base: *, +, -, /, \, ==, @propagate_inbounds, OneTo, Slice, axes, checkbo
 
 import Base.Broadcast: AbstractArrayStyle, BroadcastStyle, Broadcasted, DefaultArrayStyle, broadcasted
 
-import BlockArrays: AbstractBlockLayout, AbstractBlockedUnitRange, Block, BlockIndexRange, BlockLayout, BlockBidiagonal,
+import BlockArrays: AbstractBlockLayout, AbstractBlockedUnitRange, Block, BlockIndexRange, BlockLayout, BlockBidiagonal, BlockDiagonal,
                     BlockSlice, BlockSlice1, BlockSlices, BlockStyle, BlockTridiagonal, BlockedUnitRange, DefaultBlockAxis,
                     _blockkron, _blocklengths2blocklasts, block,
                     blockcheckbounds, blockcolstart, blockcolstop, blockcolsupport, blockindex, blockisequal,
