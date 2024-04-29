@@ -22,6 +22,7 @@ storing the entries in the non-zero bands.
 A `BlockBandedMatrix` is a subtype of `BlockMatrix` of [BlockArrays.jl](https://github.com/JuliaArrays/BlockArrays.jl)
 whose layout of non-zero blocks is banded. We can construct a `BlockBandedMatrix` as follows:
 ```julia
+using FillArrays, LinearAlgebra
 l,u = 2,1          # block bandwidths
 N = M = 4          # number of row/column blocks
 cols = rows = 1:N  # block sizes
@@ -35,10 +36,12 @@ A `BandedBlockBandedMatrix` has the added structure that the blocks themselves a
 banded, and conform to the banded matrix interface of [BandedMatrices.jl](https://github.com/JuliaLinearAlgebra/BandedMatrices.jl).
 We can construct a `BandedBlockBandedMatrix` as follows:
 ```julia
+using FillArrays, LinearAlgebra
 l,u = 2,1          # block bandwidths
 λ,μ = 1,2          # sub-block bandwidths: the bandwidths of each block
 N = M = 4          # number of row/column blocks
 cols = rows = 1:N  # block sizes
+
 BandedBlockBandedMatrix(Zeros(sum(rows),sum(cols)), rows,cols, (l,u), (λ,μ)) # creates a banded-block-banded matrix of zeros
 BandedBlockBandedMatrix(Ones(sum(rows),sum(cols)), rows,cols, (l,u), (λ,μ))  # creates a banded-block-banded matrix with ones in the non-zero entries
 BandedBlockBandedMatrix(I, rows,cols, (l,u), (λ,μ))                          # creates a banded-block-banded identity matrix

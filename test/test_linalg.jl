@@ -4,6 +4,7 @@ using ArrayLayouts
 using BandedMatrices
 using BlockArrays
 using BlockBandedMatrices
+using FillArrays
 using LinearAlgebra
 using Test
 
