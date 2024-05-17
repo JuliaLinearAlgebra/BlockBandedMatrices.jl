@@ -1,4 +1,4 @@
-using BlockArrays: _BlockArray, PseudoBlockArray, BlockArray, BlockMatrix, BlockVector,
+using BlockArrays: _BlockArray, BlockedArray, BlockArray, BlockMatrix, BlockVector,
                   nblocks, Block, cumulsizes, AbstractBlockVector
 using BlockBandedMatrices: BandedBlockBandedMatrix, _BandedBlockBandedMatrix,
                            blockbandwidths, subblockbandwidths, blockbandwidth,
@@ -15,12 +15,12 @@ import Adapt: adapt
 
 adapt(T::Type, b::BandedBlockBandedMatrix) =
     _BandedBlockBandedMatrix(adapt(T, b.data), b.block_sizes)
-adapt(T::Type{<:AbstractArray}, b::PseudoBlockArray) =
-    PseudoBlockArray(T(b.blocks), b.block_sizes)
+adapt(T::Type{<:AbstractArray}, b::BlockedArray) =
+    BlockedArray(T(b.blocks), b.block_sizes)
 
 
 const SharedBandedBlockBandedMatrix =
-    BandedBlockBandedMatrix{T, PseudoBlockArray{T, 2, SharedArray{T, 2}}} where T
+    BandedBlockBandedMatrix{T, BlockedArray{T, 2, SharedArray{T, 2}}} where T
 
 function SharedBandedBlockBandedMatrix{T}(::UndefInitializer,
                                           bs::BandedBlockBandedSizes;
@@ -155,7 +155,7 @@ function testme()
        n, m = rand(max(l, u, λ, μ):20, N), rand(max(l, u, λ, μ):20, M)
        A = BandedBlockBandedMatrix{Float64}(undef, (n, m), (l, u), (λ, μ))
        A.data .= rand.()
-       x = PseudoBlockArray(Array{Float64, 1}(undef, size(A, 2)), m)
+       x = BlockedArray(Array{Float64, 1}(undef, size(A, 2)), m)
        x .= rand.()
 
        Ashared = adapt(SharedArray, A)
@@ -163,7 +163,7 @@ function testme()
        @test Ashared isa SharedBandedBlockBandedMatrix
        @test length(procs(Ashared)) == max(1, length(procs()) - 1)
        cshared = adapt(SharedArray,
-                      PseudoBlockArray(Array{Float64, 1}(undef, size(A, 1)), n))
+                      BlockedArray(Array{Float64, 1}(undef, size(A, 1)), n))
        @test cshared.blocks isa SharedArray
        cshared .= rand.()
        xshared = adapt(SharedArray, x)

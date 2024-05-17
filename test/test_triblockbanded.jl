@@ -113,7 +113,7 @@ import BlockArrays: blockisequal
         @test Matrix(V) == Matrix(A)
         @test view(V, Block(2)[1:2], Block(3)) ≡ view(A, Block(2)[1:2], Block(3))
 
-        @test similar(Ldiv(UpperTriangular(A), b)) isa PseudoBlockVector
+        @test similar(Ldiv(UpperTriangular(A), b)) isa BlockedVector
         @test UpperTriangular(A) \ b ≈ UpperTriangular(V) \ b ≈ UpperTriangular(Matrix(A)) \ b
 
         V = view(A, 1:11, 1:11)

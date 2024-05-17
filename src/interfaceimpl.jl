@@ -7,7 +7,7 @@ BroadcastStyle(::BandedBlockBandedStyle, ::StructuredMatrixStyle{<:Diagonal}) =
     BandedBlockBandedStyle()
 
 
-function blockbandwidths(P::PseudoBlockMatrix{<:Any,<:Diagonal})
+function blockbandwidths(P::BlockedMatrix{<:Any,<:Diagonal})
     blockisequal(axes(P,1),axes(P,2)) || throw(DimensionMismatch())
     (0,0)
 end
@@ -74,6 +74,6 @@ _blockkron(::Tuple{Vararg{AbstractBandedLayout}}, A) = BandedBlockBandedMatrix(B
 
 
 ## WARNING: type piracy
-BroadcastStyle(::Type{<:SubArray{<:Any,2,<:PseudoBlockMatrix{<:Any,<:Diagonal}, <:Tuple{<:BlockSlice1,<:BlockSlice1}}}) = BandedStyle()
+BroadcastStyle(::Type{<:SubArray{<:Any,2,<:BlockedMatrix{<:Any,<:Diagonal}, <:Tuple{<:BlockSlice1,<:BlockSlice1}}}) = BandedStyle()
 
 sublayout(::DiagonalLayout{L}, inds::Type{<:NTuple{2,BS}}) where {L,BS<:BlockSlice{<:BlockRange1}} = bandedblockbandedcolumns(sublayout(L(),Tuple{BS}))

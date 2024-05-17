@@ -50,7 +50,7 @@ the strided matrix interface, but we can also use BLAS and LAPACK to, for exampl
 upper-triangularize a block column all at once.
 
 
-A `BandedBlockBandedMatrix` stores the entries as a `PseudoBlockMatrix`,
+A `BandedBlockBandedMatrix` stores the entries as a `BlockedMatrix`,
 with the number of row blocks equal to `A.l + A.u + 1`, and the row
 block sizes are all `A.μ + A.λ + 1`. The column block sizes of the storage is
 the same as the the column block sizes of the `BandedBlockBandedMatrix`. This
@@ -69,7 +69,7 @@ of row and column blocks, then `A` has zero structure
    ⋅    ⋅   │ a_53  ⋅
    ⋅    ⋅   │ a_63 a_64 ]
 ```
-and is stored in memory via `A.data` as a `PseudoBlockMatrix`, which has block sizes
+and is stored in memory via `A.data` as a `BlockedMatrix`, which has block sizes
 2 x 2, containing entries:
 ```julia
 [a_11 a_22 │ a_33 a_44

@@ -71,10 +71,10 @@ Base.size(F::FiniteDifference) = (F.n,F.n)
         @test A[Block(3)[2:3],Block(3)] isa BandedMatrix
         @test A[Block(3),Block(3)[1:2]] isa BandedMatrix
         @test A[Block.(1:3),Block.(1:3)] isa BandedBlockBandedMatrix
-        @test A[Block(1),Block.(2:3)] isa PseudoBlockArray
-        @test A[Block.(2:3),Block(1)] isa PseudoBlockArray
-        @test A[Block.(2:3),Block(2)[1:2]] isa PseudoBlockArray
-        @test A[Block(2)[1:2],Block.(2:3)] isa PseudoBlockArray
+        @test A[Block(1),Block.(2:3)] isa BlockedArray
+        @test A[Block.(2:3),Block(1)] isa BlockedArray
+        @test A[Block.(2:3),Block(2)[1:2]] isa BlockedArray
+        @test A[Block(2)[1:2],Block.(2:3)] isa BlockedArray
     end
 
     @testset "MyBlockBandedMatrix" begin
@@ -90,10 +90,10 @@ Base.size(F::FiniteDifference) = (F.n,F.n)
         @test A[Block(3)[2:3],Block(3)] isa Matrix
         @test A[Block(3),Block(3)[1:2]] isa Matrix
         @test A[Block.(1:3),Block.(1:3)] isa BlockBandedMatrix
-        @test A[Block(1),Block.(2:3)] isa PseudoBlockArray
-        @test A[Block.(2:3),Block(1)] isa PseudoBlockArray
-        @test A[Block.(2:3),Block(2)[1:2]] isa PseudoBlockArray
-        @test A[Block(2)[1:2],Block.(2:3)] isa PseudoBlockArray
+        @test A[Block(1),Block.(2:3)] isa BlockedArray
+        @test A[Block.(2:3),Block(1)] isa BlockedArray
+        @test A[Block.(2:3),Block(2)[1:2]] isa BlockedArray
+        @test A[Block(2)[1:2],Block.(2:3)] isa BlockedArray
     end
 
     @testset "Zeros" begin
@@ -110,7 +110,7 @@ Base.size(F::FiniteDifference) = (F.n,F.n)
         D = Diagonal(randn(n^2))
         @test blockbandwidths(D) == subblockbandwidths(D) == (0,0)
 
-        PD = PseudoBlockArray(D, Fill(n,n), Fill(n,n))
+        PD = BlockedArray(D, Fill(n,n), Fill(n,n))
         @test blockbandwidths(PD) == bandwidths(PD) == (0,0)
         @test MemoryLayout(typeof(PD)) isa DiagonalLayout{DenseColumnMajor}
         @test bandeddata(PD) == bandeddata(D)
@@ -168,7 +168,7 @@ Base.size(F::FiniteDifference) = (F.n,F.n)
     end
 
     @testset "DiagonalBlock" begin
-        D = Diagonal(PseudoBlockVector(randn(6), 1:3))
+        D = Diagonal(BlockedVector(randn(6), 1:3))
         D̃ = BandedBlockBandedMatrix(D)
         @test D̃ == D
         @test blockbandwidths(D) == blockbandwidths(D̃) == subblockbandwidths(D) == subblockbandwidths(D̃) == (0,0)
@@ -188,7 +188,7 @@ Base.size(F::FiniteDifference) = (F.n,F.n)
 
     @testset "Block-BandedMatrix" begin
         a = blockedrange(1:5)
-        B = _BandedMatrix(PseudoBlockArray(randn(5,length(a)),(Base.OneTo(5),a)), a, 3, 1)
+        B = _BandedMatrix(BlockedArray(randn(5,length(a)),(Base.OneTo(5),a)), a, 3, 1)
         @test blockcolsupport(B,Block(1)) == Block.(1:3)
         @test blockcolsupport(B,Block(3)) == Block.(2:4)
         @test blockrowsupport(B,Block(1)) == Block.(1:2)

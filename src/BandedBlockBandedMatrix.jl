@@ -39,10 +39,10 @@ struct BandedBlockBandedMatrix{T, BLOCKS, RAXIS<:AbstractUnitRange{Int}} <: Abst
     end
 end
 
-const DefaultBandedBlockBandedMatrix{T} = BandedBlockBandedMatrix{T, PseudoBlockMatrix{T, Matrix{T}, NTuple{2,DefaultBlockAxis}}, DefaultBlockAxis}
+const DefaultBandedBlockBandedMatrix{T} = BandedBlockBandedMatrix{T, BlockedMatrix{T, Matrix{T}, NTuple{2,DefaultBlockAxis}}, DefaultBlockAxis}
 
 @inline _BandedBlockBandedMatrix(data::AbstractMatrix, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
-    _BandedBlockBandedMatrix(PseudoBlockArray(data,(blockedrange(Fill(sum(λμ)+1,sum(lu)+1)),axes[2])), axes[1], lu, λμ)
+    _BandedBlockBandedMatrix(BlockedArray(data,(blockedrange(Fill(sum(λμ)+1,sum(lu)+1)),axes[2])), axes[1], lu, λμ)
 
 @inline _BandedBlockBandedMatrix(data::AbstractMatrix,rblocksizes::AbstractVector{Int}, cblocksizes::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
     _BandedBlockBandedMatrix(data, (blockedrange(rblocksizes),blockedrange(cblocksizes)), lu, λμ)
@@ -60,7 +60,7 @@ BandedBlockBandedMatrix{T,B}(::UndefInitializer, rblocksizes::AbstractVector{Int
     BandedBlockBandedMatrix{T,B}(undef, (blockedrange(rblocksizes),blockedrange(cblocksizes)), lu, λμ)
 
 BandedBlockBandedMatrix{T}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
-    _BandedBlockBandedMatrix(PseudoBlockMatrix{T}(undef, _bbb_data_axes(axes[2],lu,λμ)), axes[1], lu, λμ)
+    _BandedBlockBandedMatrix(BlockedMatrix{T}(undef, _bbb_data_axes(axes[2],lu,λμ)), axes[1], lu, λμ)
 """
     BandedBlockBandedMatrix{T}(undef, rows, cols, (l, u), (λ, μ))
 
@@ -427,8 +427,8 @@ sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockRangeInd,Single
 
 sub_materialize(::AbstractBandedBlockBandedLayout, V, _) = BandedBlockBandedMatrix(V)
 sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{AbstractBlockedUnitRange,AbstractBlockedUnitRange}) = BandedBlockBandedMatrix(V)
-sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{AbstractUnitRange,AbstractBlockedUnitRange}) = PseudoBlockArray(V)
-sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{AbstractBlockedUnitRange,AbstractUnitRange}) = PseudoBlockArray(V)
+sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{AbstractUnitRange,AbstractBlockedUnitRange}) = BlockedArray(V)
+sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{AbstractBlockedUnitRange,AbstractUnitRange}) = BlockedArray(V)
 
 
 sub_materialize(::AbstractBandedLayout, V, ::Tuple{AbstractBlockedUnitRange,AbstractBlockedUnitRange}) = BandedMatrix(V)

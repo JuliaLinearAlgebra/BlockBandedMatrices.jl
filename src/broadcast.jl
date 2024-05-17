@@ -150,7 +150,7 @@ function blockbanded_copyto!(dest::AbstractMatrix, src::AbstractMatrix)
     if isblockbanded(dest)
         _blockbanded_copyto!(dest, src)
     else
-        _blockbanded_copyto!(PseudoBlockArray(dest, axes(src)), src)
+        _blockbanded_copyto!(BlockedArray(dest, axes(src)), src)
     end
     dest
 end
@@ -159,7 +159,7 @@ end
 _copyto!(_, ::AbstractBlockBandedLayout, dest::AbstractMatrix, src::AbstractMatrix) = blockbanded_copyto!(dest, src)
 function _copyto!(_, ::BlockLayout{<:BandedColumns}, dest::AbstractMatrix, src::AbstractMatrix)
     if !blockisequal(axes(dest), axes(src))
-        copyto!(PseudoBlockArray(dest, axes(src)), src)
+        copyto!(BlockedArray(dest, axes(src)), src)
         return dest
     end
 
@@ -188,7 +188,7 @@ end
 
 function _copyto!(_, ::BlockLayout{<:AbstractBandedLayout}, dest::AbstractMatrix, src::AbstractMatrix)
     if !blockisequal(axes(dest), axes(src))
-        copyto!(PseudoBlockArray(dest, axes(src)), src)
+        copyto!(BlockedArray(dest, axes(src)), src)
         return dest
     end
 
@@ -352,7 +352,7 @@ for op in (:+, :-)
                                                                 <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
         bc_axes = Base.Broadcast.combine_axes(bc.args...)# Use combine_axes as `bc` might get axes from `C`
         if !blockisequal(axes(C), bc_axes)
-            copyto!(PseudoBlockArray(C, bc_axes), bc)
+            copyto!(BlockedArray(C, bc_axes), bc)
             return C
         end
 

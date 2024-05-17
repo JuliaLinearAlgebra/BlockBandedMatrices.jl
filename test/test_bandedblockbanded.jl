@@ -441,7 +441,7 @@ import ArrayLayouts: RangeCumsum
 
         @test eltype(A) === eltype(B) === Int64
         @test typeof(A.data) <: BlockArray
-        @test typeof(B.data) <: PseudoBlockArray
+        @test typeof(B.data) <: BlockedArray
         @test size(A) == size(B)
         @test bandrange(A) == bandrange(B)
         @test blockbandwidths(A) == blockbandwidths(B)
@@ -450,13 +450,13 @@ import ArrayLayouts: RangeCumsum
         A = WithBlockMatrix{Int64}(Zeros{Int64}(sum(args[1]),sum(args[2])), args...)
         B = BandedBlockBandedMatrix{Int64}(Zeros{Int64}(sum(args[1]),sum(args[2])), args...)
         @test typeof(A.data) <: BlockArray
-        @test typeof(B.data) <: PseudoBlockArray
+        @test typeof(B.data) <: BlockedArray
         @test A == B
 
         A = WithBlockMatrix{Int64}(Ones{Int64}(sum(args[1]),sum(args[2])), args...)
         B = BandedBlockBandedMatrix{Int64}(Ones{Int64}(sum(args[1]),sum(args[2])), args...)
         @test typeof(A.data) <: BlockArray
-        @test typeof(B.data) <: PseudoBlockArray
+        @test typeof(B.data) <: BlockedArray
         @test A == B
         @test (A .+ 1) .* 2 == B .* 2 .+ 2
     end
@@ -502,7 +502,7 @@ import ArrayLayouts: RangeCumsum
     end
 
     @testset "DualLayout blocks" begin
-        A = _BandedBlockBandedMatrix(PseudoBlockVector([1,2,3],[1,2])', blockedrange([1,2]), (-1,1), (-1,1))
+        A = _BandedBlockBandedMatrix(BlockedVector([1,2,3],[1,2])', blockedrange([1,2]), (-1,1), (-1,1))
         @test MemoryLayout(A) isa BandedBlockBandedColumns{RowMajor}
     end
 
