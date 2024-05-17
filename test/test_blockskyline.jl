@@ -3,6 +3,7 @@ module TestBlockSkyline
 using ArrayLayouts
 using BlockArrays
 using BlockBandedMatrices
+using FillArrays
 using LinearAlgebra
 using Random
 using Test

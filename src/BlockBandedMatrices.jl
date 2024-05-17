@@ -36,7 +36,7 @@ import MatrixFactorizations: AdjQLPackedQLayout, QR, QRPackedQ, _ql, ql, ql!
 
 
 export BandedBlockBandedMatrix, BlockBandedMatrix, BlockSkylineMatrix, blockbandwidth, blockbandwidths,
-        subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block, BlockTridiagonal, BlockBidiagonal, isblockbanded
+        subblockbandwidth, subblockbandwidths, BlockTridiagonal, BlockBidiagonal, isblockbanded
 
 
 const Block1 = Block{1,Int}
