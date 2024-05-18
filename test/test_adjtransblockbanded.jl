@@ -1,6 +1,6 @@
 module TestAdjTransBlockBanded
 
-using ArrayLayouts, BlockBandedMatrices, Test
+using ArrayLayouts, BlockBandedMatrices, Test, FillArrays, BlockArrays
 import BlockBandedMatrices: BandedBlockBandedRowMajor, BandedBlockBandedRows,
                             BandedBlockBandedColumns, BlockBandedRows,
                             BlockBandedColumns, blockcolsupport, blockrowsupport

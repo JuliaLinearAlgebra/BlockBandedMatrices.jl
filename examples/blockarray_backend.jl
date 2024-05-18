@@ -4,7 +4,7 @@ using CuArrays
 using CuArrays.CUBLAS: libcublas_handle, cublasSetStream_v2, CuDefaultStream
 using CUDAnative.CUDAdrv: CuStream
 using GPUArrays
-using BlockArrays: _BlockArray, PseudoBlockArray, BlockArray, BlockMatrix, BlockVector,
+using BlockArrays: _BlockArray, BlockedArray, BlockArray, BlockMatrix, BlockVector,
                   nblocks, Block, cumulsizes, AbstractBlockVector
 using BlockBandedMatrices: BandedBlockBandedMatrix, _BandedBlockBandedMatrix,
                            blockbandwidths, subblockbandwidths, blockbandwidth,
@@ -22,13 +22,13 @@ import LinearAlgebra
 # BlockArrays
 adapt(T::Type{<:AbstractArray}, b::BlockArray) =
     _BlockArray(T.(b.blocks), b.block_sizes)
-adapt(T::Type{<:AbstractArray}, b::PseudoBlockArray) =
-    PseudoBlockArray(T(b.blocks), b.block_sizes)
-adapt(T::Type{<:PseudoBlockArray}, b::BlockArray) = T(b.blocks, b.block_sizes)
-adapt(T::Type{<:BlockArray}, b::PseudoBlockArray) = T(b.blocks, b.block_sizes)
+adapt(T::Type{<:AbstractArray}, b::BlockedArray) =
+    BlockedArray(T(b.blocks), b.block_sizes)
+adapt(T::Type{<:BlockedArray}, b::BlockArray) = T(b.blocks, b.block_sizes)
+adapt(T::Type{<:BlockArray}, b::BlockedArray) = T(b.blocks, b.block_sizes)
 # CuArrays and BlockArrays
 if @isdefined CuArray
-  adapt(T::Type{<:CuArray}, b::PseudoBlockArray) = adapt(T, BlockArray(b))
+  adapt(T::Type{<:CuArray}, b::BlockedArray) = adapt(T, BlockArray(b))
 end
 ###############
 
@@ -138,22 +138,22 @@ function testme()
       end
     end
 
-    @testset "PseudoBlockArray Adapters" begin
-      bmat = PseudoBlockArray{Float64}(undef, [1, 1], [2, 2])
+    @testset "BlockedArray Adapters" begin
+      bmat = BlockedArray{Float64}(undef, [1, 1], [2, 2])
       @test eltype(adapt(JLArray, bmat)) === Float64
-      @test adapt(JLArray, bmat) isa PseudoBlockArray
+      @test adapt(JLArray, bmat) isa BlockedArray
       if @isdefined CuArray
-        @test !(adapt(CuArray, bmat) isa PseudoBlockArray)
+        @test !(adapt(CuArray, bmat) isa BlockedArray)
         @test adapt(CuArray, bmat) isa BlockArray{T, 2, CuArray{T, 2}} where T
         @test cu(bmat) isa BlockArray{T, 2, CuArray{T, 2}} where T
         @test eltype(cu(bmat)) === Float32
       end
     end
 
-    @testset "PseudoBlockArray Adapters" begin
+    @testset "BlockedArray Adapters" begin
       bmat = BandedBlockBandedMatrix{Float64}(undef, ([1, 1], [2, 2]), (1, 2), (1, 1))
       @test adapt(JLArray, bmat) isa BandedBlockBandedMatrix
-      @test adapt(JLArray, bmat).data isa PseudoBlockArray{T, 2, JLArray{T, 2}} where T
+      @test adapt(JLArray, bmat).data isa BlockedArray{T, 2, JLArray{T, 2}} where T
       @test eltype(adapt(JLArray, bmat)) === Float64
       if @isdefined CuArray
         @test adapt(CuArray, bmat).data isa BlockArray{T, 2, CuArray{T, 2}} where T
@@ -172,7 +172,7 @@ function testme()
        Ablock = adapt(BlockArray, A)
        cblock = BlockArray(Array{Float64, 1}(undef, size(A, 1)), n)
        cblock .= rand.()
-       x = PseudoBlockArray(Array{Float64, 1}(undef, size(A, 2)), m)
+       x = BlockedArray(Array{Float64, 1}(undef, size(A, 2)), m)
        x .= rand.()
        xblock = adapt(BlockArray, x)
 
@@ -192,7 +192,7 @@ using Statistics
 function benchmarks()
   suite = BenchmarkGroup()
   # suite["viabm"] = BenchmarkGroup()
-  suite["pseudo"] = BenchmarkGroup()
+  suite["blocked"] = BenchmarkGroup()
   suite["block"] = BenchmarkGroup()
   if @isdefined CuArrays
     suite["gpu"] = BenchmarkGroup()
@@ -205,12 +205,12 @@ function benchmarks()
     A = BandedBlockBandedMatrix{Float64}(
              undef, (repeat([n], N), repeat([m], M)), (l, u), (λ, μ))
     A.data .= rand.()
-    c = PseudoBlockArray(Array{Float64, 1}(undef, size(A, 1)), repeat([n], N))
+    c = BlockedArray(Array{Float64, 1}(undef, size(A, 1)), repeat([n], N))
     c .= rand.()
-    x = PseudoBlockArray(Array{Float64, 1}(undef, size(A, 2)), repeat([m], M))
+    x = BlockedArray(Array{Float64, 1}(undef, size(A, 2)), repeat([m], M))
     x .= rand.()
 
-    suite["pseudo"]["N=$N n=$n"] = @benchmarkable begin
+    suite["blocked"]["N=$N n=$n"] = @benchmarkable begin
       $c .= Mul($A, $x)
     end
     suite["block"]["N=$N n=$n"] = @benchmarkable begin
@@ -234,6 +234,6 @@ function benchmarks()
 end
 
 block_ratio(result, name; method=median) =
-    ratio(method(result["block"][name]), method(result["pseudo"][name]))
+    ratio(method(result["block"][name]), method(result["blocked"][name]))
 viabm_ratio(result, name; method=median) =
     ratio(method(result["viabm"][name]), method(result["block"][name]))

@@ -39,15 +39,14 @@ struct BandedBlockBandedMatrix{T, BLOCKS, RAXIS<:AbstractUnitRange{Int}} <: Abst
     end
 end
 
-const DefaultBandedBlockBandedMatrix{T} = BandedBlockBandedMatrix{T, PseudoBlockMatrix{T, Matrix{T}, NTuple{2,DefaultBlockAxis}}, DefaultBlockAxis}
+const DefaultBandedBlockBandedMatrix{T} = BandedBlockBandedMatrix{T, BlockedMatrix{T, Matrix{T}, NTuple{2,DefaultBlockAxis}}, DefaultBlockAxis}
 
 @inline _BandedBlockBandedMatrix(data::AbstractMatrix, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
-    _BandedBlockBandedMatrix(PseudoBlockArray(data,(blockedrange(Fill(sum(λμ)+1,sum(lu)+1)),axes[2])), axes[1], lu, λμ)
+    _BandedBlockBandedMatrix(BlockedArray(data,(blockedrange(Fill(sum(λμ)+1,sum(lu)+1)),axes[2])), axes[1], lu, λμ)
 
 @inline _BandedBlockBandedMatrix(data::AbstractMatrix,rblocksizes::AbstractVector{Int}, cblocksizes::AbstractVector{Int}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
     _BandedBlockBandedMatrix(data, (blockedrange(rblocksizes),blockedrange(cblocksizes)), lu, λμ)
 
-_blocklengths2blocklasts(b::Fill) = cumsum(b)
 _bbb_data_axes(caxes, lu, λμ) = (blockedrange(Fill(max(0,sum(λμ)+1),max(0,sum(lu)+1))),caxes)
 
 BandedBlockBandedMatrix{T,B,R}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B,R<:AbstractUnitRange{Int}} =
@@ -61,7 +60,7 @@ BandedBlockBandedMatrix{T,B}(::UndefInitializer, rblocksizes::AbstractVector{Int
     BandedBlockBandedMatrix{T,B}(undef, (blockedrange(rblocksizes),blockedrange(cblocksizes)), lu, λμ)
 
 BandedBlockBandedMatrix{T}(::UndefInitializer, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
-    _BandedBlockBandedMatrix(PseudoBlockMatrix{T}(undef, _bbb_data_axes(axes[2],lu,λμ)), axes[1], lu, λμ)
+    _BandedBlockBandedMatrix(BlockedMatrix{T}(undef, _bbb_data_axes(axes[2],lu,λμ)), axes[1], lu, λμ)
 """
     BandedBlockBandedMatrix{T}(undef, rows, cols, (l, u), (λ, μ))
 
@@ -242,11 +241,11 @@ convert(::Type{AbstractMatrix{T}}, B::BandedBlockBandedMatrix{T}) where T = B
 similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
     BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
 
-@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{BlockedUnitRange,AbstractUnitRange{Int}}) where T =
+@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{AbstractBlockedUnitRange,AbstractUnitRange{Int}}) where T =
     BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
-@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{AbstractUnitRange{Int},BlockedUnitRange}) where T =
+@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{AbstractUnitRange{Int},AbstractBlockedUnitRange}) where T =
     BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
-@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{BlockedUnitRange,BlockedUnitRange}) where T =
+@inline similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::Tuple{AbstractBlockedUnitRange,AbstractBlockedUnitRange}) where T =
     BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
 
 
@@ -289,7 +288,7 @@ subblockbandwidths(A::BandedBlockBandedMatrix) = (A.λ, A.μ)
 # default is to use whole block
 _subblockbandwidths(A::AbstractMatrix, ::NTuple{2,OneTo{Int}}) = bandwidths(A)
 function _subblockbandwidths(A::AbstractMatrix, _)
-    M,N = map(maximum, blocksizes(A))
+    M,N = map(maximum, blocklengths.(axes(A)))
     M-1,N-1
 end
 
@@ -401,7 +400,7 @@ const SubBandedBlockBandedMatrix{T,R1,R2} =
     SubArray{T,2,<:BandedBlockBandedMatrix{T},<:Tuple{BlockSlice{R1},BlockSlice{R2}}}
 
 const SingleBlockInd = Union{BlockSlice1, BlockSlice{<:BlockIndexRange1}}
-const BlockRangeInd = Union{BlockSlices, BlockedUnitRange}
+const BlockRangeInd = Union{BlockSlices, AbstractBlockedUnitRange}
 
 sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{SingleBlockInd,SingleBlockInd}} = bandedcolumns(sublayout(ML(), II))
 sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockRangeInd,BlockRangeInd}} = bandedblockbandedcolumns(sublayout(ML(), II))
@@ -410,7 +409,7 @@ sublayout(::BandedBlockBandedColumns{ML}, ::Type{II}) where {ML,II<:Tuple{BlockR
 
 _blockaxes1(A::BlockSlice) = A.block
 _blockaxes1(A::Slice) = _blockaxes1(A.indices)
-_blockaxes1(A::BlockedUnitRange) = blockaxes(A,1)
+_blockaxes1(A::AbstractBlockedUnitRange) = blockaxes(A,1)
 blockbandshift(A, B) = BandedMatrices.bandshift(Int.(_blockaxes1(A)), Int.(_blockaxes1(B)))
 blockbandshift(S) = blockbandshift(parentindices(S)...)
 
@@ -427,12 +426,10 @@ sublayout(::AbstractBandedBlockBandedLayout, ::Type{<:Tuple{BlockRangeInd,Single
 
 
 sub_materialize(::AbstractBandedBlockBandedLayout, V, _) = BandedBlockBandedMatrix(V)
-sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{<:BlockedUnitRange,<:BlockedUnitRange}) = BandedBlockBandedMatrix(V)
-sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{<:AbstractUnitRange,<:BlockedUnitRange}) = PseudoBlockArray(V)
-sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{<:BlockedUnitRange,<:AbstractUnitRange}) = PseudoBlockArray(V)
+sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{AbstractBlockedUnitRange,AbstractBlockedUnitRange}) = BandedBlockBandedMatrix(V)
+sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{AbstractUnitRange,AbstractBlockedUnitRange}) = BlockedArray(V)
+sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{AbstractBlockedUnitRange,AbstractUnitRange}) = BlockedArray(V)
 
-
-sub_materialize(::AbstractBandedLayout, V, ::Tuple{<:BlockedUnitRange,<:BlockedUnitRange}) = BandedMatrix(V)
 
 
 isbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(A) isa AbstractBandedLayout
@@ -442,7 +439,7 @@ isbandedblockbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayo
 subblockbandwidths(V::SubArray) = subblockbandwidths(parent(V))
 
 
-_firstblock(B::BlockedUnitRange) = Int(first(blockaxes(B,1)))
+_firstblock(B::AbstractBlockedUnitRange) = Int(first(blockaxes(B,1)))
 _firstblock(B::Block{1}) = Int(B)
 _firstblock(B::BlockIndexRange) = _firstblock(B.block)
 _firstblock(B::BlockRange) = first(B.indices[1])

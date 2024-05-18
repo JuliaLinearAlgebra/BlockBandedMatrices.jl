@@ -19,11 +19,12 @@ import Base: *, +, -, /, \, ==, @propagate_inbounds, OneTo, Slice, axes, checkbo
 
 import Base.Broadcast: AbstractArrayStyle, BroadcastStyle, Broadcasted, DefaultArrayStyle, broadcasted
 
-import BlockArrays: AbstractBlockLayout, Block, BlockIndexRange, BlockLayout, BlockSlice, BlockSlice1, BlockSlices,
-                    BlockStyle, BlockedUnitRange, DefaultBlockAxis, _blockkron, _blocklengths2blocklasts, block,
+import BlockArrays: AbstractBlockLayout, AbstractBlockedUnitRange, Block, BlockIndexRange, BlockLayout, BlockBidiagonal, BlockDiagonal,
+                    BlockSlice, BlockSlice1, BlockSlices, BlockStyle, BlockTridiagonal, BlockedUnitRange, DefaultBlockAxis,
+                    _blockkron, _blocklengths2blocklasts, block,
                     blockcheckbounds, blockcolstart, blockcolstop, blockcolsupport, blockindex, blockisequal,
-                    blockrowstart, blockrowstop, blockrowsupport, blocks, blocksize, hasmatchingblocks,
-                    sizes_from_blocks
+                    blockrowstart, blockrowstop, blockrowsupport, blocks, blocksize, checksquareblocks,
+                    hasmatchingblocks, sizes_from_blocks
 
 import FillArrays: Fill, Ones, Zeros
 
@@ -34,9 +35,8 @@ import LinearAlgebra.BLAS: BlasComplex, BlasFloat, BlasReal
 
 import MatrixFactorizations: AdjQLPackedQLayout, QR, QRPackedQ, _ql, ql, ql!
 
-
 export BandedBlockBandedMatrix, BlockBandedMatrix, BlockSkylineMatrix, blockbandwidth, blockbandwidths,
-        subblockbandwidth, subblockbandwidths, Ones, Zeros, Fill, Block, BlockTridiagonal, BlockBidiagonal, isblockbanded
+        subblockbandwidth, subblockbandwidths, BlockTridiagonal, BlockBidiagonal, isblockbanded
 
 
 const Block1 = Block{1,Int}
