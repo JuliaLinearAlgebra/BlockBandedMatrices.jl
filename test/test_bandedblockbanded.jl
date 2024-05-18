@@ -555,6 +555,16 @@ import ArrayLayouts: RangeCumsum
         @test Symmetric(A)[Block.(1:3),Block.(1:3)] isa BandedBlockBandedMatrix
         @test Hermitian(A)[Block.(1:3),Block.(1:3)] isa BandedBlockBandedMatrix
     end
+
+    @testset "similar" begin
+        l, u = 2, 1
+        λ, μ = 2, 1
+        N = M = 4
+        cols = rows = 1:N
+        data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ + μ + 1) * (l + u + 1), sum(cols)))
+        A = _BandedBlockBandedMatrix(data, rows, cols, (l, u), (λ, μ))
+        @test similar(A, Float64, (Base.OneTo(5), axes(A,2))) isa BandedBlockBandedMatrix
+    end
 end
 
 if false # turned off since tests have check-bounds=yes

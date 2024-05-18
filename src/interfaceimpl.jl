@@ -72,8 +72,4 @@ subblockbandwidths(K::BlockKron) = bandwidths(last(K.args))
 _blockkron(::Tuple{Vararg{AbstractBandedLayout}}, A) = BandedBlockBandedMatrix(BlockKron(A...))
 
 
-
-## WARNING: type piracy
-BroadcastStyle(::Type{<:SubArray{<:Any,2,<:BlockedMatrix{<:Any,<:Diagonal}, <:Tuple{<:BlockSlice1,<:BlockSlice1}}}) = BandedStyle()
-
 sublayout(::DiagonalLayout{L}, inds::Type{<:NTuple{2,BS}}) where {L,BS<:BlockSlice{<:BlockRange1}} = bandedblockbandedcolumns(sublayout(L(),Tuple{BS}))

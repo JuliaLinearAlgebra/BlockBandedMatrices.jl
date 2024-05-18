@@ -431,8 +431,6 @@ sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{AbstractUnitRange,
 sub_materialize(::AbstractBandedBlockBandedLayout, V, ::Tuple{AbstractBlockedUnitRange,AbstractUnitRange}) = BlockedArray(V)
 
 
-sub_materialize(::AbstractBandedLayout, V, ::Tuple{AbstractBlockedUnitRange,AbstractBlockedUnitRange}) = BandedMatrix(V)
-
 
 isbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(A) isa AbstractBandedLayout
 isbandedblockbanded(A::SubArray{<:Any,2,<:BandedBlockBandedMatrix}) = MemoryLayout(A) isa AbstractBandedBlockBandedLayout
