@@ -1,6 +1,6 @@
 name = "BlockBandedMatrices"
 uuid = "ffab5731-97b5-5995-9138-79e8c1846df0"
-version = "0.12.11"
+version = "0.13"
 
 [deps]
 ArrayLayouts = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
@@ -20,12 +20,12 @@ BlockBandedMatricesSparseArraysExt = "SparseArrays"
 [compat]
 Aqua = "0.8"
 ArrayLayouts = "1"
-BandedMatrices = "0.17.2, 1"
-BlockArrays = "0.16.34"
+BandedMatrices = "1"
+BlockArrays = "1"
 Documenter = "1"
 FillArrays = "1"
 LinearAlgebra = "1.6"
-MatrixFactorizations = "1, 2"
+MatrixFactorizations = "1, 2, 3"
 Random = "1.6"
 SparseArrays = "1.6"
 Test = "1.6"

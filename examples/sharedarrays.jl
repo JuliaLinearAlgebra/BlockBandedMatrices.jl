@@ -7,7 +7,7 @@ pids = addprocs(4)
 function shared_BandedBlockBandedMatrix(::UndefInitializer, bs::BlockSizes, (l, u), (λ, μ); pids=Int[])
     bs = BandedBlockBandedSizes(bs, l, u, λ, μ)
     data = SharedMatrix{Float64}((l+u+1)*(λ+μ+1), size(A,2); pids=pids)
-    _BandedBlockBandedMatrix(PseudoBlockArray(data, bs.data_block_sizes), bs)
+    _BandedBlockBandedMatrix(BlockedArray(data, bs.data_block_sizes), bs)
 end
 
 shared_BandedBlockBandedMatrix(::UndefInitializer, (N,M), (l, u), (λ, μ); pids=Int[]) =

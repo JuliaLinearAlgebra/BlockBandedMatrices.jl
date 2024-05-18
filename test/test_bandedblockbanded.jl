@@ -441,7 +441,7 @@ import ArrayLayouts: RangeCumsum
 
         @test eltype(A) === eltype(B) === Int64
         @test typeof(A.data) <: BlockArray
-        @test typeof(B.data) <: PseudoBlockArray
+        @test typeof(B.data) <: BlockedArray
         @test size(A) == size(B)
         @test bandrange(A) == bandrange(B)
         @test blockbandwidths(A) == blockbandwidths(B)
@@ -450,13 +450,13 @@ import ArrayLayouts: RangeCumsum
         A = WithBlockMatrix{Int64}(Zeros{Int64}(sum(args[1]),sum(args[2])), args...)
         B = BandedBlockBandedMatrix{Int64}(Zeros{Int64}(sum(args[1]),sum(args[2])), args...)
         @test typeof(A.data) <: BlockArray
-        @test typeof(B.data) <: PseudoBlockArray
+        @test typeof(B.data) <: BlockedArray
         @test A == B
 
         A = WithBlockMatrix{Int64}(Ones{Int64}(sum(args[1]),sum(args[2])), args...)
         B = BandedBlockBandedMatrix{Int64}(Ones{Int64}(sum(args[1]),sum(args[2])), args...)
         @test typeof(A.data) <: BlockArray
-        @test typeof(B.data) <: PseudoBlockArray
+        @test typeof(B.data) <: BlockedArray
         @test A == B
         @test (A .+ 1) .* 2 == B .* 2 .+ 2
     end
@@ -502,14 +502,14 @@ import ArrayLayouts: RangeCumsum
     end
 
     @testset "DualLayout blocks" begin
-        A = _BandedBlockBandedMatrix(PseudoBlockVector([1,2,3],[1,2])', blockedrange([1,2]), (-1,1), (-1,1))
+        A = _BandedBlockBandedMatrix(BlockedVector([1,2,3],[1,2])', blockedrange([1,2]), (-1,1), (-1,1))
         @test MemoryLayout(A) isa BandedBlockBandedColumns{RowMajor}
     end
 
     @testset "1:N blocks" begin
         N = 10
         A = BandedBlockBandedMatrix{Float64}(undef, 1:N,1:N, (1,1), (1,1))
-        @test axes(A) isa NTuple{2,BlockedUnitRange{<:RangeCumsum}}
+        @test axes(A) isa NTuple{2,BlockedOneTo{Int,<:RangeCumsum}}
     end
 
     @testset "change bandwidths" begin
@@ -554,6 +554,16 @@ import ArrayLayouts: RangeCumsum
 
         @test Symmetric(A)[Block.(1:3),Block.(1:3)] isa BandedBlockBandedMatrix
         @test Hermitian(A)[Block.(1:3),Block.(1:3)] isa BandedBlockBandedMatrix
+    end
+
+    @testset "similar" begin
+        l, u = 2, 1
+        λ, μ = 2, 1
+        N = M = 4
+        cols = rows = 1:N
+        data = reshape(collect(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ + μ + 1) * (l + u + 1), sum(cols)))
+        A = _BandedBlockBandedMatrix(data, rows, cols, (l, u), (λ, μ))
+        @test similar(A, Float64, (Base.OneTo(5), axes(A,2))) isa BandedBlockBandedMatrix
     end
 end
 

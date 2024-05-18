@@ -39,7 +39,7 @@ end
 function qr!(A::BlockBandedMatrix{T}) where T
     M,N = blocksize(A)
     ax1 = M < N ? axes(A,1) : axes(A,2)
-    _blockbanded_qr!(A, PseudoBlockVector(zeros(T,length(ax1)), (ax1,)))
+    _blockbanded_qr!(A, BlockedVector(zeros(T,length(ax1)), (ax1,)))
 end
 
 function ql!(A::BlockBandedMatrix{T}) where T
@@ -51,7 +51,7 @@ function ql!(A::BlockBandedMatrix{T}) where T
     else
         axes(A,2)
     end
-    τ = PseudoBlockVector{T}(undef, (ax2,))
+    τ = BlockedVector{T}(undef, (ax2,))
 
     for K = N:-1:max(N - M + 1,1)
         μ = M+K-N
@@ -79,8 +79,8 @@ function materialize!(Mul::MatLmulVec{<:AdjQRPackedQLayout{<:AbstractBlockBanded
     N,M = blocksize(A)
     # impose block structure
     ax1,ax2 = axes(A)
-    τ  = PseudoBlockArray(Q.τ, (length(ax1) ≤ length(ax2) ? ax1 : ax2,))
-    B = PseudoBlockArray(Bin, (ax1,))
+    τ  = BlockedArray(Q.τ, (length(ax1) ≤ length(ax2) ? ax1 : ax2,))
+    B = BlockedArray(Bin, (ax1,))
     for K = 1:min(N,M)
         KR = Block.(K:min(K+l,N))
         V = view(A,KR,Block(K))
@@ -96,8 +96,8 @@ function materialize!(Mul::MatLmulVec{<:AdjQLPackedQLayout{<:AbstractBlockBanded
     N,M = blocksize(A)
     # impose block structure
     ax1,ax2 = axes(A)
-    τ  = PseudoBlockArray(Q.τ, (length(ax1) ≤ length(ax2) ? ax1 : ax2,))
-    B = PseudoBlockArray(Mul.B, (ax1,))
+    τ  = BlockedArray(Q.τ, (length(ax1) ≤ length(ax2) ? ax1 : ax2,))
+    B = BlockedArray(Mul.B, (ax1,))
     for K = N:-1:1
         KR = Block.(max(1,K-u):K)
         V = view(A,KR,Block(K))
@@ -115,8 +115,8 @@ function materialize!(Mul::MatLmulMat{<:AdjQRPackedQLayout{<:AbstractBlockBanded
     N,M = blocksize(A)
     # impose block structure
     ax1,ax2 = axes(A)
-    τ  = PseudoBlockArray(Q.τ, (length(ax1) ≤ length(ax2) ? ax1 : ax2,))
-    B = PseudoBlockArray(Bin, (ax1,axes(Bin,2)))
+    τ  = BlockedArray(Q.τ, (length(ax1) ≤ length(ax2) ? ax1 : ax2,))
+    B = BlockedArray(Bin, (ax1,axes(Bin,2)))
     for K = 1:min(N,M), J = 1:blocksize(Bin,2)
         KR = Block.(K:min(K+l,N))
         V = view(A,KR,Block(K))
