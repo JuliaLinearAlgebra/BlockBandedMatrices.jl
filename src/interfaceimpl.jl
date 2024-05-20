@@ -73,3 +73,11 @@ _blockkron(::Tuple{Vararg{AbstractBandedLayout}}, A) = BandedBlockBandedMatrix(B
 
 
 sublayout(::DiagonalLayout{L}, inds::Type{<:NTuple{2,BS}}) where {L,BS<:BlockSlice{<:BlockRange1}} = bandedblockbandedcolumns(sublayout(L(),Tuple{BS}))
+
+
+
+##
+# special for unitblocks
+blockbandwidths(A::BlockedMatrix{<:Any,<:Any,<:NTuple{2,BlockedOneTo{Int,<:AbstractUnitRange{Int}}}}) = bandwidths(A.blocks)
+blockbandwidths(A::BlockedMatrix{<:Any,<:Diagonal,<:NTuple{2,BlockedOneTo{Int,<:AbstractUnitRange{Int}}}}) = bandwidths(A.blocks)
+subblockbandwidths(A::BlockedMatrix{<:Any,<:Any,<:NTuple{2,BlockedOneTo{Int,<:AbstractUnitRange{Int}}}}) = (0,0)
