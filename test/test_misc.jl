@@ -247,6 +247,15 @@ Base.size(F::FiniteDifference) = (F.n,F.n)
 
         @test BandedBlockBandedMatrix(D̃_yy) ≈ D_yy
     end
+
+    @testset "banded with unitblocks" begin
+        A = BlockedArray(brand(5,4,1,2), Ones{Int}(5), Ones{Int}(4))
+        @test bandwidths(A) == blockbandwidths(A) == (1,2)
+        @test subblockbandwidths(A) == (0,0)
+        D = BlockedArray(Diagonal(1:5), Ones{Int}(5), Ones{Int}(5))
+        @test bandwidths(D) == blockbandwidths(D) == (0,0)
+        @test subblockbandwidths(D) == (0,0)
+    end
 end
 
 end # module
