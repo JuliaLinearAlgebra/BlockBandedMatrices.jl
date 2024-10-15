@@ -96,7 +96,13 @@ import BandedMatrices: _isweakzero
 function blockbandwidths(bc::Broadcasted)
     (a,b) = size(bc)
     bnds = (a-1,b-1)
-    _isweakzero(bc.f, bc.args...) && return min.(bnds, max.(_broadcast_blockbandwidths.(Ref(bnds), bc.args, Ref(axes(bc)))...))
+    if _isweakzero(bc.f, bc.args...)
+        ax = axes(bc)
+        t = map(bc.args) do x
+            _broadcast_blockbandwidths(bnds, x, ax)
+        end
+        return min.(bnds, max.(t...))
+    end
     bnds
 end
 
