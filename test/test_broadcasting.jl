@@ -289,6 +289,14 @@ import Base: oneto
             @test C == A + A
         end
     end
+
+    @testset "blockbandwidths" begin
+        B = BlockArray(ones(6,6), 1:3, 1:3)
+        BB = BlockBandedMatrix(B, (1,1))
+        bc = Broadcast.broadcasted(+, BB, BB)
+        bbw = @inferred blockbandwidths(bc)
+        @test bbw == blockbandwidths(BB)
+    end
 end
 
 end # module
