@@ -58,8 +58,14 @@ function _broadcast_blockbandwidths((l,u), A::AbstractArray, (ax1,ax2))
 end
 
 
-blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)}) =
-    min.(_broadcast_blockbandwidths.(Ref(_blockbnds(bc)), bc.args, Ref(axes(bc)))...)
+function blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)})
+    ax = axes(bc)
+    blkinds = _blockbnds(bc)
+    t = map(bc.args) do x
+        _broadcast_blockbandwidths(blkinds, x, ax)
+    end
+    min.(t...)
+end
 
 blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(/)}) = _broadcast_blockbandwidths(_blockbnds(bc), first(bc.args), axes(bc))
 blockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(\)}) = _broadcast_blockbandwidths(_blockbnds(bc), last(bc.args), axes(bc))
@@ -76,8 +82,13 @@ function _broadcast_subblockbandwidths((l,u), A::AbstractArray)
     subblockbandwidths(A) # need to special case vector broadcasting
 end
 
-subblockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)}) =
-    min.(_broadcast_subblockbandwidths.(Ref(_subblockbnds(bc)), bc.args)...)
+function subblockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)})
+    subbbw = _subblockbnds(bc)
+    t = map(bc.args) do x
+        _broadcast_subblockbandwidths(subbbw, x)
+    end
+    min.(t...)
+end
 
 subblockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(/)}) = _broadcast_subblockbandwidths(_subblockbnds(bc), first(bc.args))
 subblockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(\)}) = _broadcast_subblockbandwidths(_subblockbnds(bc), last(bc.args))
@@ -85,7 +96,12 @@ subblockbandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(
 function subblockbandwidths(bc::Broadcasted)
     (a,b) = size(bc)
     bnds = (a-1,b-1)
-    _isweakzero(bc.f, bc.args...) && return min.(bnds, max.(_broadcast_subblockbandwidths.(Ref(bnds), bc.args)...))
+    if _isweakzero(bc.f, bc.args...)
+        t = map(bc.args) do x
+            _broadcast_subblockbandwidths(bnds, x)
+        end
+        return min.(bnds, max.(t...))
+    end
     bnds
 end
 
