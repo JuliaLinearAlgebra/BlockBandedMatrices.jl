@@ -58,8 +58,4 @@ include("interfaceimpl.jl")
 include("triblockbanded.jl")
 include("adjtransblockbanded.jl")
 
-if !isdefined(Base, :get_extension)
-    include("../ext/BlockBandedMatricesSparseArraysExt.jl")
-end
-
 end # module
