@@ -2,8 +2,10 @@ using BlockBandedMatrices
 using Test
 
 import Aqua
+downstream_test = "--downstream_integration_test" in ARGS
 @testset "Project quality" begin
-    Aqua.test_all(BlockBandedMatrices, ambiguities=false, piracies=false)
+    Aqua.test_all(BlockBandedMatrices, ambiguities=false, piracies=false,
+        stale_deps=!downstream_test)
 end
 
 using Documenter
