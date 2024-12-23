@@ -288,7 +288,7 @@ subblockbandwidths(A::BandedBlockBandedMatrix) = (A.λ, A.μ)
 # default is to use whole block
 _subblockbandwidths(A::AbstractMatrix, ::NTuple{2,OneTo{Int}}) = bandwidths(A)
 function _subblockbandwidths(A::AbstractMatrix, _)
-    M,N = map(maximum, blocklengths.(axes(A)))
+    M,N = map(x -> maximum(x, init=0), blocklengths.(axes(A)))
     M-1,N-1
 end
 
