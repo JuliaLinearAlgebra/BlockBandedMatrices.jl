@@ -84,4 +84,4 @@ subblockbandwidths(A::BlockedMatrix{<:Any,<:Any,<:NTuple{2,BlockedOneTo{Int,<:Ab
 
 
 ## BlockVector
-subblockbandwidths(a::AbstractBlockVector) = (blocksize(a,1)-1, 0)
+subblockbandwidths(a::AbstractVector) = (blocksize(a,1)-1, 0)
