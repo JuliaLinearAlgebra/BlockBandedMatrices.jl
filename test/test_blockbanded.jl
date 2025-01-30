@@ -247,6 +247,11 @@ import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
         f(s) = s.block_starts.data
         @inferred(f(s))
     end
+
+    @testset "BlockVector" begin
+        s = BlockVector(1:21, 1:6)
+        @test BlockBandedMatrices.subblockbandwidths(s) == (5, 0)
+    end
 end
 
 end # module
