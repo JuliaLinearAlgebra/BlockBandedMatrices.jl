@@ -29,6 +29,8 @@ const BandedBlockBandedRowMajor = BandedBlockBandedRows{ColumnMajor}
 const BlockBandedColumnMajor = BlockBandedColumns{ColumnMajor}
 const BlockBandedRowMajor = BlockBandedRows{ColumnMajor}
 
+blockbandedcolumns(lay) = BlockBandedColumns{typeof(lay)}()
+
 transposelayout(::BandedBlockBandedColumns{Lay}) where Lay = BandedBlockBandedRows{Lay}()
 transposelayout(::BandedBlockBandedRows{Lay}) where Lay = BandedBlockBandedColumns{Lay}()
 transposelayout(::BlockBandedColumns{Lay}) where Lay = BlockBandedRows{Lay}()
