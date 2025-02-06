@@ -63,6 +63,18 @@ import BlockBandedMatrices: BandedBlockBandedRowMajor, BandedBlockBandedRows,
         @test rowsupport(E2, 1) == 1:0
         @test colsupport(E2', 1) == 1:0
     end
+
+    @testset "Adj*BlockBanded" begin
+        R = BlockBandedMatrix{Float64}(undef, [1,1,2,2,3], 1:2:9, (0,0)); fill!(R, 0)
+        for K = 1:N
+            for k = 1:(K÷2)
+                R[Block(K,K)[k,2k-1]] = R[Block(K,K)[k,2K-2k+1]] = 1/sqrt(2)
+            end
+            isodd(K) && (R[Block(K,K)[K÷2+1,K]] = 1)
+        end
+        @test R'R == Matrix(R)'R
+        @test R*R' ≈ I
+    end
 end
 
 end # module
