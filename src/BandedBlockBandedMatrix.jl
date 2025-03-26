@@ -167,7 +167,7 @@ BandedBlockBandedMatrix{T,B}(m::Union{AbstractMatrix, UniformScaling},
 BandedBlockBandedMatrix{T}(m::Union{AbstractMatrix, UniformScaling},
                             axes::NTuple{2,AbstractUnitRange{Int}},
                            lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
-  DefaultBandedBlockBandedMatrix{T}(m, axes, lu, λμ)
+  BandedBlockBandedMatrix{T,BlockedMatrix{T,Matrix{T},typeof(_bbb_data_axes(axes[2],lu,λμ))},typeof(axes[1])}(m, axes, lu, λμ)
 
 BandedBlockBandedMatrix{T,B,R}(m::Union{AbstractMatrix, UniformScaling},
                             rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
@@ -333,6 +333,22 @@ zeroblock(A::BandedBlockBandedMatrix, K::Int, J::Int) =
 
 Base.size(arr::BandedBlockBandedMatrix) =
     @inbounds return map(length,axes(arr))
+
+@inline function inbands_viewblock(A::BandedBlockBandedMatrix, KJ::Block{2})
+    l,u = blockbandwidths(A)
+    K,J = KJ.n
+    _BandedMatrix(view(A.data, Block(K-J+u+1, J)), length(axes(A,1)[Block(K)]), subblockbandwidths(A)...)
+end
+
+@inline function viewblock(A::BandedBlockBandedMatrix, KJ::Block{2})
+    @boundscheck checkbounds(A, KJ)
+    K,J = KJ.n
+    if -A.u ≤ K-J ≤ A.l
+        inbands_viewblock(A, KJ)
+    else
+        _BandedMatrix(view(A.data, Block(1,1)), blocklengths(A,1)[Block(K)], (-40320,-40320))
+    end
+end
 
 
 @inline function getindex(A::BandedBlockBandedMatrix{T}, i::Int, j::Int) where T
