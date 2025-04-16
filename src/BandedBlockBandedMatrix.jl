@@ -346,7 +346,8 @@ end
     if -A.u ≤ K-J ≤ A.l
         inbands_viewblock(A, KJ)
     else
-        _BandedMatrix(view(A.data, Block(1,1)), blocklengths(A,1)[Block(K)], (-40320,-40320))
+        dat = view(A.data, Block(1,1))
+        _BandedMatrix(dat, length(axes(A,1)[Block(K)]), size(dat,1)-1,0)
     end
 end
 
