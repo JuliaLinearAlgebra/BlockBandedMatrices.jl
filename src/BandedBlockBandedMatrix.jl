@@ -39,7 +39,7 @@ struct BandedBlockBandedMatrix{T, BLOCKS, RAXIS<:AbstractUnitRange{Int}} <: Abst
     end
 end
 
-const DefaultBandedBlockBandedMatrix{T} = BandedBlockBandedMatrix{T, BlockedMatrix{T, Matrix{T}, NTuple{2,DefaultBlockAxis}}, DefaultBlockAxis}
+const DefaultBandedBlockBandedMatrix{T} = BandedBlockBandedMatrix{T, <:BlockedMatrix{T, Matrix{T}}}
 
 @inline _BandedBlockBandedMatrix(data::AbstractMatrix, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) =
     _BandedBlockBandedMatrix(BlockedArray(data,(blockedrange(Fill(sum(λμ)+1,sum(lu)+1)),axes[2])), axes[1], lu, λμ)
@@ -340,14 +340,30 @@ Base.size(arr::BandedBlockBandedMatrix) =
     _BandedMatrix(view(A.data, Block(K-J+u+1, J)), length(axes(A,1)[Block(K)]), subblockbandwidths(A)...)
 end
 
+@inline inbands_viewblock(A::BandedBlockBandedMatrix, K::Block{1}, J::Block{1}) = inbands_viewblock(A, Block(Int(K), Int(J)))
+
+emptyview(A::BlockedMatrix, J) = view(A.blocks, 1:0, axes(A,2)[J])
+function emptyview(A, J)
+    V = view(A, Block(1), J)
+    view(V, 1:0, 1:size(V,2))
+end
+
+@inline function outbands_viewblock(A::BandedBlockBandedMatrix, KJ::Block{2})
+    l,u = blockbandwidths(A)
+    K,J = KJ.n
+    # Need to make an empty banded matrix in a type-stable way
+    _BandedMatrix(emptyview(A.data, Block(J)), length(axes(A,1)[Block(K)]), -720,-720)
+end
+
+
+
 @inline function viewblock(A::BandedBlockBandedMatrix, KJ::Block{2})
-    @boundscheck checkbounds(A, KJ)
+    @boundscheck blockcheckbounds(A, KJ)
     K,J = KJ.n
     if -A.u ≤ K-J ≤ A.l
         inbands_viewblock(A, KJ)
     else
-        dat = view(A.data, Block(1,1))
-        _BandedMatrix(dat, length(axes(A,1)[Block(K)]), size(dat,1)-1,0)
+        outbands_viewblock(A, KJ)
     end
 end
 
@@ -363,7 +379,7 @@ end
     @boundscheck checkbounds(A, i, j)
     BI,BJ = findblockindex.(axes(A), (i,j))
     if -A.l ≤ Int(block(BJ)-block(BI)) ≤ A.u
-        V = view(A, block(BI),block(BJ))
+        V = inbands_viewblock(A, block(BI),block(BJ))
          @inbounds V[blockindex(BI),blockindex(BJ)] = convert(T, v)::T
     elseif !iszero(v)
         throw(BandError(A))
