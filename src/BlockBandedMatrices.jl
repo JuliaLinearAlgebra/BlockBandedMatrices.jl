@@ -24,7 +24,7 @@ import BlockArrays: AbstractBlockLayout, AbstractBlockedUnitRange, Block, BlockI
                     _blockkron, _blocklengths2blocklasts, block,
                     blockcheckbounds, blockcolstart, blockcolstop, blockcolsupport, blockindex, blockisequal,
                     blockrowstart, blockrowstop, blockrowsupport, blocks, blocksize, checksquareblocks,
-                    hasmatchingblocks, sizes_from_blocks
+                    hasmatchingblocks, sizes_from_blocks, viewblock
 
 import FillArrays: Fill, Ones, Zeros
 

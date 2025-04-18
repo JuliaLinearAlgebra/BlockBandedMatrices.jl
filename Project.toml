@@ -19,7 +19,7 @@ BlockBandedMatricesSparseArraysExt = "SparseArrays"
 [compat]
 Aqua = "0.8"
 ArrayLayouts = "1"
-BandedMatrices = "1"
+BandedMatrices = "1.9.4"
 BlockArrays = "1"
 Documenter = "1"
 FillArrays = "1"
