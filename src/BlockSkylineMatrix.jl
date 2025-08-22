@@ -366,7 +366,12 @@ axes(A::BlockSkylineMatrix) = A.block_sizes.axes
 # BlockSkylineMatrix Interface #
 ################################
 
-MemoryLayout(::Type{<:BlockSkylineMatrix}) = BlockBandedColumnMajor()
+struct BlockSkylineColumns{Lay} <: AbstractBlockLayout end
+
+blockskylinelayout(lay, ::Type{<:BlockBandedSizes}) = blockbandedcolumns(lay)
+blockskylinelayout(lay, _) = BlockSkylineColumns{typeof(lay)}()
+
+MemoryLayout(::Type{<:BlockSkylineMatrix{T,DATA,BS}}) where {T,DATA,BS} = blockskylinelayout(MemoryLayout(DATA), BS)
 colblockbandwidths(A::BlockSkylineMatrix) = (A.block_sizes.l, A.block_sizes.u)
 blockbandwidths(A::BlockSkylineMatrix) = maximum.(colblockbandwidths(A))
 BroadcastStyle(::Type{<:BlockSkylineMatrix}) = BlockSkylineStyle()
