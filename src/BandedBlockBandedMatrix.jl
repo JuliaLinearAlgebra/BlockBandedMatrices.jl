@@ -130,8 +130,10 @@ function convert(::Type{<:BandedBlockBandedMatrix}, B::BandedMatrix)
     end
 end
 
-convert(::Type{BandedBlockBandedMatrix{T,BLOCKS,RAXIS}}, A::BandedBlockBandedMatrix) where {T,BLOCKS,RAXIS} =
+convert(::Type{BandedBlockBandedMatrix{T,BLOCKS,RAXIS}}, A::BandedBlockBandedMatrix) where {T,BLOCKS,RAXIS<:AbstractUnitRange{Int}} =
     _BandedBlockBandedMatrix(convert(BLOCKS, A.data), convert(RAXIS, A.raxis), (A.l, A.u), (A.λ, A.μ))
+
+convert(::Type{BandedBlockBandedMatrix{T,BLOCKS,RAXIS}}, A::BandedBlockBandedMatrix{T,BLOCKS,RAXIS})  where {T,BLOCKS,RAXIS<:AbstractUnitRange{Int}} = A
 
 function BandedBlockBandedMatrix{T,B,R}(Z::Zeros, axes::NTuple{2,AbstractUnitRange{Int}},
                                        lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B,R<:AbstractUnitRange{Int}}
@@ -139,7 +141,16 @@ function BandedBlockBandedMatrix{T,B,R}(Z::Zeros, axes::NTuple{2,AbstractUnitRan
        throw(DimensionMismatch())
    end
    blocks = fill!(B(undef, _bbb_data_axes(axes[2],lu,λμ)), zero(T))
-   _BandedBlockBandedMatrix(blocks, convert(R, axes[1]), lu, λμ)
+   _BandedBlockBandedMatrix(blocks, convert(R, axes[1]), lu, λμ)::BandedBlockBandedMatrix{T,B,R}
+end
+
+function BandedBlockBandedMatrix{T}(Z::Zeros, ax::NTuple{2,AbstractUnitRange{Int}},
+                                       lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B,R<:AbstractUnitRange{Int}}
+   if size(Z) ≠ map(length,ax)
+       throw(DimensionMismatch())
+   end
+   blocks = fill!(PseudoBlockMatrix{T}(undef, _bbb_data_axes(ax[2],lu,λμ)), zero(T))
+   _BandedBlockBandedMatrix(blocks, ax[1], lu, λμ)::BandedBlockBandedMatrix{T}
 end
 
 function BandedBlockBandedMatrix{T,B,R}(E::Eye, axes::NTuple{2,AbstractUnitRange{Int}},
@@ -164,15 +175,19 @@ BandedBlockBandedMatrix{T,B}(m::Union{AbstractMatrix, UniformScaling},
                            lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B} =
   BandedBlockBandedMatrix{T,B,typeof(axes[1])}(m, axes, lu, λμ)
 
-BandedBlockBandedMatrix{T}(m::Union{AbstractMatrix, UniformScaling},
-                            axes::NTuple{2,AbstractUnitRange{Int}},
+BandedBlockBandedMatrix{T}(A::Union{AbstractMatrix, UniformScaling},
+                            ax::NTuple{2,AbstractUnitRange{Int}},
                            lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where T =
-  DefaultBandedBlockBandedMatrix{T}(m, axes, lu, λμ)
-
+  _bandedblockbanded_copyto!(BandedBlockBandedMatrix{T}(Zeros{T}(size(A)), ax, lu, λμ), A)
+  
 BandedBlockBandedMatrix{T,B,R}(m::Union{AbstractMatrix, UniformScaling},
                             rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
                            lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,B,R<:AbstractUnitRange{Int}} =
   BandedBlockBandedMatrix{T,B,R}(m, (blockedrange(rdims),blockedrange(cdims)), lu, λμ)
+
+BandedBlockBandedMatrix{T,B,R}(m::Union{AbstractMatrix, UniformScaling}) where {T,B,R} =
+    BandedBlockBandedMatrix{T,B,R}(m, axes(m), blockbandwidths(m), subblockbandwidths(m))
+DefaultBandedBlockBandedMatrix(m::Union{AbstractMatrix, UniformScaling}) = DefaultBandedBlockBandedMatrix{eltype(m)}(m)
 
 BandedBlockBandedMatrix{T,B}(m::Union{AbstractMatrix, UniformScaling},
                             rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
@@ -195,11 +210,14 @@ BandedBlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
     BandedBlockBandedMatrix(A, (blockedrange(rdims),blockedrange(cdims)), lu, λμ)
 
 
-function BandedBlockBandedMatrix{T,Blocks,RR}(A::AbstractMatrix, axes::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,Blocks,RR<:AbstractUnitRange{Int}}
-    ret = BandedBlockBandedMatrix{T,Blocks,RR}(Zeros{T}(size(A)), axes, lu, λμ)
-    L,M = λμ
+BandedBlockBandedMatrix{T,Blocks,RR}(A::AbstractMatrix, ax::NTuple{2,AbstractUnitRange{Int}}, lu::NTuple{2,Int}, λμ::NTuple{2,Int}) where {T,Blocks,RR<:AbstractUnitRange{Int}} =
+    _bandedblockbanded_copyto!(BandedBlockBandedMatrix{T,Blocks,RR}(Zeros{T}(size(A)), ax, lu, λμ), A)
+
+function _bandedblockbanded_copyto!(ret, A)
+    ax = axes(ret)
+    L,M = subblockbandwidths(ret)
     for J = blockaxes(ret,2), K = blockcolsupport(ret, J)
-        kr, jr = axes[1][K], axes[2][J]
+        kr, jr = ax[1][K], ax[2][J]
 
         # We have the correct block - now we need to only add the entries from
         # the correct bands
