@@ -224,6 +224,7 @@ end
 
 BlockBandedMatrix{T}(A::AbstractMatrix, block_sizes::BlockBandedSizes) where T =
     BlockSkylineMatrix{T}(A, block_sizes)
+    
 
 ##
 # Special cases
@@ -343,19 +344,21 @@ julia> BlockBandedMatrix(B, (1,1))
 """
 BlockBandedMatrix(A::AbstractMatrix, lu::NTuple{2,Int}) = BlockBandedMatrix(A, BlockBandedSizes(axes(A), lu...))
 
-function convert(::Type{BlockSkylineMatrix}, A::AbstractMatrix)
+function convert(::Type{BlockSkylineMatrix{T}}, A::AbstractMatrix) where T
     block_sizes = BlockSkylineSizes(axes(A), colblockbandwidths(A)...)
-
-    copyto!(BlockSkylineMatrix{eltype(A)}(undef, block_sizes), A)
+    copyto!(BlockSkylineMatrix{T}(undef, block_sizes), A)
 end
 
-function convert(::Type{BlockBandedMatrix}, A::AbstractMatrix)
-    convert(BlockSkylineMatrix, A)
-end
+convert(::Type{BlockSkylineMatrix}, A::AbstractMatrix) = convert(BlockSkylineMatrix{eltype(A)}, A)
+
+convert(::Type{BlockBandedMatrix}, A::AbstractMatrix) = convert(BlockSkylineMatrix, A)
+convert(::Type{BlockBandedMatrix{T}}, A::AbstractMatrix) where T = convert(BlockSkylineMatrix{T}, A)
+
 
 
 BlockSkylineMatrix(A::AbstractMatrix) = convert(BlockSkylineMatrix, A)
 BlockBandedMatrix(A::AbstractMatrix) = convert(BlockBandedMatrix, A)
+BlockBandedMatrix{T}(A::AbstractMatrix) where T = convert(BlockBandedMatrix{T}, A)
 
 similar(A::BlockSkylineMatrix, T::Type=eltype(A), bs::BlockSkylineSizes=A.block_sizes) =
     BlockSkylineMatrix{T}(undef, bs)
