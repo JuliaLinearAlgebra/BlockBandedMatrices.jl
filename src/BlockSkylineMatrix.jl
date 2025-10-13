@@ -270,6 +270,99 @@ BlockSkylineMatrix(A::Union{AbstractMatrix,UniformScaling},
                         rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
                         lu::NTuple{2,AbstractVector{Int}}) = BlockSkylineMatrix{eltype(A)}(A, rdims, cdims, lu)
 
+"""
+    BlockSkylineMatrix(A::BlockSkylineMatrix{T,DATA,BS}, rows::UnitRange,
+                       cols::UnitRange) where {T,DATA,BS}
+
+Construct a new BlockSkylineMatrix from the entries of `A` that are within the range of
+`rows` and `columns`. This function allocates new memory and copies data, because it is
+not guaranteed that the `data` for the result is a contiguous subset of `A.data`.
+"""
+function BlockSkylineMatrix(A::BlockSkylineMatrix{T,DATA,BS}, rows::UnitRange,
+                            cols::UnitRange) where {T,DATA,BS}
+    bi_start = findblockindex.(axes(A), (rows.start, cols.start))
+    bi_stop = findblockindex.(axes(A), (rows.stop, cols.stop))
+
+    first_block = Int64.(BlockArrays.block.(bi_start))
+    last_block = Int64.(BlockArrays.block.(bi_stop))
+    first_blockindices = Int64.(BlockArrays.blockindex.(bi_start))
+    last_blockindices = Int64.(BlockArrays.blockindex.(bi_stop))
+
+    orig_blocksizes = blocksizes(A)
+    orig_row_sizes = [bs[1] for bs ∈ view(orig_blocksizes, :, 1)]
+    orig_col_sizes = [bs[2] for bs ∈ view(orig_blocksizes, 1, :)]
+
+    # First cut down to the right number of blocks
+    new_row_sizes = orig_row_sizes[first_block[1]:last_block[1]]
+    new_col_sizes = orig_col_sizes[first_block[2]:last_block[2]]
+    # Now reduce if necessary the block sizes
+    new_row_sizes[end] = min(new_row_sizes[end], last_blockindices[1])
+    new_row_sizes[1] += -first_blockindices[1] + 1
+    new_col_sizes[end] = min(new_col_sizes[end], last_blockindices[2])
+    new_col_sizes[1] += -first_blockindices[2] + 1
+
+    old_l, old_u = BlockBandedMatrices.colblockbandwidths(A)
+    # Cut down to the right number of blocks
+    new_l = old_l[first_block[2]:last_block[2]]
+    new_u = old_u[first_block[2]:last_block[2]]
+    # Depending on whether the new top-left block was on, under or over the old diagonal
+    # blocks, we need to adjust new_l and new_u.
+    block_offset = first_block[2] - first_block[1]
+    if new_l isa Vector
+        new_l .+= block_offset
+        new_u .-= block_offset
+    else
+        new_l = new_l .+ block_offset
+        new_u = new_u .- block_offset
+    end
+
+    newarray = BlockSkylineMatrix{T}(undef, new_row_sizes, new_col_sizes, (new_l, new_u))
+
+    # Fill block-by-block, because when we extract a full block we get a view of a dense
+    # matrix, which should be efficient, and also type-stable.
+    new_N, new_M = blocksize(newarray)
+    new_data = newarray.data
+    old_N, old_M = blocksize(A)
+    old_data = A.data
+    for new_J ∈ 1:new_M
+        new_KR = max(1,new_J-new_u[new_J]):min(new_J+new_l[new_J],new_N)
+
+        if !isempty(new_KR)
+            old_J = new_J + first_block[2]
+            old_KR = max(1,old_J-old_u[old_J]):min(old_J+old_l[old_J],old_N)
+
+            new_blockstart = BlockBandedMatrices.blockstart(newarray, new_KR[1], new_J)
+            new_blockstride = BlockBandedMatrices.blockstride(newarray, new_J)
+            old_blockstart = BlockBandedMatrices.blockstart(A, old_KR[1], old_J)
+            old_blockstride = BlockBandedMatrices.blockstride(A, old_J)
+            if new_J == 1
+                old_blockstart += (first_blockindices[2] - 1) * old_blockstride
+            end
+
+            blocks_to_skip = old_KR[1]:first_block[1]-1
+            old_offset = sum(@view orig_row_sizes[blocks_to_skip]; init=0)
+            if old_KR[1] == first_block[1]
+                old_offset += first_blockindices[1] - 1
+            end
+            # Stop range of 'old rows' going past end of 'new rows'
+            max_old_rows = min(old_blockstride - old_offset, new_blockstride)
+
+            # Iterate over columns so that we can access the `data` vectors directly.
+            ncol = new_col_sizes[new_J]
+            for j ∈ 1:ncol
+                new_data_start = new_blockstart+(j-1)*new_blockstride
+                new_data_stop = new_data_start + new_blockstride - 1
+                old_data_start = old_blockstart+(j-1)*old_blockstride+old_offset
+                old_data_stop = old_data_start + max_old_rows - 1
+                @views new_data[new_data_start:new_data_stop] .=
+                       old_data[old_data_start:old_data_stop]
+            end
+        end
+    end
+
+    return newarray
+end
+
 
 """
     BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},
@@ -342,6 +435,8 @@ julia> BlockBandedMatrix(B, (1,1))
 ```
 """
 BlockBandedMatrix(A::AbstractMatrix, lu::NTuple{2,Int}) = BlockBandedMatrix(A, BlockBandedSizes(axes(A), lu...))
+
+BlockBandedMatrix(A::BlockBandedMatrix, rows::UnitRange, cols::UnitRange) = BlockSkylineMatrix(A, rows, cols)
 
 function convert(::Type{BlockSkylineMatrix}, A::AbstractMatrix)
     block_sizes = BlockSkylineSizes(axes(A), colblockbandwidths(A)...)
