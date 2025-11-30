@@ -25,6 +25,7 @@ Documenter = "1"
 FillArrays = "1"
 LinearAlgebra = "1"
 MatrixFactorizations = "1, 2, 3"
+ParallelTestRunner = "2"
 Random = "1"
 SparseArrays = "1"
 Test = "1"
@@ -33,9 +34,10 @@ julia = "1.10"
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+ParallelTestRunner = "d3525ed8-44d0-4b2c-a655-542cee43accc"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "Random", "SparseArrays", "Test", "Documenter"]
+test = ["Aqua", "ParallelTestRunner", "Random", "SparseArrays", "Test", "Documenter"]
