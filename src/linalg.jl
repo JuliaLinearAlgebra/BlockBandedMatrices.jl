@@ -105,7 +105,9 @@ sub_materialize(::BlockLayout{<:AbstractBandedLayout}, V, _) = BlockBandedMatrix
 strides(V::SubBlockSkylineMatrix{<:Any,LL,UU,<:Union{BlockRange1,Block1},Block1}) where {LL,UU} =
     (1,parent(V).block_sizes.block_strides[Int(parentindices(V)[2].block)])
 
-
+function Base.cconvert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:Union{BlockRange1,Block1},Block1}) where {T,LL,UU}
+    V
+end
 function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:Union{BlockRange1,Block1},Block1}) where {T,LL,UU}
     A = parent(V)
     JR = parentindices(V)[2]
@@ -117,6 +119,9 @@ end
 strides(V::SubBlockSkylineMatrix{<:Any,LL,UU,<:BlockRange1,<:BlockIndexRange1}) where {LL,UU} =
     (1,parent(V).block_sizes.block_strides[Int(Block(parentindices(V)[2]))])
 
+function Base.cconvert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:BlockRange1,<:BlockIndexRange1}) where {T,LL,UU}
+    V
+end
 function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:BlockRange1,<:BlockIndexRange1}) where {T,LL,UU}
     A = parent(V)
     JR = parentindices(V)[2]
@@ -127,6 +132,9 @@ function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:Block
     p + sizeof(T)*(JR.block.indices[1][1]-1)*stride(V,2)
 end
 
+function Base.cconvert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,BlockIndexRange1,BlockIndexRange1}) where {T,LL,UU}
+    V
+end
 function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,BlockIndexRange1,BlockIndexRange1}) where {T,LL,UU}
     A = parent(V)
     JR = parentindices(V)[2]
