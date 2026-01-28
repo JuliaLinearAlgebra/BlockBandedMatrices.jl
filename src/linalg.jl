@@ -105,6 +105,7 @@ sub_materialize(::BlockLayout{<:AbstractBandedLayout}, V, _) = BlockBandedMatrix
 strides(V::SubBlockSkylineMatrix{<:Any,LL,UU,<:Union{BlockRange1,Block1},Block1}) where {LL,UU} =
     (1,parent(V).block_sizes.block_strides[Int(parentindices(V)[2].block)])
 
+
 function Base.cconvert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:Union{BlockRange1,Block1},Block1}) where {T,LL,UU}
     V
 end
