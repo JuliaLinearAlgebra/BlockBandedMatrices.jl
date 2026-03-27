@@ -1,28 +1,20 @@
 using BlockBandedMatrices
-using Test
+using ParallelTestRunner
 
-import Aqua
-downstream_test = "--downstream_integration_test" in ARGS
-@testset "Project quality" begin
-    Aqua.test_all(BlockBandedMatrices, ambiguities=false, piracies=false,
-        stale_deps=!downstream_test)
+const init_code = quote
+   using Test
+   using BlockBandedMatrices
 end
 
-using Documenter
-@testset "docstrings" begin
-    # don't test docstrings on old versions to avoid failures due to changes in types
-    if VERSION >= v"1.9"
-        DocMeta.setdocmeta!(BlockBandedMatrices, :DocTestSetup, :(using BlockBandedMatrices); recursive=true)
-        doctest(BlockBandedMatrices)
-    end
+# Start with autodiscovered tests
+testsuite = find_tests(pwd())
+
+if "--downstream_integration_test" in ARGS
+    delete!(testsuite, "test_aqua")
 end
 
-include("test_blockbanded.jl")
-include("test_blockskyline.jl")
-include("test_bandedblockbanded.jl")
-include("test_broadcasting.jl")
-include("test_linalg.jl")
-include("test_misc.jl")
-include("test_triblockbanded.jl")
-include("test_adjtransblockbanded.jl")
-include("test_blockskylineqr.jl")
+filtered_args = filter(!=("--downstream_integration_test"), ARGS)
+# Parse arguments
+args = parse_args(filtered_args)
+
+runtests(BlockBandedMatrices, args; init_code, testsuite)
