@@ -195,6 +195,7 @@ Base.size(F::FiniteDifference) = (F.n,F.n)
         @test blockrowsupport(B,Block(1)) == Block.(1:2)
         @test blockrowsupport(B,Block(4)) == Block.(3:5)
 
+
         Q = Eye((a,))[:,Block(2)]
         @test Q isa BandedMatrix
         @test blockcolsupport(Q,Block(1)) == Block.(2:2)
@@ -210,6 +211,9 @@ Base.size(F::FiniteDifference) = (F.n,F.n)
 
             B = _BandedMatrix(randn(5,length(a)), a, 3, 1)
             @test blockbandwidths(B) == (4,0)
+
+            B = _BandedMatrix(BlockedArray(randn(5,length(a)),(Base.OneTo(5),a)), a, 3, 1)            
+            @test blockbandwidths(B) == (2,1)
         end
     end
 
