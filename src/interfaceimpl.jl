@@ -57,6 +57,13 @@ function blockbandwidths(::AbstractBandedLayout, (a,b)::Tuple{AbstractBlockedUni
     end
 end
 
+function blockbandwidths(::AbstractBandedLayout, (a,b)::Tuple{BlockedOneTo{<:Any,<:AbstractRange}, BlockedOneTo{<:Any,<:AbstractRange}}, A)
+    a ≠ b && return blockbandwidths(UnknownLayout(), (a,b), A) # can implement same step but not done yet
+    l,u = bandwidths(A)
+    s = step(a.lasts) # normal blocksize 
+    (l+s-1) ÷ s, (u+s-1) ÷ s
+end
+
 
 
 
