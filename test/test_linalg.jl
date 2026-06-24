@@ -10,6 +10,7 @@ using Test
 
 import BandedMatrices: BandError, bandeddata
 import BlockBandedMatrices: _BandedBlockBandedMatrix
+import ..check_strided_get
 
 @testset "lmul!/rmul!" begin
     C = BandedBlockBandedMatrix{Float64}(undef, 1:2,1:2, (1,1), (1,1))
@@ -45,6 +46,7 @@ end
     @test stride(V,2) == 7
     @test unsafe_load(pointer(V)) == 46
     @test unsafe_load(pointer(V) + stride(V,2)*sizeof(Float64)) == 53
+    check_strided_get(V)
 
     x = randn(size(A,2))
     @test A*x == (similar(x) .= MulAdd(A,x)) ≈ Matrix(A)*x
@@ -87,6 +89,7 @@ end
 
     V = view(A, Block(2), Block(2))
     @test unsafe_load(Base.unsafe_convert(Ptr{Float64}, bandeddata(V))) == 13.0
+    check_strided_get(bandeddata(V))
 
     C = BandedMatrix{Float64}(undef, size(V), 2 .*bandwidths(V))
     C .= MulAdd(V,V)
