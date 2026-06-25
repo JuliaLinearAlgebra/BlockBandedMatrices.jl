@@ -5,7 +5,7 @@ const SubBlockSkylineMatrix{T,LL,UU,R1,R2} =
 
 
 
-function add_bandwidths(A::AbstractBlockBandedMatrix,B::AbstractBlockBandedMatrix)
+function add_bandwidths(A, B)
     Al,Au = colblockbandwidths(A)
     Bl,Bu = colblockbandwidths(B)
 
@@ -24,7 +24,7 @@ function add_bandwidths(A::AbstractBlockBandedMatrix,B::AbstractBlockBandedMatri
     l,u
 end
 
-function add_bandwidths(A::BlockBandedMatrix,B::BlockBandedMatrix)
+function add_bandwidths(A::BlockBandedMatrix, B::BlockBandedMatrix)
     l,u = blockbandwidths(A) .+ blockbandwidths(B)
     Fill(l,blocksize(B,2)), Fill(u,blocksize(B,2))
 end
