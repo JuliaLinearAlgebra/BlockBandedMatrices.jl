@@ -511,7 +511,7 @@ function getindex(A::BandedBlockBandedMatrix{T}, KR::BlockRange{1}, JR::BlockRan
     _BandedBlockBandedMatrix(A.data[:,JR], axes(axes(A,1)[KR],1), (l-sh, u+sh), subblockbandwidths(A))
 end
 
-@inline function bandwidths(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice1,BlockSlice1}}) where T
+@inline function bandwidths(::AbstractBandedBlockBandedLayout, V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice1,BlockSlice1}}) where T
     inblockbands(V) && return subblockbandwidths(parent(V))
     (-720,-720)
 end
