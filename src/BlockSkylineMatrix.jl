@@ -368,7 +368,7 @@ axes(A::BlockSkylineMatrix) = A.block_sizes.axes
 
 MemoryLayout(::Type{<:BlockSkylineMatrix}) = BlockBandedColumnMajor()
 colblockbandwidths(A::BlockSkylineMatrix) = (A.block_sizes.l, A.block_sizes.u)
-blockbandwidths(A::BlockSkylineMatrix) = maximum.(colblockbandwidths(A))
+blockbandwidths(A::BlockSkylineMatrix) = maximum.(colblockbandwidths(A); init=0)
 BroadcastStyle(::Type{<:BlockSkylineMatrix}) = BlockSkylineStyle()
 BroadcastStyle(::Type{<:BlockBandedMatrix}) = BlockBandedStyle()
 
