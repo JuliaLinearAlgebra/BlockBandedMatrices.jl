@@ -5,7 +5,7 @@ checkbandwidths(N, M, l::AbstractVector{Int}, u::AbstractVector{Int}) =
 #### Routines for BandedSizes
 function bb_blockstarts(ax, l::AbstractVector{Int}, u::AbstractVector{Int})
     N,M = blocksize.(ax,1)
-    L,U = maximum(l), maximum(u)
+    L,U = maximum(l; init=0), maximum(u; init=0)
     b_start = BandedMatrix{Int}(undef, (N, M), (L, U))
     -L > U && return b_start
 
@@ -28,7 +28,7 @@ end
 
 function bb_blockstrides(b_axes, l::AbstractVector{Int}, u::AbstractVector{Int})
     N, M = blocksize.(b_axes,1)
-    L,U = maximum(l), maximum(u)
+    L,U = maximum(l; init=0), maximum(u; init=0)
     checkbandwidths(N, M, l, u)
     b_strides = Vector{Int}(undef, M)
     for J=1:M
