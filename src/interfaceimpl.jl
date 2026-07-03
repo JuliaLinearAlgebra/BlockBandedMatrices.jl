@@ -58,7 +58,7 @@ function blockbandwidths(::AbstractBandedLayout, (a,b)::Tuple{AbstractBlockedUni
 end
 
 function blockbandwidths(::AbstractBandedLayout, (a,b)::Tuple{AbstractBlockedUnitRange{<:Any,<:AbstractRange}, AbstractBlockedUnitRange{<:Any,<:AbstractRange}}, A)
-    a ≠ b && return blockbandwidths(UnknownLayout(), (a,b), A) # can implement same step but not done yet
+    step(a.lasts) ≠ step(b.lasts) && return blockbandwidths(UnknownLayout(), (a,b), A) # can implement same step but not done yet
     l,u = bandwidths(A)
     s = step(a.lasts) # normal blocksize 
     (l+s-1) ÷ s, (u+s-1) ÷ s
@@ -85,9 +85,9 @@ sublayout(::DiagonalLayout{L}, inds::Type{<:NTuple{2,BS}}) where {L,BS<:BlockSli
 
 ##
 # special for unitblocks
-blockbandwidths(A::BlockedMatrix{<:Any,<:Any,<:NTuple{2,BlockedOneTo{Int,<:AbstractUnitRange{Int}}}}) = bandwidths(A.blocks)
-blockbandwidths(A::BlockedMatrix{<:Any,<:Diagonal,<:NTuple{2,BlockedOneTo{Int,<:AbstractUnitRange{Int}}}}) = bandwidths(A.blocks)
-subblockbandwidths(A::BlockedMatrix{<:Any,<:Any,<:NTuple{2,BlockedOneTo{Int,<:AbstractUnitRange{Int}}}}) = (0,0)
+blockbandwidths(A::BlockedMatrix{<:Any,<:Any,<:NTuple{2,AbstractBlockedUnitRange{Int,<:AbstractUnitRange{Int}}}}) = bandwidths(A.blocks)
+blockbandwidths(A::BlockedMatrix{<:Any,<:Diagonal,<:NTuple{2,AbstractBlockedUnitRange{Int,<:AbstractUnitRange{Int}}}}) = bandwidths(A.blocks)
+subblockbandwidths(A::BlockedMatrix{<:Any,<:Any,<:NTuple{2,AbstractBlockedUnitRange{Int,<:AbstractUnitRange{Int}}}}) = (0,0)
 
 
 ## BlockVector
