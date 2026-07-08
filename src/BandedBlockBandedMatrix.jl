@@ -237,6 +237,10 @@ convert(::Type{AbstractMatrix{T}}, B::BandedBlockBandedMatrix) where T = _Banded
 convert(::Type{AbstractArray{T}}, B::BandedBlockBandedMatrix{T}) where T = B
 convert(::Type{AbstractMatrix{T}}, B::BandedBlockBandedMatrix{T}) where T = B
 
+copy(A::Adjoint{T,<:BandedBlockBandedMatrix}) where T = copy(parent(A))'
+copy(A::Transpose{T,<:BandedBlockBandedMatrix}) where T = transpose(copy(parent(A)))
+
+
 
 similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
     BandedBlockBandedMatrix{T}(undef, axes, blockbandwidths(A), subblockbandwidths(A))
