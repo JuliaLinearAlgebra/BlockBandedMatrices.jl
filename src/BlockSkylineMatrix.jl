@@ -270,6 +270,10 @@ BlockSkylineMatrix(A::Union{AbstractMatrix,UniformScaling},
                         rdims::AbstractVector{Int}, cdims::AbstractVector{Int},
                         lu::NTuple{2,AbstractVector{Int}}) = BlockSkylineMatrix{eltype(A)}(A, rdims, cdims, lu)
 
+copy(B::BlockSkylineMatrix) = _BlockSkylineMatrix(copy(B.data), B.block_sizes)
+copy(A::Adjoint{T,<:BlockSkylineMatrix}) where T = copy(parent(A))'
+copy(A::Transpose{T,<:BlockSkylineMatrix}) where T = transpose(copy(parent(A)))
+
 
 """
     BlockBandedMatrix(A::Union{AbstractMatrix,UniformScaling},

@@ -80,6 +80,32 @@ Random.seed!(0)
         @test OO == Matrix(O)^2
     end
 
+    @testset "copy wrappers" begin
+        rows = [2, 1, 3]
+        A = BlockSkylineMatrix{Float64}(undef, rows, rows, ([0,0,0],[0,0,0]))
+        A.data .= reshape(1.0:length(A.data), size(A.data))
+
+        AC = copy(A)
+        @test AC isa BlockSkylineMatrix
+        @test AC == A
+        @test AC !== A
+        @test AC.data !== A.data
+
+        BA = copy(adjoint(A))
+        @test BA isa Adjoint{Float64,<:BlockSkylineMatrix}
+        @test parent(BA) isa BlockSkylineMatrix
+        @test BA == adjoint(Matrix(A))
+        @test parent(BA) == A
+        @test parent(BA) !== A
+
+        TA = copy(transpose(A))
+        @test TA isa Transpose{Float64,<:BlockSkylineMatrix}
+        @test parent(TA) isa BlockSkylineMatrix
+        @test TA == transpose(Matrix(A))
+        @test parent(TA) == A
+        @test parent(TA) !== A
+    end
+
     @testset "Broadcasting" begin
         rows = [3, 1, 2, 1, 2, 1, 2, 1, 2, 1, 3]
         l,u = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1], [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1]
