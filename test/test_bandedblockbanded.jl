@@ -575,7 +575,7 @@ import ArrayLayouts: RangeCumsum
         A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
         @test copy(A') isa Adjoint
         @test copy(A') == copy(A)'
-        @test copy(transpose(A)) isa Adjoint
+        @test copy(transpose(A)) isa Transpose
         @test copy(transpose(A)) == transpose(copy(A))
     end
 end
