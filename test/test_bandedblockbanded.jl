@@ -565,6 +565,19 @@ import ArrayLayouts: RangeCumsum
         A = _BandedBlockBandedMatrix(data, rows, cols, (l, u), (λ, μ))
         @test similar(A, Float64, (Base.OneTo(5), axes(A,2))) isa BandedBlockBandedMatrix
     end
+
+    @testset "adj/trans" begin
+        l , u = 2,1
+        λ , μ = 1,2
+        N = M = 4
+        cols = rows = 1:N
+        data = reshape(Vector(1:(λ+μ+1)*(l+u+1)*sum(cols)), ((λ+μ+1)*(l+u+1), sum(cols)))
+        A = _BandedBlockBandedMatrix(data, rows,cols, (l,u), (λ,μ))
+        @test copy(A') isa Adjoint
+        @test copy(A') == copy(A)'
+        @test copy(transpose(A)) isa Transpose
+        @test copy(transpose(A)) == transpose(copy(A))
+    end
 end
 
 if false # turned off since tests have check-bounds=yes
