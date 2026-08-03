@@ -12,6 +12,7 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout,
                             blockrowstop, blockcolstop, ColumnMajor
 
 import BlockArrays: blockisequal
+import ..check_strided_get
 
 @testset "triangular" begin
     @testset "triangular BandedBlockBandedMatrix mul" begin
@@ -156,6 +157,7 @@ import BlockArrays: blockisequal
         @test unsafe_load(pointer(V)) == A[2,4]
         @test unsafe_load(pointer(V)+sizeof(Float64)*stride(V,2)) == A[2,5]
         @test MemoryLayout(typeof(V)) == ColumnMajor()
+        check_strided_get(V)
 
         @test size(V) == (5,3)
         b = randn(size(V,2))
@@ -174,6 +176,7 @@ import BlockArrays: blockisequal
         @test unsafe_load(pointer(V)) == A[2,5]
         @test unsafe_load(pointer(V)+sizeof(Float64)*stride(V,2)) == A[2,6]
         @test MemoryLayout(typeof(V)) == ColumnMajor()
+        check_strided_get(V)
 
         @test size(V) == (5,2)
         b = randn(size(V,2))
@@ -194,6 +197,8 @@ import BlockArrays: blockisequal
         V_22 = view(A, Block(N)[1:N],  Block(N)[1:N])
         @test unsafe_load(pointer(V_22)) == V_22[1,1] == V[1,1]
         @test strides(V_22) == strides(V) == (1,9)
+        check_strided_get(V_22)
+        check_strided_get(V)
         b = randn(N)
         @test copyto!(similar(b) , MulAdd(V,b)) == copyto!(similar(b) , MulAdd(V_22,b)) ==
             Matrix(V)*b ==
