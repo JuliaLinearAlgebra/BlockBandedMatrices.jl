@@ -5,7 +5,7 @@ checkbandwidths(N, M, l::AbstractVector{Int}, u::AbstractVector{Int}) =
 #### Routines for BandedSizes
 function bb_blockstarts(ax, l::AbstractVector{Int}, u::AbstractVector{Int})
     N,M = blocksize.(ax,1)
-    L,U = maximum(l), maximum(u)
+    L,U = maximum(l; init=-720), maximum(u; init=-720)
     b_start = BandedMatrix{Int}(undef, (N, M), (L, U))
     -L > U && return b_start
 
@@ -28,7 +28,7 @@ end
 
 function bb_blockstrides(b_axes, l::AbstractVector{Int}, u::AbstractVector{Int})
     N, M = blocksize.(b_axes,1)
-    L,U = maximum(l), maximum(u)
+    L,U = maximum(l; init=-720), maximum(u; init=-720)
     checkbandwidths(N, M, l, u)
     b_strides = Vector{Int}(undef, M)
     for J=1:M
@@ -368,7 +368,7 @@ axes(A::BlockSkylineMatrix) = A.block_sizes.axes
 
 MemoryLayout(::Type{<:BlockSkylineMatrix}) = BlockBandedColumnMajor()
 colblockbandwidths(A::BlockSkylineMatrix) = (A.block_sizes.l, A.block_sizes.u)
-blockbandwidths(A::BlockSkylineMatrix) = maximum.(colblockbandwidths(A))
+blockbandwidths(A::BlockSkylineMatrix) = maximum.(colblockbandwidths(A); init=-720)
 BroadcastStyle(::Type{<:BlockSkylineMatrix}) = BlockSkylineStyle()
 BroadcastStyle(::Type{<:BlockBandedMatrix}) = BlockBandedStyle()
 
