@@ -78,9 +78,12 @@ BroadcastStyle(S::AdjTransBlockBandedStyle, T::AdjTransBlockBandedStyle) =
 BroadcastStyle(S::AdjTransBlockBandedStyle{Adj}, T::AdjTransBlockBandedStyle{Adj}) where Adj =
     AdjTransBlockBandedStyle{Adj,typeof(Base.Broadcast.result_style(_adjtransparentstyle(S), _adjtransparentstyle(T)))}()
 
-# functions with real Taylor coefficients satisfy conj(f(x...)) == f(conj.(x)...)
-_conjequivariant(_) = false
-_conjequivariant(::Union{typeof(+),typeof(-),typeof(*),typeof(/),typeof(\)}) = true
+# The arithmetic operations whose broadcasts can be rewritten in terms of the underlying
+# data: they commute with conjugation, so that an `Adjoint` can be moved outside of the
+# broadcast, and they map zeros to zeros and the junk stored outside the bands to junk,
+# so that they can be applied to the data of a `BandedBlockBandedMatrix` directly.
+_isbroadcastarith(_) = false
+_isbroadcastarith(::Union{typeof(+),typeof(-),typeof(*),typeof(/),typeof(\)}) = true
 
 # an argument can be moved through the adjoint/transpose if it is a scalar or has a
 # matching wrapper, where a nested broadcast must itself commute with conjugation
@@ -88,7 +91,7 @@ _adjtransable(_, _) = false
 _adjtransable(_, ::Number) = true
 _adjtransable(::typeof(adjoint), ::Adjoint) = true
 _adjtransable(::typeof(transpose), ::Transpose) = true
-_adjtransable(op, bc::Broadcasted) = _conjequivariant(bc.f) && all(map(x -> _adjtransable(op, x), bc.args))
+_adjtransable(op, bc::Broadcasted) = _isbroadcastarith(bc.f) && all(map(x -> _adjtransable(op, x), bc.args))
 
 _adjtransarg(::typeof(adjoint), α::Number) = conj(α)
 _adjtransarg(::typeof(transpose), α::Number) = α
@@ -98,7 +101,7 @@ _adjtransarg(op, bc::Broadcasted) = broadcasted(bc.f, map(x -> _adjtransarg(op, 
 
 function copy(bc::Broadcasted{<:AdjTransBlockBandedStyle})
     op = _adjtransop(BroadcastStyle(typeof(bc)))
-    if _conjequivariant(bc.f) && all(map(x -> _adjtransable(op, x), bc.args))
+    if _isbroadcastarith(bc.f) && all(map(x -> _adjtransable(op, x), bc.args))
         op(Base.Broadcast.materialize(broadcasted(bc.f, map(x -> _adjtransarg(op, x), bc.args)...)))
     else # e.g. exp.(A') is not block-banded
         copy(Broadcasted{DefaultArrayStyle{2}}(bc.f, bc.args, bc.axes))

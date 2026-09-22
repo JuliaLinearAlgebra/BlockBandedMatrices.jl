@@ -616,6 +616,49 @@ rmul!(A::BandedBlockBandedMatrix, x::Number) = (rmul!(A.data, x); A)
 *(A::BandedBlockBandedMatrix, x::Number) = _BandedBlockBandedMatrix(A.data*x, axes(A,1), blockbandwidths(A), subblockbandwidths(A))
 
 
+###
+# broadcasting is passed through to the data
+#
+# The data of a `BandedBlockBandedMatrix` stores every entry inside the bands, so a
+# broadcast whose arguments all share the same block structure can be applied to the data
+# directly, e.g. `α .* A .+ B` is `α .* A.data .+ B.data` reinterpreted as a
+# `BandedBlockBandedMatrix`. This needs the result to vanish outside the bands, where the
+# data stores junk that is never read.
+###
+
+# the blocking of the data plays no role in an elementwise operation, so we broadcast over
+# the flat array underlying it
+_flatdata(A::BandedBlockBandedMatrix) = parent(bandedblockbandeddata(A))
+
+_isdatabroadcast(bc::Broadcasted) = _isbroadcastarith(bc.f) && _isweakzero(bc.f, bc.args...)
+
+_isdataarg(_, _) = false
+_isdataarg(_, ::Number) = true
+_isdataarg(A, B::BandedBlockBandedMatrix) = bandedblockbandeddata(B) isa BlockedArray &&
+    blockisequal(axes(A), axes(B)) && blockbandwidths(A) == blockbandwidths(B) &&
+    subblockbandwidths(A) == subblockbandwidths(B)
+_isdataarg(A, bc::Broadcasted) = _isdatabroadcast(bc) && all(map(x -> _isdataarg(A, x), bc.args))
+
+_dataarg(x::Number) = x
+_dataarg(A::BandedBlockBandedMatrix) = _flatdata(A)
+_dataarg(bc::Broadcasted) = broadcasted(bc.f, map(_dataarg, bc.args)...)
+
+# the first BandedBlockBandedMatrix in the tree determines the structure of the result
+_firstbandedblockbanded() = nothing
+_firstbandedblockbanded(A::BandedBlockBandedMatrix, args...) = A
+_firstbandedblockbanded(bc::Broadcasted, args...) = _firstbandedblockbanded(bc.args..., args...)
+_firstbandedblockbanded(_, args...) = _firstbandedblockbanded(args...)
+
+function copy(bc::Broadcasted{BandedBlockBandedStyle})
+    A = _firstbandedblockbanded(bc)
+    if !isnothing(A) && _isdataarg(A, bc)
+        _BandedBlockBandedMatrix(materialize(_dataarg(bc)), axes(A), blockbandwidths(A), subblockbandwidths(A))
+    else # e.g. exp.(A) or matrices whose bands do not line up
+        invoke(copy, Tuple{Broadcasted}, bc)
+    end
+end
+
+
 #####
 # summary
 #####
