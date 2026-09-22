@@ -8,8 +8,9 @@ import ArrayLayouts: AbstractColumnMajor, AdjQRPackedQLayout, ColumnMajor,
                      layout_replace_in_print_matrix, rowsupport, sub_materialize, sublayout, symmetriclayout,
                      transposelayout, zero!, materialize!, materialize
 
-import BandedMatrices: BandedColumns, BandedLayout, BandedStyle, BlasFloat,
-                       _BandedMatrix, banded_getindex, banded_setindex!,
+import BandedMatrices: AdjOrTransStyle, BandedColumns, BandedLayout, BandedStyle, BlasFloat,
+                       _BandedMatrix, _isbroadcastarith, _isweakzero, adjortransstyle,
+                       banded_getindex, banded_setindex!,
                        bandedcolumns, bandeddata, bandshift, bandwidth, bandwidths, colrange,
                        inbands_getindex, inbands_setindex!, isbanded
 

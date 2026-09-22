@@ -297,6 +297,106 @@ import Base: oneto
         bbw = @inferred blockbandwidths(bc)
         @test bbw == blockbandwidths(BB)
     end
+
+    @testset "adjoint/transpose" begin
+        A = BandedBlockBandedMatrix(randn(ComplexF64,10,10), 1:4,1:4, (1,1), (1,1))
+        B = BlockBandedMatrix(randn(ComplexF64,10,10), 1:4,1:4, (1,1))
+        α = 2+im
+
+        @testset "$op" for op in (adjoint, transpose)
+            Wrap = op === adjoint ? Adjoint : Transpose
+            @testset "$(typeof(M).name.name)" for M in (A, B)
+                W, Wm = op(M), op(Matrix(M))
+                for (R,Rm) in ((α .* W, α .* Wm), (W .* α, Wm .* α), (W ./ α, Wm ./ α),
+                               (α .\ W, α .\ Wm), ((-).(W), (-).(Wm)),
+                               (W .+ W, Wm .+ Wm), (W .- W, Wm .- Wm),
+                               (α .* W .+ W, α .* Wm .+ Wm))
+                    @test R isa Wrap{ComplexF64}
+                    @test parent(R) isa typeof(M).name.wrapper
+                    @test R ≈ Rm
+                end
+            end
+            @test op(A) .+ op(B) isa Wrap{ComplexF64}
+            @test parent(op(A) .+ op(B)) isa BlockBandedMatrix
+            @test op(A) .+ op(B) ≈ op(Matrix(A)) .+ op(Matrix(B))
+        end
+
+        # the wrapper is dropped when it cannot be moved through the broadcast
+        @test exp.(A') ≈ exp.(Matrix(A)')
+        @test !(exp.(A') isa Adjoint)
+        @test imag.(A') ≈ imag.(Matrix(A)')
+        @test !(imag.(A') isa Adjoint)
+        @test A' .+ transpose(A) ≈ Matrix(A)' .+ transpose(Matrix(A))
+        @test !(A' .+ transpose(A) isa Adjoint)
+        @test A' .+ A ≈ Matrix(A)' .+ Matrix(A)
+        @test A' .* ones(10,10) ≈ Matrix(A)'
+
+        f(α, A) = α .* A'
+        @test @inferred(f(α, A)) isa Adjoint{ComplexF64,<:BandedBlockBandedMatrix}
+        @test f(α, A) ≈ α .* Matrix(A)'
+
+        C = BandedBlockBandedMatrix{ComplexF64}(undef, 1:4,1:4, (1,1), (1,1))
+        C .= α .* A'
+        @test C ≈ α .* Matrix(A)'
+        D = Matrix{ComplexF64}(undef, 10, 10)
+        D .= α .* A'
+        @test D ≈ α .* Matrix(A)'
+    end
+
+    @testset "data" begin
+        A = BandedBlockBandedMatrix{Float64}(undef, 1:4,1:4, (1,1),(1,1))
+        B = BandedBlockBandedMatrix{Float64}(undef, 1:4,1:4, (1,1),(1,1))
+        # the data outside the bands is junk that must not leak into the result
+        A.data .= NaN; B.data .= NaN
+        for M in (A,B), J = 1:4, K = max(1,J-1):min(4,J+1)
+            V = view(M, Block(K), Block(J))
+            for j = axes(V,2), k = colrange(V,j)
+                V[k,j] = randn()
+            end
+        end
+        Am, Bm = Matrix(A), Matrix(B)
+        α = 2.0
+        @test !any(isnan, Am)
+
+        for (R,Rm) in ((α .* A, α .* Am), (A .* α, Am .* α), (A ./ α, Am ./ α), (α .\ A, α .\ Am),
+                       ((-).(A), (-).(Am)), (A .+ B, Am .+ Bm), (A .- B, Am .- Bm),
+                       (A .* B, Am .* Bm), (α .* A .+ B, α .* Am .+ Bm))
+            @test R isa BandedBlockBandedMatrix
+            @test blockbandwidths(R) == (1,1)
+            @test subblockbandwidths(R) == (1,1)
+            @test Matrix(R) == Rm
+        end
+        @test typeof(α .* A) == typeof(similar(A, Float64))
+
+        # the data is only used when the structures line up
+        C = BandedBlockBandedMatrix(randn(10,10), 1:4,1:4, (2,1),(1,0)); Cm = Matrix(C)
+        @test A .+ C ≈ Am .+ Cm
+        @test blockbandwidths(A .+ C) == (2,1)
+        @test subblockbandwidths(A .+ C) == (1,1)
+        @test A .* C ≈ Am .* Cm
+        @test blockbandwidths(A .* C) == (1,1)
+        @test subblockbandwidths(A .* C) == (1,0)
+        @test_throws DimensionMismatch A .+ BandedBlockBandedMatrix(randn(10,14), 1:4,2:5, (1,1),(1,1))
+
+        # broadcasts that do not preserve the bands are unchanged
+        @test A .+ 1 ≈ Am .+ 1
+        @test exp.(A) ≈ exp.(Am)
+        @test Diagonal(1:10) .* A ≈ Diagonal(1:10) .* Am
+
+        f(α, A) = α .* A
+        g(A, B) = A .+ B
+        h(α, A, B) = α .* A .+ B
+        @test @inferred(f(α, A)) ≈ α .* Am
+        # Following can't be inferred because of issues in type-inferrence
+        # see Base.Broadcast.axistype overload in
+        #  BlockArrays/src/blockbroadcast.jl:45
+        @test g(A, B) ≈ Am .+ Bm
+        @test h(α, A, B) ≈ α .* Am .+ Bm
+
+        # and the data is used through an adjoint as well
+        @test parent((2+im) .* A') isa BandedBlockBandedMatrix
+        @test (2+im) .* A' ≈ (2+im) .* Am'
+    end
 end
 
 end # module

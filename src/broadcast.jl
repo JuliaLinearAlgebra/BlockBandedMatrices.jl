@@ -33,6 +33,27 @@ BroadcastStyle(::DefaultArrayStyle{2}, ::BandedBlockBandedStyle) = BandedBlockBa
 BroadcastStyle(::BandedBlockBandedStyle, ::DefaultArrayStyle{2}) = BandedBlockBandedStyle()
 
 ###
+# Adjoints and transposes
+#
+# The adjoint (transpose) of a block-banded matrix is not stored as a block-banded matrix,
+# so we use the `AdjOrTransStyle` machinery of BandedMatrices.jl to broadcast over the
+# parents and re-wrap the result, e.g. `α .* A'` returns an `Adjoint` of a block-banded
+# matrix instead of a dense matrix.
+###
+
+adjortransstyle(op, sty::AbstractBlockBandedStyle) = AdjOrTransStyle{typeof(op),typeof(sty)}()
+
+BroadcastStyle(::Type{<:Adjoint{<:Any,Mat}}) where Mat<:AbstractBlockBandedMatrix =
+    adjortransstyle(adjoint, BroadcastStyle(Mat))
+BroadcastStyle(::Type{<:Transpose{<:Any,Mat}}) where Mat<:AbstractBlockBandedMatrix =
+    adjortransstyle(transpose, BroadcastStyle(Mat))
+
+# mixing with a dense array is not supported by the block-banded machinery, as the block
+# bandwidths of an unblocked array are not known, so we materialise densely as before
+BroadcastStyle(::AdjOrTransStyle{<:Any,<:AbstractBlockBandedStyle}, T::DefaultArrayStyle{2}) = T
+
+
+###
 # broadcast blockbandwidths
 ###
 _blockbnds(bc) = blocksize(bc) .- 1
@@ -107,8 +128,6 @@ end
 
 
 # zero is preserved. Take the maximum bandwidth
-import BandedMatrices: _isweakzero
-
 function blockbandwidths(bc::Broadcasted)
     (a,b) = size(bc)
     bnds = (a-1,b-1)
