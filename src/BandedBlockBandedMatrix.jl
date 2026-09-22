@@ -626,9 +626,6 @@ rmul!(A::BandedBlockBandedMatrix, x::Number) = (rmul!(A.data, x); A)
 # data stores junk that is never read.
 ###
 
-# the blocking of the data plays no role in an elementwise operation, so we broadcast over
-# the flat array underlying it
-_flatdata(A::BandedBlockBandedMatrix) = parent(bandedblockbandeddata(A))
 
 _isdatabroadcast(bc::Broadcasted) = _isbroadcastarith(bc.f) && _isweakzero(bc.f, bc.args...)
 
@@ -637,13 +634,12 @@ _isdataarg(_, ::Number) = true
 # the data must also be safe to read, which it need not be for `undef` entries of a
 # non-isbits eltype
 _isdataarg(A, B::BandedBlockBandedMatrix) = isbitstype(eltype(B)) &&
-    bandedblockbandeddata(B) isa BlockedArray &&
     blockisequal(axes(A), axes(B)) && blockbandwidths(A) == blockbandwidths(B) &&
     subblockbandwidths(A) == subblockbandwidths(B)
 _isdataarg(A, bc::Broadcasted) = _isdatabroadcast(bc) && all(map(x -> _isdataarg(A, x), bc.args))
 
 _dataarg(x::Number) = x
-_dataarg(A::BandedBlockBandedMatrix) = _flatdata(A)
+_dataarg(A::BandedBlockBandedMatrix) = bandedblockbandeddata(A)
 _dataarg(bc::Broadcasted) = broadcasted(bc.f, map(_dataarg, bc.args)...)
 
 # the first BandedBlockBandedMatrix in the tree determines the structure of the result
