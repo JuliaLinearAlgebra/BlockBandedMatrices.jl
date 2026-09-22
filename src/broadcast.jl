@@ -33,6 +33,86 @@ BroadcastStyle(::DefaultArrayStyle{2}, ::BandedBlockBandedStyle) = BandedBlockBa
 BroadcastStyle(::BandedBlockBandedStyle, ::DefaultArrayStyle{2}) = BandedBlockBandedStyle()
 
 ###
+# Adjoints and transposes
+#
+# The adjoint (transpose) of a block-banded matrix is not stored as a block-banded
+# matrix, so broadcasting is done on the parent and the result re-wrapped, e.g.
+# `α .* A'` returns an `Adjoint` of a block-banded matrix. This is valid whenever the
+# broadcasted function commutes with conjugation, as `f.(A', α) == f.(A, conj(α))'`.
+###
+
+"""
+    AdjTransBlockBandedStyle{Adj,Sty}
+
+is a `BroadcastStyle` for an `Adjoint` (`Adj == typeof(adjoint)`) or `Transpose`
+(`Adj == typeof(transpose)`) of a block-banded matrix whose parent has
+`BroadcastStyle` `Sty`.
+"""
+struct AdjTransBlockBandedStyle{Adj,Sty} <: AbstractArrayStyle{2} end
+
+AdjTransBlockBandedStyle{Adj,Sty}(::Val{2}) where {Adj,Sty} = AdjTransBlockBandedStyle{Adj,Sty}()
+AdjTransBlockBandedStyle{Adj,Sty}(::Val{N}) where {Adj,Sty,N} = DefaultArrayStyle{N}()
+
+const AdjointBlockBandedStyle{Sty} = AdjTransBlockBandedStyle{typeof(adjoint),Sty}
+const TransposeBlockBandedStyle{Sty} = AdjTransBlockBandedStyle{typeof(transpose),Sty}
+
+_adjtransop(::AdjTransBlockBandedStyle{Adj}) where Adj = Adj.instance
+_adjtransparentstyle(::AdjTransBlockBandedStyle{<:Any,Sty}) where Sty = Sty()
+
+adjtransbroadcaststyle(op, sty::AbstractBlockBandedStyle) = AdjTransBlockBandedStyle{typeof(op),typeof(sty)}()
+adjtransbroadcaststyle(op, _) = DefaultArrayStyle{2}()
+
+BroadcastStyle(::Type{<:Adjoint{<:Any,Mat}}) where Mat<:AbstractBlockBandedMatrix =
+    adjtransbroadcaststyle(adjoint, BroadcastStyle(Mat))
+BroadcastStyle(::Type{<:Transpose{<:Any,Mat}}) where Mat<:AbstractBlockBandedMatrix =
+    adjtransbroadcaststyle(transpose, BroadcastStyle(Mat))
+
+# combining with any other style drops down to the style of the parents, that is,
+# the result is materialised as a block-banded matrix instead of its adjoint.
+# Only one order needs to be declared as broadcasting tests both.
+BroadcastStyle(S::AdjTransBlockBandedStyle, T::AbstractArrayStyle{2}) =
+    Base.Broadcast.result_style(_adjtransparentstyle(S), T)
+BroadcastStyle(::AdjTransBlockBandedStyle, T::DefaultArrayStyle{2}) = T
+BroadcastStyle(S::AdjTransBlockBandedStyle, T::AdjTransBlockBandedStyle) =
+    Base.Broadcast.result_style(_adjtransparentstyle(S), _adjtransparentstyle(T))
+BroadcastStyle(S::AdjTransBlockBandedStyle{Adj}, T::AdjTransBlockBandedStyle{Adj}) where Adj =
+    AdjTransBlockBandedStyle{Adj,typeof(Base.Broadcast.result_style(_adjtransparentstyle(S), _adjtransparentstyle(T)))}()
+
+# functions with real Taylor coefficients satisfy conj(f(x...)) == f(conj.(x)...)
+_conjequivariant(_) = false
+_conjequivariant(::Union{typeof(+),typeof(-),typeof(*),typeof(/),typeof(\)}) = true
+
+# an argument can be moved through the adjoint/transpose if it is a scalar or has a
+# matching wrapper, where a nested broadcast must itself commute with conjugation
+_adjtransable(_, _) = false
+_adjtransable(_, ::Number) = true
+_adjtransable(::typeof(adjoint), ::Adjoint) = true
+_adjtransable(::typeof(transpose), ::Transpose) = true
+_adjtransable(op, bc::Broadcasted) = _conjequivariant(bc.f) && all(map(x -> _adjtransable(op, x), bc.args))
+
+_adjtransarg(::typeof(adjoint), α::Number) = conj(α)
+_adjtransarg(::typeof(transpose), α::Number) = α
+_adjtransarg(::typeof(adjoint), A::Adjoint) = parent(A)
+_adjtransarg(::typeof(transpose), A::Transpose) = parent(A)
+_adjtransarg(op, bc::Broadcasted) = broadcasted(bc.f, map(x -> _adjtransarg(op, x), bc.args)...)
+
+function copy(bc::Broadcasted{<:AdjTransBlockBandedStyle})
+    op = _adjtransop(BroadcastStyle(typeof(bc)))
+    if _conjequivariant(bc.f) && all(map(x -> _adjtransable(op, x), bc.args))
+        op(Base.Broadcast.materialize(broadcasted(bc.f, map(x -> _adjtransarg(op, x), bc.args)...)))
+    else # e.g. exp.(A') is not block-banded
+        copy(Broadcasted{DefaultArrayStyle{2}}(bc.f, bc.args, bc.axes))
+    end
+end
+
+copyto!(dest::AbstractArray, bc::Broadcasted{<:AdjTransBlockBandedStyle}) =
+    copyto!(dest, Broadcasted{DefaultArrayStyle{2}}(bc.f, bc.args, bc.axes))
+
+similar(bc::Broadcasted{<:AdjTransBlockBandedStyle}, ::Type{T}) where T =
+    similar(Broadcasted{DefaultArrayStyle{2}}(bc.f, bc.args, bc.axes), T)
+
+
+###
 # broadcast blockbandwidths
 ###
 _blockbnds(bc) = blocksize(bc) .- 1

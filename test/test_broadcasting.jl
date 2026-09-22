@@ -297,6 +297,51 @@ import Base: oneto
         bbw = @inferred blockbandwidths(bc)
         @test bbw == blockbandwidths(BB)
     end
+
+    @testset "adjoint/transpose" begin
+        A = BandedBlockBandedMatrix(randn(ComplexF64,10,10), 1:4,1:4, (1,1), (1,1))
+        B = BlockBandedMatrix(randn(ComplexF64,10,10), 1:4,1:4, (1,1))
+        α = 2+im
+
+        @testset "$op" for op in (adjoint, transpose)
+            Wrap = op === adjoint ? Adjoint : Transpose
+            @testset "$(typeof(M).name.name)" for M in (A, B)
+                W, Wm = op(M), op(Matrix(M))
+                for (R,Rm) in ((α .* W, α .* Wm), (W .* α, Wm .* α), (W ./ α, Wm ./ α),
+                               (α .\ W, α .\ Wm), ((-).(W), (-).(Wm)),
+                               (W .+ W, Wm .+ Wm), (W .- W, Wm .- Wm),
+                               (α .* W .+ W, α .* Wm .+ Wm))
+                    @test R isa Wrap{ComplexF64}
+                    @test parent(R) isa typeof(M).name.wrapper
+                    @test R ≈ Rm
+                end
+            end
+            @test op(A) .+ op(B) isa Wrap{ComplexF64}
+            @test parent(op(A) .+ op(B)) isa BlockBandedMatrix
+            @test op(A) .+ op(B) ≈ op(Matrix(A)) .+ op(Matrix(B))
+        end
+
+        # the wrapper is dropped when it cannot be moved through the broadcast
+        @test exp.(A') ≈ exp.(Matrix(A)')
+        @test !(exp.(A') isa Adjoint)
+        @test imag.(A') ≈ imag.(Matrix(A)')
+        @test !(imag.(A') isa Adjoint)
+        @test A' .+ transpose(A) ≈ Matrix(A)' .+ transpose(Matrix(A))
+        @test !(A' .+ transpose(A) isa Adjoint)
+        @test A' .+ A ≈ Matrix(A)' .+ Matrix(A)
+        @test A' .* ones(10,10) ≈ Matrix(A)'
+
+        f(α, A) = α .* A'
+        @test @inferred(f(α, A)) isa Adjoint{ComplexF64,<:BandedBlockBandedMatrix}
+        @test f(α, A) ≈ α .* Matrix(A)'
+
+        C = BandedBlockBandedMatrix{ComplexF64}(undef, 1:4,1:4, (1,1), (1,1))
+        C .= α .* A'
+        @test C ≈ α .* Matrix(A)'
+        D = Matrix{ComplexF64}(undef, 10, 10)
+        D .= α .* A'
+        @test D ≈ α .* Matrix(A)'
+    end
 end
 
 end # module
