@@ -634,7 +634,10 @@ _isdatabroadcast(bc::Broadcasted) = _isbroadcastarith(bc.f) && _isweakzero(bc.f,
 
 _isdataarg(_, _) = false
 _isdataarg(_, ::Number) = true
-_isdataarg(A, B::BandedBlockBandedMatrix) = bandedblockbandeddata(B) isa BlockedArray &&
+# the data must also be safe to read, which it need not be for `undef` entries of a
+# non-isbits eltype
+_isdataarg(A, B::BandedBlockBandedMatrix) = isbitstype(eltype(B)) &&
+    bandedblockbandeddata(B) isa BlockedArray &&
     blockisequal(axes(A), axes(B)) && blockbandwidths(A) == blockbandwidths(B) &&
     subblockbandwidths(A) == subblockbandwidths(B)
 _isdataarg(A, bc::Broadcasted) = _isdatabroadcast(bc) && all(map(x -> _isdataarg(A, x), bc.args))
