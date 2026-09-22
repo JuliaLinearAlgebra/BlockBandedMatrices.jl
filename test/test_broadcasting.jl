@@ -387,8 +387,11 @@ import Base: oneto
         g(A, B) = A .+ B
         h(α, A, B) = α .* A .+ B
         @test @inferred(f(α, A)) ≈ α .* Am
-        @test @inferred(g(A, B)) ≈ Am .+ Bm
-        @test @inferred(h(α, A, B)) ≈ α .* Am .+ Bm
+        # Following can't be inferred because of issues in type-inferrence
+        # see Base.Broadcast.axistype overload in
+        #  BlockArrays/src/blockbroadcast.jl:45
+        @test g(A, B) ≈ Am .+ Bm
+        @test h(α, A, B) ≈ α .* Am .+ Bm
 
         # and the data is used through an adjoint as well
         @test parent((2+im) .* A') isa BandedBlockBandedMatrix
