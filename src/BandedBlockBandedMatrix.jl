@@ -335,8 +335,7 @@ zeroblock(A::BandedBlockBandedMatrix, K::Int, J::Int) =
 #     BlockArray(similar(block_array.blocks, Array{T2, N}), copy(block_array.block_sizes))
 # end
 
-Base.size(arr::BandedBlockBandedMatrix) =
-    @inbounds return map(length,axes(arr))
+Base.size(arr::BandedBlockBandedMatrix) = map(length, axes(arr))
 
 
 @inline function getindex(A::BandedBlockBandedMatrix{T}, i::Int, j::Int) where T

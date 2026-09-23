@@ -389,8 +389,7 @@ zeroblock(A::BlockSkylineMatrix, K::Int, J::Int) =
 #     BlockArray(similar(block_array.blocks, Array{T2, N}), copy(block_array.block_sizes))
 # end
 
-Base.size(arr::BlockSkylineMatrix) =
-    @inbounds return map(length,axes(arr))
+Base.size(arr::BlockSkylineMatrix) = map(length, axes(arr))
 
 
 @inline function getindex(A::BlockSkylineMatrix, i::Int, j::Int)
