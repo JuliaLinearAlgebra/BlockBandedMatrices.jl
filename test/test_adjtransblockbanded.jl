@@ -13,6 +13,11 @@ import BlockBandedMatrices: BandedBlockBandedRowMajor, BandedBlockBandedRows,
         @test MemoryLayout(A') isa BandedBlockBandedRows
         @test MemoryLayout(transpose(A)') isa BandedBlockBandedColumns
 
+        # the data of an adjoint is conjugated, and the layout of a real matrix is unchanged
+        @test MemoryLayout(A') isa BandedBlockBandedRows{ConjLayout{ColumnMajor}}
+        @test MemoryLayout(transpose(A)') isa BandedBlockBandedColumns{ConjLayout{ColumnMajor}}
+        @test MemoryLayout(BandedBlockBandedMatrix(randn(10,14), 1:4,2:5, (1,2), (2,1))') isa BandedBlockBandedRowMajor
+
         @test A'[Block(1,1)] == A[Block(1,1)]'
         @test A'[Block(2,3)] == A[Block(3,2)]'
         @test transpose(A)[Block(1,1)] == transpose(A[Block(1,1)])
@@ -31,6 +36,11 @@ import BlockBandedMatrices: BandedBlockBandedRowMajor, BandedBlockBandedRows,
         @test MemoryLayout(transpose(A)) isa BlockBandedRows
         @test MemoryLayout(A') isa BlockBandedRows
         @test MemoryLayout(transpose(A)') isa BlockBandedColumns
+
+        @test MemoryLayout(transpose(A)) isa BlockBandedRows{ColumnMajor}
+        @test MemoryLayout(A') isa BlockBandedRows{ConjLayout{ColumnMajor}}
+        @test MemoryLayout(transpose(A)') isa BlockBandedColumns{ConjLayout{ColumnMajor}}
+        @test MemoryLayout(BlockBandedMatrix(randn(10,14), 1:4,2:5, (1,2))') isa BlockBandedRows{ColumnMajor}
 
         @test A'[Block(1,1)] == A[Block(1,1)]'
         @test A'[Block(2,3)] == A[Block(3,2)]'
