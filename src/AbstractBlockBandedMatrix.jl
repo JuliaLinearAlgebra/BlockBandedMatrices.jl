@@ -34,10 +34,10 @@ transposelayout(::BandedBlockBandedRows{Lay}) where Lay = BandedBlockBandedColum
 transposelayout(::BlockBandedColumns{Lay}) where Lay = BlockBandedRows{Lay}()
 transposelayout(::BlockBandedRows{Lay}) where Lay = BlockBandedColumns{Lay}()
 
-conjlayout(::Type{T}, ::BandedBlockBandedColumns{Lay}) where {T<:Complex,Lay} = BandedBlockBandedColumns{typeof(conjlayout(T,Lay))}()
-conjlayout(::Type{T}, ::BandedBlockBandedRows{Lay}) where {T<:Complex,Lay} = BandedBlockBandedRows{typeof(conjlayout(T,Lay))}()
-conjlayout(::Type{T}, ::BlockBandedColumns{Lay}) where {T<:Complex,Lay} = BlockBandedColumns{typeof(conjlayout(T,Lay))}()
-conjlayout(::Type{T}, ::BlockBandedRows{Lay}) where {T<:Complex,Lay} = BlockBandedRows{typeof(conjlayout(T,Lay))}()
+conjlayout(::Type{T}, ::BandedBlockBandedColumns{Lay}) where {T<:Complex,Lay} = BandedBlockBandedColumns{typeof(conjlayout(T,Lay()))}()
+conjlayout(::Type{T}, ::BandedBlockBandedRows{Lay}) where {T<:Complex,Lay} = BandedBlockBandedRows{typeof(conjlayout(T,Lay()))}()
+conjlayout(::Type{T}, ::BlockBandedColumns{Lay}) where {T<:Complex,Lay} = BlockBandedColumns{typeof(conjlayout(T,Lay()))}()
+conjlayout(::Type{T}, ::BlockBandedRows{Lay}) where {T<:Complex,Lay} = BlockBandedRows{typeof(conjlayout(T,Lay()))}()
 
 symmetriclayout(::AbstractBandedBlockBandedLayout) = BandedBlockBandedLayout()
 hermitianlayout(_, ::AbstractBandedBlockBandedLayout) = BandedBlockBandedLayout()
