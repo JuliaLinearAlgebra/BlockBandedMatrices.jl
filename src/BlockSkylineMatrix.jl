@@ -6,7 +6,8 @@ checkbandwidths(N, M, l::AbstractVector{Int}, u::AbstractVector{Int}) =
 function bb_blockstarts(ax, l::AbstractVector{Int}, u::AbstractVector{Int})
     N,M = blocksize.(ax,1)
     L,U = maximum(l), maximum(u)
-    b_start = BandedMatrix{Int}(undef, (N, M), (L, U))
+    # zero-filled so in-band slots for blocks outside a column's own band read as 0
+    b_start = BandedMatrix(Zeros{Int}(N, M), (L, U))
     -L > U && return b_start
 
     checkbandwidths(N, M, l, u)
