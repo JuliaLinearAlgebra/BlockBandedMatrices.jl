@@ -106,6 +106,13 @@ strides(V::SubBlockSkylineMatrix{<:Any,LL,UU,<:Union{BlockRange1,Block1},Block1}
     (1,parent(V).block_sizes.block_strides[Int(parentindices(V)[2].block)])
 
 
+function Base.cconvert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:Union{BlockRange1,Block1},Block1}) where {T,LL,UU}
+    A = parent(V)
+    KR = parentindices(V)[1].block
+    J = parentindices(V)[2].block
+    Base.cconvert(Ptr{T}, view(A, first(KR), J))
+end
+
 function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:Union{BlockRange1,Block1},Block1}) where {T,LL,UU}
     A = parent(V)
     JR = parentindices(V)[2]
@@ -117,6 +124,16 @@ end
 strides(V::SubBlockSkylineMatrix{<:Any,LL,UU,<:BlockRange1,<:BlockIndexRange1}) where {LL,UU} =
     (1,parent(V).block_sizes.block_strides[Int(Block(parentindices(V)[2]))])
 
+function Base.cconvert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:BlockRange1,<:BlockIndexRange1}) where {T,LL,UU}
+    A = parent(V)
+    JR = parentindices(V)[2]
+    K = first(parentindices(V)[1].block)
+    J = Block(JR)
+    K ∈ blockcolsupport(A, J) || throw(ArgumentError("Pointer is only defined when inside blockcolsupport"))
+    s = blockstart(A, Int(K), Int(J)) + (first(JR.block.indices[1]) - 1)*blockstride(A, Int(J))
+    Base.cconvert(Ptr{T}, view(A.data, s:lastindex(A.data)))
+end
+
 function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:BlockRange1,<:BlockIndexRange1}) where {T,LL,UU}
     A = parent(V)
     JR = parentindices(V)[2]
@@ -125,6 +142,17 @@ function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,<:Block
     K ∈ blockcolsupport(A, J) || throw(ArgumentError("Pointer is only defined when inside blockcolsupport"))
     p = unsafe_convert(Ptr{T}, view(A, K, J))
     p + sizeof(T)*(JR.block.indices[1][1]-1)*stride(V,2)
+end
+
+function Base.cconvert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,BlockIndexRange1,BlockIndexRange1}) where {T,LL,UU}
+    A = parent(V)
+    K = parentindices(V)[1].block.block
+    kr = parentindices(V)[1].block.indices[1]
+    J = parentindices(V)[2].block.block
+    jr = parentindices(V)[2].block.indices[1]
+    K ∈ blockcolsupport(A, J) || throw(ArgumentError("Pointer is only defined when inside blockcolsupport"))
+    s = blockstart(A, Int(K), Int(J)) + (first(kr) - 1) + (first(jr) - 1)*blockstride(A, Int(J))
+    Base.cconvert(Ptr{T}, view(A.data, s:lastindex(A.data)))
 end
 
 function unsafe_convert(::Type{Ptr{T}}, V::SubBlockSkylineMatrix{T,LL,UU,BlockIndexRange1,BlockIndexRange1}) where {T,LL,UU}
