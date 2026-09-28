@@ -12,6 +12,7 @@ import BlockBandedMatrices: MemoryLayout, TriangularLayout,
                             blockrowstop, blockcolstop, ColumnMajor
 
 import BlockArrays: blockisequal
+import ..check_strided_get
 
 @testset "triangular" begin
     @testset "triangular BandedBlockBandedMatrix mul" begin
@@ -155,6 +156,7 @@ import BlockArrays: blockisequal
         V = view(A, Block.(2:3), Block(3))
         @test unsafe_load(pointer(V)) == A[2,4]
         @test unsafe_load(pointer(V)+sizeof(Float64)*stride(V,2)) == A[2,5]
+        check_strided_get(V)
         @test MemoryLayout(typeof(V)) == ColumnMajor()
 
         @test size(V) == (5,3)
@@ -165,6 +167,7 @@ import BlockArrays: blockisequal
 
         V = view(A, Block.(1:3), Block(3)[2:3])
         @test_throws ArgumentError pointer(V)
+        @test_throws ArgumentError Base.cconvert(Ptr{Float64}, V)
         @test MemoryLayout(typeof(V)) == ColumnMajor()
 
         b = randn(size(A,1))
@@ -173,6 +176,7 @@ import BlockArrays: blockisequal
         V = view(A, Block.(2:3), Block(3)[2:3])
         @test unsafe_load(pointer(V)) == A[2,5]
         @test unsafe_load(pointer(V)+sizeof(Float64)*stride(V,2)) == A[2,6]
+        check_strided_get(V)
         @test MemoryLayout(typeof(V)) == ColumnMajor()
 
         @test size(V) == (5,2)
@@ -182,6 +186,7 @@ import BlockArrays: blockisequal
 
         V = view(A, Block.(1:3), Block(3)[2:3])
         @test_throws ArgumentError pointer(V)
+        @test_throws ArgumentError Base.cconvert(Ptr{Float64}, V)
         @test MemoryLayout(typeof(V)) == ColumnMajor()
 
         b = randn(size(A,1))
@@ -193,6 +198,8 @@ import BlockArrays: blockisequal
         V = view(A, Block(N),  Block(N))
         V_22 = view(A, Block(N)[1:N],  Block(N)[1:N])
         @test unsafe_load(pointer(V_22)) == V_22[1,1] == V[1,1]
+        check_strided_get(V_22)
+        check_strided_get(V)
         @test strides(V_22) == strides(V) == (1,9)
         b = randn(N)
         @test copyto!(similar(b) , MulAdd(V,b)) == copyto!(similar(b) , MulAdd(V_22,b)) ==

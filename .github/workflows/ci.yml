@@ -29,6 +29,7 @@ jobs:
           - 'min'
           - 'lts'
           - '1'
+          - 'nightly'
         os:
           - ubuntu-latest
           - macOS-latest

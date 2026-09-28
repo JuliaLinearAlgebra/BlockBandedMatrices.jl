@@ -456,6 +456,14 @@ _parent_blocks(V::BlockBandedBlock)::Tuple{Int,Int} =
 MemoryLayout(::Type{<:BlockBandedBlock}) = ColumnMajor()
 Base.elsize(::Type{<:BlockSkylineMatrix{T,R}}) where {T,R} = Base.elsize(R)
 
+function Base.cconvert(::Type{Ptr{T}}, V::BlockBandedBlock{T}) where T
+    A = parent(V)
+    K,J = _parent_blocks(V)
+    Block(K) ∈ blockcolsupport(A, Block(J)) || throw(ArgumentError("Pointer is only defined when inside blockcolsupport"))
+    # a range, not a single index, so empty blocks starting past the end of data are allowed
+    Base.cconvert(Ptr{T}, view(A.data, blockstart(A,K,J):lastindex(A.data)))
+end
+
 function Base.unsafe_convert(::Type{Ptr{T}}, V::BlockBandedBlock{T}) where T
     A = parent(V)
     K,J = _parent_blocks(V)
