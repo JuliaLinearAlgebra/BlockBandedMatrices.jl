@@ -165,6 +165,14 @@ Random.seed!(0)
         s = split(sprint(show, "text/plain", B), '\n')[2]
         @test s == " 1  │  0  0  │  ⋅  ⋅  ⋅  │  ⋅  ⋅  ⋅  ⋅"
     end
+
+    @testset "block_starts" begin
+        # block (3,2) is in the band of block_starts but not stored, so must be 0
+        bs = BlockBandedMatrices.BlockSkylineSizes([2,3,4], [1,2,3], [2,0,0], [0,1,1])
+        @test Matrix(bs.block_starts) == [1 10  0;
+                                          3 12 20;
+                                          6  0 23]
+    end
 end
 
 end # module
