@@ -514,10 +514,16 @@ function getindex(A::BandedBlockBandedMatrix{T}, KR::BlockRange{1}, JR::BlockRan
     _BandedBlockBandedMatrix(A.data[:,JR], axes(axes(A,1)[KR],1), (l-sh, u+sh), subblockbandwidths(A))
 end
 
-@inline function bandwidths(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice1,BlockSlice1}}) where T
+@inline bandwidths(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice1,BlockSlice1}}) where T = _block_bandwidths(MemoryLayout(parent(V)), V)
+
+@inline function _blockbanded_block_bandwidths(V)
     inblockbands(V) && return subblockbandwidths(parent(V))
     (-720,-720)
 end
+@inline _block_bandwidths(_, V) = _blockbanded_block_bandwidths(V)
+@inline _block_bandwidths(::DiagonalLayout, V) = _blockbanded_block_bandwidths(V)
+# a block of a banded matrix is banded with the bandwidths shifted by the offset of the block from the diagonal
+@inline _block_bandwidths(::AbstractBandedLayout, V) = min.(size(V) .- 1, bandwidths(parent(V)) .+ (-1,1) .* bandshift(V))
 
 function bandwidths(V::SubArray{T,2,<:AbstractMatrix,<:Tuple{BlockSlice{<:BlockIndexRange1},BlockSlice{<:BlockIndexRange1}}}) where T
    B = parentblock(V)

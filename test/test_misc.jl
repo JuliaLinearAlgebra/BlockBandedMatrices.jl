@@ -204,6 +204,14 @@ Base.size(F::FiniteDifference) = (F.n,F.n)
         @test Q isa BandedMatrix
         @test blockrowsupport(Q,Block(1)) == Block.(2:2)
 
+        @test bandwidths(view(B, Block(2), Block(1))) == (1,0)
+        @test all(B[Block(K,J)] == Matrix(B)[a[Block(K)], a[Block(J)]] for K=1:5, J=1:5)
+
+        # blocks of a banded matrix with blocked axes, including blocks where the bandwidths are shifted
+        B = _BandedMatrix(BlockedArray(randn(5,6), (Base.OneTo(5), blockedrange(1:3))), blockedrange(1:2), 2, 2)
+        @test bandwidths(view(B, Block(2), Block(3))) == (1,0)
+        @test all(B[Block(K,J)] == Matrix(B)[axes(B,1)[Block(K)], axes(B,2)[Block(J)]] for K=1:2, J=1:3)
+
         @testset "constant blocks" begin
             a = blockedrange(Fill(2,5))
             Q = Eye((a,))[:,Block(2)]
