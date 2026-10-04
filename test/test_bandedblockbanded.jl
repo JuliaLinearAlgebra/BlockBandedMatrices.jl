@@ -578,6 +578,22 @@ import ArrayLayouts: RangeCumsum
         @test copy(transpose(A)) isa Transpose
         @test copy(transpose(A)) == transpose(copy(A))
     end
+
+    @testset "rectangular row vector mul" begin
+        for (m,n) in ((9,5), (5,9)), lu in ((2,0), (0,2), (1,1), (1,-1)), λμ in ((1,1), (0,2))
+            S = BandedBlockBandedMatrix(randn(sum(1:m), sum(1:n)), 1:m, 1:n, lu, λμ)
+            a, b = BlockVector(randn(sum(1:m)), 1:m), BlockVector(randn(sum(1:n)), 1:n)
+            @test all(k -> rowsupport(S,k) ⊆ rowsupport(S,axes(S,1)), axes(S,1))
+            @test all(j -> colsupport(S,j) ⊆ colsupport(S,axes(S,2)), axes(S,2))
+            @test a' * S ≈ Vector(a)' * Matrix(S)
+            @test Vector(a)' * S ≈ Vector(a)' * Matrix(S)
+            @test transpose(a) * S ≈ transpose(Vector(a)) * Matrix(S)
+            @test transpose(S) * a ≈ transpose(Matrix(S)) * Vector(a)
+            @test S' * a ≈ Matrix(S)' * Vector(a)
+            @test S * b ≈ Matrix(S) * Vector(b)
+            @test S * Matrix(S)' ≈ Matrix(S) * Matrix(S)'
+        end
+    end
 end
 
 if false # turned off since tests have check-bounds=yes

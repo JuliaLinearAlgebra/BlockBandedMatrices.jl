@@ -252,6 +252,18 @@ import BlockBandedMatrices: MemoryLayout, ColumnMajor, BroadcastStyle,
         s = BlockVector(1:21, 1:6)
         @test BlockBandedMatrices.subblockbandwidths(s) == (5, 0)
     end
+
+    @testset "rectangular row vector mul" begin
+        for (m,n) in ((9,5), (5,9)), lu in ((2,0), (0,2), (1,-1))
+            A = BlockBandedMatrix(randn(sum(1:m), sum(1:n)), 1:m, 1:n, lu)
+            a = BlockVector(randn(sum(1:m)), 1:m)
+            @test all(k -> rowsupport(A,k) ⊆ rowsupport(A,axes(A,1)), axes(A,1))
+            @test all(j -> colsupport(A,j) ⊆ colsupport(A,axes(A,2)), axes(A,2))
+            @test a' * A ≈ Vector(a)' * Matrix(A)
+            @test Vector(a)' * A ≈ Vector(a)' * Matrix(A)
+            @test A * Matrix(A)' ≈ Matrix(A) * Matrix(A)'
+        end
+    end
 end
 
 end # module
