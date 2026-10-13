@@ -119,7 +119,7 @@ Base.size(F::FiniteDifference) = (F.n,F.n)
 
         @test bandwidths(V) == (0,0)
         @test_broken Broadcast.BroadcastStyle(typeof(V)) == BandedStyle()
-        @test MemoryLayout(typeof(V)) isa BandedColumns{DenseColumnMajor}
+        @test MemoryLayout(V) isa AbstractBandedLayout
         @test bandeddata(V) == bandeddata(PD)[:,1:n]
         @test BandedMatrix(V) == V
     end
@@ -174,9 +174,9 @@ Base.size(F::FiniteDifference) = (F.n,F.n)
         @test D̃ == D
         @test blockbandwidths(D) == blockbandwidths(D̃) == subblockbandwidths(D) == subblockbandwidths(D̃) == (0,0)
 
-        @test @inferred(D[Block(2,2)]) isa BandedMatrix
-        @test D[Block(2,3)] isa BandedMatrix
-        @test bandwidths(D[Block(2,2)]) == (0,0)
+        @test MemoryLayout(D[Block(2,2)]) isa AbstractBandedLayout
+        @test MemoryLayout(D[Block(2,3)]) isa AbstractBandedLayout
+        @test bandwidths(@inferred(D[Block(2,2)])) == (0,0)
         @test bandwidths(D[Block(2,3)]) == (-720,-720)
         @test D[Block(2,2)] == D[2:3,2:3]
         @test D[Block(2,3)] == zeros(2,3)
