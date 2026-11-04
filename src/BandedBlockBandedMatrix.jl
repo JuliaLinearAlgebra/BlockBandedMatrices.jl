@@ -240,6 +240,18 @@ convert(::Type{AbstractMatrix{T}}, B::BandedBlockBandedMatrix{T}) where T = B
 copy(A::Adjoint{T,<:BandedBlockBandedMatrix}) where T = copy(parent(A))'
 copy(A::Transpose{T,<:BandedBlockBandedMatrix}) where T = transpose(copy(parent(A)))
 
+# convert the parent, as the fallback copies into similar(A, T), which fails when A is infinite
+for (Adj, adj) in ((:Adjoint, :adjoint), (:Transpose, :transpose))
+    @eval begin
+        AbstractArray{T}(A::$Adj{<:Any,<:BandedBlockBandedMatrix}) where T = $adj(AbstractArray{T}(parent(A)))
+        AbstractMatrix{T}(A::$Adj{<:Any,<:BandedBlockBandedMatrix}) where T = $adj(AbstractMatrix{T}(parent(A)))
+        convert(::Type{AbstractArray{T}}, A::$Adj{<:Any,<:BandedBlockBandedMatrix}) where T = $adj(convert(AbstractArray{T}, parent(A)))
+        convert(::Type{AbstractMatrix{T}}, A::$Adj{<:Any,<:BandedBlockBandedMatrix}) where T = $adj(convert(AbstractMatrix{T}, parent(A)))
+        convert(::Type{AbstractArray{T}}, A::$Adj{T,<:BandedBlockBandedMatrix}) where T = A
+        convert(::Type{AbstractMatrix{T}}, A::$Adj{T,<:BandedBlockBandedMatrix}) where T = A
+    end
+end
+
 
 
 similar(A::BandedBlockBandedMatrix, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
