@@ -577,6 +577,19 @@ import ArrayLayouts: RangeCumsum
         @test copy(A') == copy(A)'
         @test copy(transpose(A)) isa Transpose
         @test copy(transpose(A)) == transpose(copy(A))
+
+        # converting the eltype keeps the wrapper, rather than copying into similar(A', T)
+        for (Ã, Adj) in ((A', Adjoint), (transpose(A), Transpose))
+            for B in (AbstractArray{ComplexF64}(Ã), AbstractMatrix{ComplexF64}(Ã),
+                      convert(AbstractArray{ComplexF64}, Ã), convert(AbstractMatrix{ComplexF64}, Ã))
+                @test B isa Adj{ComplexF64,<:BandedBlockBandedMatrix{ComplexF64}}
+                @test B == Ã
+            end
+            @test convert(AbstractArray{Int}, Ã) ≡ convert(AbstractMatrix{Int}, Ã) ≡ Ã
+        end
+        B = _BandedBlockBandedMatrix(data .+ im*data, rows,cols, (l,u), (λ,μ))
+        @test convert(AbstractArray{ComplexF32}, B') == B'
+        @test convert(AbstractArray{ComplexF32}, transpose(B)) == transpose(B)
     end
 
     @testset "rectangular row vector mul" begin
