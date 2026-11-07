@@ -321,6 +321,19 @@ import ArrayLayouts: RangeCumsum
         @test A[Block.(3:4), :] isa BandedBlockBandedMatrix
         @test A[:, :] isa BandedBlockBandedMatrix
 
+        @testset "empty block ranges" begin
+            for (KR, JR) in ((Block.(1:0), Block.(3:4)), (Block.(2:3), Block.(1:0)), (Block.(3:2), Block.(2:3)),
+                             (Block.(2:3), Block.(5:4)), (Block.(1:0), Block.(1:0)))
+                E = A[KR, JR]
+                @test E isa BandedBlockBandedMatrix
+                @test size(E) == (length(axes(A,1)[KR]), length(axes(A,2)[JR]))
+                @test blocksize(E) == (length(KR), length(JR))
+                @test E == view(A, KR, JR) == Matrix(A)[axes(A,1)[KR], axes(A,2)[JR]]
+                @test blockbandwidths(E) == blockbandwidths(view(A, KR, JR))
+                @test subblockbandwidths(E) == subblockbandwidths(A)
+            end
+        end
+
         x = randn(size(B,2))
         y = similar(x, size(B,1))
         @test (similar(y) .= MulAdd(B, x)) == (similar(y) .= MulAdd(V,x))

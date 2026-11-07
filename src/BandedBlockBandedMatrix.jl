@@ -521,7 +521,7 @@ function getindex(A::BandedBlockBandedMatrix{T}, K::Block{1}, J::Block{1}) where
 end
 
 function getindex(A::BandedBlockBandedMatrix{T}, KR::BlockRange{1}, JR::BlockRange{1}) where T
-    sh = Int(KR[1]-JR[1])
+    sh = _firstblock(KR) - _firstblock(JR) # works for empty ranges, unlike KR[1]
     l,u = blockbandwidths(A)
     _BandedBlockBandedMatrix(A.data[:,JR], axes(axes(A,1)[KR],1), (l-sh, u+sh), subblockbandwidths(A))
 end
